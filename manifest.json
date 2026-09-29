@@ -1,0 +1,19 @@
+{
+  "name": "NutriLog — AI Diet Tracker",
+  "short_name": "NutriLog",
+  "description": "AI-powered diet tracker with macro tracking, meal planning, and barcode scanning",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FAFAF7",
+  "theme_color": "#FAFAF7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🥗</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
