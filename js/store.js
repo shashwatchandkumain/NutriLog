@@ -1,0 +1,50 @@
+// Global app state + a tiny event bus. Views read `state` and re-render on events.
+import { today } from './lib/utils.js';
+
+export const state = {
+  session: null,
+  user: null,
+  profile: null,
+  prefs: null,
+  goals: null,
+  date: today(),
+  day: null,            // { items, activities, water }
+  weights: [],          // [{ recorded_on, weight_kg }] ascending
+  loggedDates: [],      // ['YYYY-MM-DD', ...]
+  online: navigator.onLine,
+  pending: 0,           // queued offline writes
+  syncing: false,
+  passwordRecovery: false,
+};
+
+const listeners = new Map();
+
+/** Subscribe to an event. Returns an unsubscribe function. */
+export function on(event, fn) {
+  if (!listeners.has(event)) listeners.set(event, new Set());
+  listeners.get(event).add(fn);
+  return () => listeners.get(event)?.delete(fn);
+}
+
+export function emit(event, detail) {
+  for (const fn of listeners.get(event) || []) {
+    try { fn(detail); } catch (e) { console.error(`[NutriLog] listener for ${event} failed`, e); }
+  }
+}
+
+/** Effective daily targets, with safe defaults before onboarding sets real ones. */
+export function currentGoals() {
+  const g = state.goals || {};
+  return {
+    calories: Number(g.calories) || 2000,
+    protein: Number(g.protein_g) || 100,
+    carbs: Number(g.carbs_g) || 250,
+    fat: Number(g.fat_g) || 65,
+    fiber: Number(g.fiber_g) || 28,
+    isCustom: !!g.is_custom,
+    isSet: !!g.calories,
+  };
+}
+
+export const weightUnit = () => state.prefs?.weight_unit || 'kg';
+export const heightUnit = () => state.prefs?.height_unit || 'cm';

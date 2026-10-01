@@ -1,0 +1,17 @@
+# Supabase CLI configuration for NutriLog.
+# Only the Edge Function settings matter for deployment; run `supabase link` to bind a project.
+project_id = "nutrilog"
+
+# The functions verify the caller's session themselves (supabase.auth.getUser), which works with
+# both legacy JWT secrets and the newer signing keys. account-recovery must accept signed-out users.
+[functions.ai-food-analysis]
+verify_jwt = false
+
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.account-recovery]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false

@@ -1,19 +1,23 @@
 {
-  "name": "NutriLog — AI Diet Tracker",
+  "id": "./",
+  "name": "NutriLog — Nutrition & Calorie Tracker",
   "short_name": "NutriLog",
-  "description": "AI-powered diet tracker with macro tracking, meal planning, and barcode scanning",
-  "start_url": "./",
+  "description": "Track meals, calories, macros and weight. Search foods, log by photo or barcode, and sync across your devices.",
+  "start_url": "./#/dashboard",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#FAFAF7",
-  "theme_color": "#FAFAF7",
-  "orientation": "portrait",
+  "orientation": "any",
+  "background_color": "#f8f7f2",
+  "theme_color": "#0f766e",
+  "categories": ["health", "food", "lifestyle"],
   "icons": [
-    {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🥗</text></svg>",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Dashboard", "url": "./#/dashboard" },
+    { "name": "Progress", "url": "./#/progress" }
   ]
 }

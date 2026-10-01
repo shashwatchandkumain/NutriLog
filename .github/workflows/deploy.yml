@@ -1,0 +1,68 @@
+# Deploys NutriLog to GitHub Pages.
+#
+# Optional: instead of committing js/config.js, set these repository VARIABLES
+# (Settings → Secrets and variables → Actions → Variables). They are public values:
+#   SUPABASE_URL        https://YOUR-PROJECT.supabase.co
+#   SUPABASE_ANON_KEY   your anon / publishable key
+#   ENABLE_GOOGLE_AUTH  true | false (optional)
+# Never add the service_role key, Gemini key or Claude key here — those go in Supabase.
+#
+# To use this workflow: Settings → Pages → Build and deployment → Source: "GitHub Actions".
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write public config from repository variables (if set)
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          ENABLE_GOOGLE_AUTH: ${{ vars.ENABLE_GOOGLE_AUTH }}
+        run: |
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ]; then
+            case "$SUPABASE_ANON_KEY" in sb_secret_*) echo "Refusing to publish a secret key"; exit 1;; esac
+            printf "export const CONFIG = {\n  SUPABASE_URL: '%s',\n  SUPABASE_ANON_KEY: '%s',\n  ENABLE_GOOGLE_AUTH: %s,\n};\n" \
+              "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "${ENABLE_GOOGLE_AUTH:-false}" > js/config.js
+            echo "js/config.js written from repository variables"
+          fi
+      - name: Stamp the service-worker cache version
+        run: sed -i "s/^const VERSION = '.*';/const VERSION = '${GITHUB_SHA::12}';/" sw.js
+      - name: Assemble site
+        run: |
+          mkdir _site
+          cp -r index.html manifest.json sw.js food_db.js .nojekyll css js icons _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - id: deployment
+        uses: actions/deploy-pages@v4

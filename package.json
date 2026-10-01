@@ -1,0 +1,23 @@
+{
+  "name": "nutrilog",
+  "private": true,
+  "type": "module",
+  "description": "NutriLog \u2014 personal nutrition and calorie tracker (static PWA + Supabase)",
+  "scripts": {
+    "serve": "python3 -m http.server 8080",
+    "build:foods": "node scripts/build-food-db.mjs",
+    "build:icons": "node scripts/build-icons.mjs",
+    "lint": "eslint .",
+    "test": "node --test tests/unit/*.test.mjs tests/db/*.test.mjs",
+    "test:e2e": "node --test --test-timeout=300000 tests/e2e/*.e2e.mjs",
+    "test:functions": "cd supabase/functions && npx -y deno@2 test --allow-env --node-modules-dir=none _shared/",
+    "check:functions": "cd supabase/functions && npx -y deno@2 check --node-modules-dir=none ai-food-analysis/index.ts ai-chat/index.ts account-recovery/index.ts delete-account/index.ts"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^16.5.0",
+    "playwright": "^1.63.0"
+  }
+}
