@@ -1,7 +1,7 @@
 // Settings: profile, nutrition goals, units, theme, reminders, privacy, account, data, delete.
-import { html, setHTML, fmtInt, today } from '../lib/utils.js';
+import { html, setHTML, fmtInt, today, formatDay } from '../lib/utils.js';
 import { recommendTargets, formatHeight, formatWeight } from '../lib/nutrition.js';
-import { state, on, currentGoals } from '../store.js';
+import { state, on, currentGoals, effectiveProfile, aiProvider } from '../store.js';
 import { $, toast, showError, withBusy, confirmDialog, openSheet, download } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { applyTheme, getThemePref } from '../ui/theme.js';
@@ -10,18 +10,20 @@ import { targetsView, customTargetsForm, readCustomTargets } from './targets.js'
 import { saveProfile, savePrefs, saveGoals, logWeight, exportAll } from '../services/data.js';
 import * as auth from '../services/auth.js';
 import { requestPermission, notificationPermission } from '../services/reminders.js';
+import { openImport } from './import.js';
 
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 
 export function mountSettings(root, { onSignedOut }) {
   const disposers = [];
 
   const render = () => {
-    const p = state.profile || {};
+    const p = effectiveProfile();
     const prefs = state.prefs || {};
     const g = currentGoals();
     const exerciseMode = prefs.exercise_mode || 'included';
     const rec = recommendTargets(p, { exerciseMode });
+    const provider = aiProvider();
     const shown = { calories: g.calories, protein: g.protein, carbs: g.carbs, fat: g.fat, fiber: g.fiber };
     const shortId = String(state.user?.id || '').slice(0, 8).toUpperCase();
     const themePref = getThemePref();
@@ -38,6 +40,7 @@ export function mountSettings(root, { onSignedOut }) {
             <dt>Height</dt><dd>${formatHeight(Number(p.height_cm), prefs.height_unit)}</dd>
             <dt>Weight</dt><dd>${formatWeight(p.weight_kg, prefs.weight_unit)}</dd>
             <dt>Target weight</dt><dd>${p.target_weight_kg ? formatWeight(p.target_weight_kg, prefs.weight_unit) : '—'}</dd>
+            <dt>Target date</dt><dd>${p.target_date ? formatDay(p.target_date, { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</dd>
             <dt>Goal</dt><dd>${{ lose: 'Lose weight', maintain: 'Maintain weight', gain: 'Gain weight', muscle: 'Build muscle' }[p.goal] || '—'}</dd>
             <dt>Diet</dt><dd>${{ vegetarian: 'Vegetarian', eggetarian: 'Eggetarian', non_vegetarian: 'Non-vegetarian', vegan: 'Vegan' }[p.diet_type] || 'Not specified'}</dd>
             <dt>Allergies</dt><dd>${(p.allergies || []).join(', ') || 'None'}</dd>
@@ -51,7 +54,7 @@ export function mountSettings(root, { onSignedOut }) {
               <button type="button" data-goal-mode="custom" aria-pressed="${g.isCustom}">Custom</button>
             </div></div>
           <div class="stack">
-            ${targetsView(shown, rec, exerciseMode === 'add' ? { ...p, activity_level: 'sedentary' } : p)}
+            ${targetsView(shown, rec, exerciseMode === 'add' ? { ...p, activity_level: 'sedentary' } : p, prefs.weight_unit)}
             ${g.isCustom && rec && rec.calories !== g.calories ? html`<div class="banner"><div class="grow"><b>You're using custom targets</b>Recommended for your current profile: ${fmtInt(rec.calories)} kcal, ${fmtInt(rec.protein)} g protein.</div><button type="button" class="btn btn-secondary btn-sm" data-use-rec>Use recommended</button></div>` : ''}
             ${g.isCustom ? html`<form id="s-custom" class="stack" novalidate>${customTargetsForm(shown)}<button class="btn btn-primary" type="submit">Save custom targets</button></form>` : ''}
             <div class="setting-row">
@@ -64,6 +67,18 @@ export function mountSettings(root, { onSignedOut }) {
             <div class="setting-row">
               <div><div class="t">Daily water goal</div><div class="d">Glasses of 250 ml</div></div>
               <div class="input-group" style="width:140px"><input class="input" type="number" min="1" max="30" value="${prefs.water_goal || 8}" id="s-water" aria-label="Water goal in glasses"><span class="input-suffix">glasses</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="s-ai">
+          <h2 id="s-ai">${icon('sparkles', 18)} AI model</h2>
+          <p class="sub">Used for food estimates (text and photos), activities and the Nutri AI coach. Both models get the same reference values for Indian staples and portions, and calories are always calculated from the protein, carbs and fat they estimate — so the two give consistent numbers.</p>
+          <div class="setting-row">
+            <div><div class="t">Analyze with</div><div class="d">${provider === 'claude' ? 'Claude (Anthropic) — detailed, careful estimates.' : 'Gemini (Google) — fast estimates.'} If the chosen model is unavailable, the other one answers.</div></div>
+            <div class="segmented" role="group" aria-label="AI model">
+              <button type="button" data-ai="gemini" aria-pressed="${provider === 'gemini'}">Gemini</button>
+              <button type="button" data-ai="claude" aria-pressed="${provider === 'claude'}">Claude</button>
             </div>
           </div>
         </section>
@@ -98,7 +113,8 @@ export function mountSettings(root, { onSignedOut }) {
         <section class="card" aria-labelledby="s-privacy">
           <h2 id="s-privacy">${icon('lock', 18)} Privacy</h2>
           <p class="explain" style="margin-top:8px">Your data is stored in your personal account and protected by Supabase Row Level Security — only you can read or change it, on any device you log in to.</p>
-          <p class="explain" style="margin-top:8px">When you use AI features, the description or photo you submit is sent to Google Gemini or Anthropic Claude through NutriLog's secure server to estimate nutrition. NutriLog does not keep the photo. API keys never reach your browser.</p>
+          <p class="explain" style="margin-top:8px">When you use AI features, the description or photo you submit is sent to the AI model you chose (Google Gemini or Anthropic Claude) through NutriLog's secure server to estimate nutrition. NutriLog does not keep the photo. API keys never reach your browser.</p>
+          <p class="explain" style="margin-top:8px">Smart-scale readings travel from the scale to this browser over Bluetooth and are saved only to your account.</p>
         </section>
 
         <section class="card" aria-labelledby="s-account">
@@ -118,6 +134,8 @@ export function mountSettings(root, { onSignedOut }) {
           <h2 id="s-data">Your data</h2>
           <div class="setting-row"><div><div class="t">Export my data</div><div class="d">Everything in your account as JSON, or your food log as CSV.</div></div>
             <div class="row"><button type="button" class="btn btn-secondary btn-sm" data-export="json">${icon('download', 16)} JSON</button><button type="button" class="btn btn-secondary btn-sm" data-export="csv">CSV</button></div></div>
+          <div class="setting-row"><div><div class="t">Import a profile</div><div class="d">Bring in weigh-ins, meals and profile details from a NutriLog export (yours or someone else's) or a smart-scale (occult) backup with one or more profiles.</div></div>
+            <button type="button" class="btn btn-secondary btn-sm" data-import>${icon('upload', 16)} Import</button></div>
         </section>
 
         <section class="card danger-zone" aria-labelledby="s-danger">
@@ -150,6 +168,11 @@ export function mountSettings(root, { onSignedOut }) {
         await withBusy(t, '…', () => savePrefs({ exercise_mode: t.dataset.exMode }));
         if (!currentGoals().isCustom) await applyRecommendation(true);
       } else if (t.matches('[data-pref]')) await withBusy(t, '…', () => savePrefs({ [t.dataset.pref]: t.dataset.v }));
+      else if (t.matches('[data-ai]')) {
+        if (t.dataset.ai === aiProvider()) return;
+        await withBusy(t, '…', () => savePrefs({ ai_provider: t.dataset.ai }));
+        toast(`AI model: ${t.dataset.ai === 'claude' ? 'Claude' : 'Gemini'}.`, 'success');
+      } else if (t.matches('[data-import]')) openImport();
       else if (t.matches('[data-theme-set]')) {
         applyTheme(t.dataset.themeSet);
         render();
@@ -191,7 +214,7 @@ export function mountSettings(root, { onSignedOut }) {
   });
 
   async function applyRecommendation(silent) {
-    const rec = recommendTargets(state.profile, { exerciseMode: state.prefs?.exercise_mode });
+    const rec = recommendTargets(effectiveProfile(), { exerciseMode: state.prefs?.exercise_mode });
     if (!rec) { if (!silent) toast('Complete your profile first.', 'error'); return; }
     await saveGoals({ ...rec, isCustom: false });
     toast(`Targets updated: ${fmtInt(rec.calories)} kcal a day.`, 'success');
@@ -199,7 +222,7 @@ export function mountSettings(root, { onSignedOut }) {
   const useRecommended = (btn) => withBusy(btn, '…', () => applyRecommendation(false));
 
   function editProfile() {
-    const model = { ...(state.profile || {}), prefs: { ...(state.prefs || {}) } };
+    const model = { ...effectiveProfile(), prefs: { ...(state.prefs || {}) } };
     const sheet = openSheet({ title: 'Edit profile', wide: true, footer: true });
     const renderForm = () => {
       setHTML(sheet.body, html`<form class="stack" id="pf" novalidate>
@@ -219,14 +242,14 @@ export function mountSettings(root, { onSignedOut }) {
       const errs = validateProfile(model);
       if (errs.length) { toast(errs[0], 'error'); return; }
       try {
-        const before = state.profile || {};
+        const before = effectiveProfile();
         const patch = profilePatch(model);
         if (model.prefs.weight_unit !== state.prefs?.weight_unit || model.prefs.height_unit !== state.prefs?.height_unit) {
           await savePrefs({ weight_unit: model.prefs.weight_unit, height_unit: model.prefs.height_unit });
         }
         await saveProfile(patch);
         // Keep weight history consistent with an edited current weight.
-        if (patch.weight_kg && Math.abs(Number(before.weight_kg || 0) - patch.weight_kg) >= 0.05) logWeight(today(), patch.weight_kg);
+        if (patch.weight_kg && Math.abs(Number(before.weight_kg || 0) - patch.weight_kg) >= 0.005) logWeight(today(), patch.weight_kg, { source: 'manual' });
         sheet.close();
         if (!currentGoals().isCustom) await applyRecommendation(true);
         else toast('Profile saved. Your custom targets were kept.', 'success');

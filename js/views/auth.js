@@ -71,9 +71,9 @@ export function renderWelcome(root, { legacyAnonymous = false } = {}) {
     ${legacyAnonymous ? html`<div class="banner"><span aria-hidden="true">💾</span><div class="grow"><b>Welcome back to NutriLog</b>This device has data from the previous version. Create an account with your email to keep it and sync it across devices.</div></div>` : ''}
     <div class="auth-panel">
       <div class="features">
-        <div class="feature"><span class="feature-icon" aria-hidden="true">🔎</span><div><b>1,100+ foods, Indian-first</b>Roti, dal, paneer, biryani — with real portion sizes.</div></div>
-        <div class="feature"><span class="feature-icon" aria-hidden="true">📷</span><div><b>Log by photo, barcode or text</b>AI estimates your plate; you confirm before saving.</div></div>
-        <div class="feature"><span class="feature-icon" aria-hidden="true">🔄</span><div><b>Syncs across your devices</b>Phone, laptop, any browser — one private account.</div></div>
+        <div class="feature"><span class="feature-icon" aria-hidden="true">✨</span><div><b>Describe it, snap it, done</b>AI (Gemini or Claude) works out any meal — roti, dal, biryani — and you check it before saving.</div></div>
+        <div class="feature"><span class="feature-icon" aria-hidden="true">⚖️</span><div><b>Smart-scale weigh-ins</b>Measure over Bluetooth: weight, heart rate and body composition in one tap.</div></div>
+        <div class="feature"><span class="feature-icon" aria-hidden="true">🎯</span><div><b>Hit your target by your date</b>Calories planned from your weight, activity and goal date — synced to every device.</div></div>
       </div>
       <div class="stack" style="margin-top:22px">
         <a class="btn btn-primary btn-lg btn-block" href="#/signup">Create account</a>

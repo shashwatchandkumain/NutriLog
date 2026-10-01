@@ -1,14 +1,14 @@
 // Progress: streaks, averages, weight trend & goal progress, calorie and protein trends.
 // Everything is computed from the user's logged data — no demo numbers.
-import { html, setHTML, fmtInt, fmt1, today, addDays, dateRange, formatDay, parseISODate } from '../lib/utils.js';
-import { formatWeight, kgToLb, macroCalories } from '../lib/nutrition.js';
+import { html, setHTML, fmtInt, fmt1, fmtNum, today, addDays, dateRange, formatDay, parseISODate } from '../lib/utils.js';
+import { formatWeight, kgToLb, macroCalories, recommendTargets, trimNumber } from '../lib/nutrition.js';
 import { totalsByDate, computeStreak, averageOfLoggedDays, sortWeights, weightChange, goalProgress } from '../lib/stats.js';
-import { state, on, currentGoals, weightUnit } from '../store.js';
+import { state, on, currentGoals, weightUnit, effectiveProfile } from '../store.js';
 import { $, bindActions, confirmDialog, toast } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { barChart, lineChart } from '../ui/charts.js';
 import { fetchItemsRange, fetchLoggedDates, fetchWeights, deleteWeight } from '../services/data.js';
-import { openWeightSheet } from './dashboard.js';
+import { openWeightSheet, openScale } from './weigh-in.js';
 import { openCalendar } from './calendar.js';
 import { navigate } from '../router.js';
 
@@ -34,8 +34,10 @@ export function mountProgress(root) {
     <div class="tiles" id="p-tiles"><div class="skeleton" style="height:88px"></div><div class="skeleton" style="height:88px"></div><div class="skeleton" style="height:88px"></div><div class="skeleton" style="height:88px"></div></div>
     <div class="dash-grid" style="margin-top:14px">
       <div class="cards">
-        <section class="card"><div class="card-head"><h2 class="card-title">Weight</h2><button type="button" class="btn btn-secondary btn-sm" data-action="log-weight">+ Log weight</button></div>
+        <section class="card"><div class="card-head"><h2 class="card-title">Weight</h2>
+          <div class="row"><button type="button" class="btn btn-primary btn-sm" data-action="measure">${icon('scale', 16)} Measure</button><button type="button" class="btn btn-secondary btn-sm" data-action="log-weight">+ Log</button></div></div>
           <div id="p-weight"></div></section>
+        <section class="card" id="p-body"></section>
         <section class="card"><div class="card-head"><h2 class="card-title">Calories</h2><span class="small muted" id="p-cal-note"></span></div><div id="p-cal"></div></section>
         <section class="card"><div class="card-head"><h2 class="card-title">Protein</h2><span class="small muted" id="p-prot-note"></span></div><div id="p-prot"></div></section>
       </div>
@@ -84,14 +86,23 @@ export function mountProgress(root) {
     const prog = goalProgress(p.start_weight_kg, current, p.target_weight_kg);
     const toGo = p.target_weight_kg && current ? Number(current) - Number(p.target_weight_kg) : null;
     const lossGoal = ['lose'].includes(p.goal);
+    const plan = recommendTargets(effectiveProfile(), { exerciseMode: state.prefs?.exercise_mode })?.plan;
+    const when = plan?.projectedDate ? formatDay(plan.projectedDate, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+    const planLine = !plan || plan.status === 'reached' ? ''
+      : plan.status === 'past' ? 'Target date has passed — set a new one in Settings'
+        : !when ? ''
+          : plan.status === 'dated' ? `On track for ${when}`
+            : plan.status === 'capped' ? `Safe pace gets you there by ${when}`
+              : `At this pace: ${when}`;
     setHTML($('#p-tiles', root), html`
       <div class="tile"><div class="tile-label">🔥 Current streak</div><div class="tile-value">${streak.current}<small> day${streak.current === 1 ? '' : 's'}</small></div><div class="tile-delta">Best ${streak.best} · ${streak.daysLogged} day${streak.daysLogged === 1 ? '' : 's'} logged</div></div>
       <div class="tile"><div class="tile-label">Avg calories / day</div><div class="tile-value">${avg ? fmtInt(avg.calories) : '—'}<small> kcal</small></div><div class="tile-delta">${avg ? `${avg.days} logged day${avg.days === 1 ? '' : 's'} · target ${fmtInt(g.calories)}` : 'No meals in this range'}</div></div>
       <div class="tile"><div class="tile-label">Avg protein / day</div><div class="tile-value">${avg ? fmtInt(avg.protein) : '—'}<small> g</small></div><div class="tile-delta ${avg && avg.protein >= g.protein * 0.9 ? 'good' : ''}">target ${fmtInt(g.protein)} g</div></div>
       <div class="tile"><div class="tile-label">Weight change (${RANGES[range].label})</div><div class="tile-value">${ch ? `${ch.change > 0 ? '+' : ch.change < 0 ? '−' : ''}${formatWeight(Math.abs(ch.change), unit)}` : '—'}</div>
         <div class="tile-delta ${ch && ((lossGoal && ch.change < 0) || (!lossGoal && p.goal !== 'maintain' && ch.change > 0)) ? 'good' : ''}">${ch ? `since ${formatDay(ch.from.recorded_on, { month: 'short', day: 'numeric' })}` : 'Need 2+ weigh-ins'}</div></div>
-      <div class="tile"><div class="tile-label">Goal progress</div><div class="tile-value">${prog != null ? `${Math.round(prog * 100)}%` : '—'}</div>
+      <div class="tile"><div class="tile-label">Goal progress${p.target_date ? ` · by ${formatDay(p.target_date, { day: 'numeric', month: 'short' })}` : ''}</div><div class="tile-value">${prog != null ? `${fmtNum(prog * 100, 1)}%` : '—'}</div>
         <div class="tile-delta">${p.target_weight_kg ? (toGo != null && Math.abs(toGo) >= 0.05 ? `${formatWeight(Math.abs(toGo), unit)} to go` : 'Target reached 🎉') : html`<a href="#/settings">Set a target weight</a>`}</div>
+        ${planLine ? html`<div class="tile-delta">${planLine}</div>` : ''}
         ${prog != null ? html`<div class="bar"><span style="width:${prog * 100}%"></span></div>` : ''}</div>`);
   };
 
@@ -107,7 +118,7 @@ export function mountProgress(root) {
     }));
     const t = state.profile?.target_weight_kg;
     weightDispose = lineChart($('#p-weight', root), pts, {
-      target: t ? (unit === 'lb' ? kgToLb(Number(t)) : Number(t)) : null, unit, format: (v) => v.toFixed(1),
+      target: t ? (unit === 'lb' ? kgToLb(Number(t)) : Number(t)) : null, unit, format: (v) => trimNumber(v, 2),
       emptyText: 'Log your weight on at least two days to see your trend.', ariaLabel: 'Weight over time',
     });
     const list = [...w].reverse().slice(0, 12);
@@ -116,12 +127,47 @@ export function mountProgress(root) {
       ${list.length ? list.map((x, i) => {
         const prev = list[i + 1];
         const diff = prev ? Number(x.weight_kg) - Number(prev.weight_kg) : null;
+        const meta = [formatDay(x.recorded_on), x.source === 'scale' ? 'smart scale' : null,
+          x.body_fat_pct != null ? `${fmtNum(x.body_fat_pct, 1)}% fat` : null, x.heart_rate_bpm ? `${x.heart_rate_bpm} bpm` : null,
+          x.pending ? 'saving…' : null].filter(Boolean).join(' · ');
         return html`<div class="item">
-          <div class="item-main"><div class="item-name">${formatWeight(x.weight_kg, unit)}</div><div class="item-meta">${formatDay(x.recorded_on)}${x.pending ? ' · saving…' : ''}</div></div>
+          <div class="item-main"><div class="item-name">${formatWeight(x.weight_kg, unit)}</div><div class="item-meta">${meta}</div></div>
           ${diff != null ? html`<span class="small ${diff < 0 ? 'muted' : ''}">${diff > 0 ? '+' : diff < 0 ? '−' : '±'}${formatWeight(Math.abs(diff), unit)}</span>` : ''}
           <button type="button" class="icon-btn" data-action="del-weight" data-date="${x.recorded_on}" aria-label="Delete weigh-in on ${x.recorded_on}">${icon('trash', 18)}</button>
         </div>`;
-      }) : html`<div class="empty"><div class="empty-icon">⚖️</div><div class="empty-title">No weight history</div><div class="empty-sub">Log your weight regularly to see progress toward your goal.</div></div>`}`);
+      }) : html`<div class="empty"><div class="empty-icon">⚖️</div><div class="empty-title">No weight history</div><div class="empty-sub">Measure with your smart scale or log your weight regularly to see progress toward your goal.</div></div>`}`);
+    renderBody(w);
+  };
+
+  let bodyDispose = null;
+  const renderBody = (w) => {
+    bodyDispose?.();
+    bodyDispose = null;
+    const unit = weightUnit();
+    const latest = [...w].reverse().find((x) => x.body_fat_pct != null);
+    const el = $('#p-body', root);
+    if (!latest) {
+      setHTML(el, html`<div class="card-head"><h2 class="card-title">Body composition</h2></div>
+        <p class="small muted">Measure with your smart scale (or log a weigh-in) with your height and age set in your profile to see body fat, lean mass, body water and BMR.</p>`);
+      return;
+    }
+    const pts = w.filter((x) => x.body_fat_pct != null).slice(-60).map((x) => ({
+      date: x.recorded_on, value: Number(x.body_fat_pct), label: formatDay(x.recorded_on, { month: 'short', day: 'numeric' }), title: formatDay(x.recorded_on),
+    }));
+    const hr = [...w].reverse().find((x) => x.heart_rate_bpm);
+    setHTML(el, html`
+      <div class="card-head"><h2 class="card-title">Body composition</h2><span class="small muted">${formatDay(latest.recorded_on, { month: 'short', day: 'numeric' })}</span></div>
+      <div class="tiles">
+        <div class="tile"><div class="tile-label">Body fat</div><div class="tile-value">${fmtNum(latest.body_fat_pct, 1)}<small>%</small></div><div class="tile-delta">${latest.fat_mass_kg != null ? `${formatWeight(latest.fat_mass_kg, unit)} fat` : ''}</div></div>
+        <div class="tile"><div class="tile-label">Lean mass</div><div class="tile-value">${latest.lean_mass_kg != null ? formatWeight(latest.lean_mass_kg, unit) : '—'}</div></div>
+        <div class="tile"><div class="tile-label">Body water</div><div class="tile-value">${latest.body_water_pct != null ? html`${fmtNum(latest.body_water_pct, 1)}<small>%</small>` : '—'}</div></div>
+        <div class="tile"><div class="tile-label">BMI</div><div class="tile-value">${latest.bmi != null ? fmtNum(latest.bmi, 1) : '—'}</div></div>
+        <div class="tile"><div class="tile-label">BMR</div><div class="tile-value">${latest.bmr_kcal != null ? html`${fmtNum(latest.bmr_kcal, 1)}<small> kcal</small>` : '—'}</div></div>
+        <div class="tile"><div class="tile-label">Heart rate</div><div class="tile-value">${hr ? html`${hr.heart_rate_bpm}<small> bpm</small>` : '—'}</div><div class="tile-delta">${hr ? formatDay(hr.recorded_on, { month: 'short', day: 'numeric' }) : 'from the smart scale'}</div></div>
+      </div>
+      <div id="p-fat" style="margin-top:12px"></div>
+      <p class="tiny faint" style="margin-top:6px">Estimated from weight, height, age and sex (Deurenberg / Watson / Mifflin–St Jeor). Treat as a trend, not a medical measurement.</p>`);
+    bodyDispose = lineChart($('#p-fat', root), pts, { unit: '%', format: (v) => v.toFixed(1), emptyText: 'Two or more weigh-ins will show your body-fat trend.', ariaLabel: 'Body fat over time' });
   };
 
   const renderNutrition = () => {
@@ -192,6 +238,7 @@ export function mountProgress(root) {
       load();
     },
     'log-weight': () => openWeightSheet(),
+    measure: () => openScale(),
     'del-weight': async (el) => {
       const d = el.dataset.date;
       if (await confirmDialog({ title: 'Delete weigh-in?', message: `Remove the entry for ${formatDay(d)}?`, confirmLabel: 'Delete', danger: true })) {
@@ -206,5 +253,5 @@ export function mountProgress(root) {
   disposers.push(on('data-changed', () => load()));
   disposers.push(on('account', renderAll));
   load();
-  return () => { disposers.forEach((d) => d()); weightDispose?.(); nutritionDisposers.forEach((d) => d()); };
+  return () => { disposers.forEach((d) => d()); weightDispose?.(); bodyDispose?.(); nutritionDisposers.forEach((d) => d()); };
 }

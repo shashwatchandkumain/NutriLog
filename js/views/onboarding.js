@@ -11,7 +11,7 @@ import { targetsView, customTargetsForm, readCustomTargets } from './targets.js'
 const STEPS = [
   { id: 'basics', title: "Let's set up your profile", lead: 'A few details to personalise your calorie and macro targets.', fields: basicsFields },
   { id: 'body', title: 'Your body', lead: 'Used to calculate how much energy you need each day.', fields: bodyFields },
-  { id: 'goal', title: "What's your goal?", lead: 'You can change this any time in Settings.', fields: goalFields },
+  { id: 'goal', title: "What's your goal?", lead: 'Your target weight and date (previous step) plan the pace. You can change this any time in Settings.', fields: goalFields },
   { id: 'activity', title: 'How active are you?', lead: 'Include your usual workouts — NutriLog will not double-count them.', fields: activityFields },
   { id: 'diet', title: 'Food preferences', lead: 'Optional — helps AI suggestions fit what you eat.', fields: dietFields },
 ];
@@ -76,7 +76,7 @@ export function renderOnboarding(root, { onDone }) {
       <h1>Your daily plan</h1>
       <p class="lead">Based on your profile. You can fine-tune these now or later in Settings.</p>
       <div class="stack">
-        ${targetsView(t, rec, model)}
+        ${targetsView(t, rec, model, model.prefs.weight_unit)}
         <details class="card" style="padding:14px" ${custom ? 'open' : ''}>
           <summary style="cursor:pointer;font-weight:600">Adjust targets manually</summary>
           <form id="ob-custom" class="stack" style="margin-top:12px" novalidate>${customTargetsForm(t)}
@@ -104,7 +104,7 @@ export function renderOnboarding(root, { onDone }) {
         const target = custom || rec;
         await saveGoals({ calories: target.calories, protein: target.protein, carbs: target.carbs, fat: target.fat, fiber: target.fiber, isCustom: !!custom });
         await saveProfile({ ...profilePatch(model), start_weight_kg: state.profile?.start_weight_kg || profilePatch(model).weight_kg, onboarding_completed: true });
-        logWeight(today(), profilePatch(model).weight_kg);
+        logWeight(today(), profilePatch(model).weight_kg, { source: 'manual' });
         renderRecovery();
       } catch (err) { showError(err, 'onboarding save'); }
     }));

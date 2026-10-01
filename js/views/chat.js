@@ -11,7 +11,7 @@ const key = () => `nutrilog.chat.${state.user?.id}.${state.date}`;
 const load = () => { try { return JSON.parse(sessionStorage.getItem(key())) || []; } catch { return []; } };
 const save = (msgs) => { try { sessionStorage.setItem(key(), JSON.stringify(msgs.slice(-30))); } catch { /* ignore */ } };
 
-const PROMPTS = ['Am I on track today?', 'High-protein vegetarian snack ideas?', 'I had 2 idli and sambar for breakfast'];
+const PROMPTS = ['Am I on track today?', 'High-protein vegetarian snack ideas?', 'I had 2 idli and sambar for breakfast', 'Aaj maine kitna protein khaya?'];
 
 export function openCoach({ mode } = {}) {
   const sheet = openSheet({ title: 'Nutri AI', wide: true });
@@ -48,7 +48,7 @@ export function openCoach({ mode } = {}) {
     try {
       const history = msgs.filter((m) => !m.error).map((m) => ({ role: m.role, content: m.content }));
       const res = await coach(runMode, state.date, runMode === 'chat' ? history : []);
-      msgs.push({ role: 'assistant', content: res.reply, foods: res.foods || [] });
+      msgs.push({ role: 'assistant', content: res.reply, foods: res.foods || [], provider: res.provider });
     } catch (e) {
       msgs.push({ role: 'assistant', content: e?.userMessage || 'AI is unavailable right now. Please try again later.', error: true });
       if (!e?.userMessage) showError(e, 'coach');
@@ -71,7 +71,7 @@ export function openCoach({ mode } = {}) {
     const p = e.target.closest('[data-prompt]');
     if (p) { run('chat', p.dataset.prompt); return; }
     const a = e.target.closest('[data-add]');
-    if (a) { const m = msgs[Number(a.dataset.add)]; if (m?.foods?.length) openReview(m.foods, { source: 'chat' }); }
+    if (a) { const m = msgs[Number(a.dataset.add)]; if (m?.foods?.length) openReview(m.foods, { source: 'chat', provider: m.provider }); }
   });
 
   render();

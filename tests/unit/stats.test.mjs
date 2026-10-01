@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { computeStreak, totalsByDate, averageOfLoggedDays, weightChange, goalProgress, dailyScore } from '../../js/lib/stats.js';
 import { sumNutrition } from '../../js/lib/nutrition.js';
-import { netActivityCalories } from '../../js/lib/activity.js';
+import { netActivityCalories, treadmillMet, weightOn } from '../../js/lib/activity.js';
 
 test('streak counts consecutive days and survives an unlogged today', () => {
   assert.deepEqual(computeStreak(['2026-09-27', '2026-09-28', '2026-09-29'], '2026-09-29'), { current: 3, best: 3, daysLogged: 3 });
@@ -53,4 +53,24 @@ test('exercise uses net MET calories', () => {
   assert.equal(netActivityCalories(9.8, 80, 30), (9.8 - 1) * 80 * 0.5); // 352
   assert.equal(netActivityCalories(1, 80, 60), 0);
   assert.equal(netActivityCalories(5, 0, 60), 0);
+});
+
+test('treadmill MET from speed and incline (ACSM equations)', () => {
+  const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≈ ${b}`);
+  close(treadmillMet({ speedKmh: 6 }), 13.5 / 3.5);                       // walking 100 m/min, flat
+  close(treadmillMet({ speedKmh: 5, inclinePct: 10 }), (3.5 + 0.1 * (5000 / 60) + 1.8 * (5000 / 60) * 0.1) / 3.5); // uphill walk
+  close(treadmillMet({ speedKmh: 10, inclinePct: 1 }), (3.5 + 0.2 * (10000 / 60) + 0.9 * (10000 / 60) * 0.01) / 3.5); // running
+  close(treadmillMet({ speedKmh: 6.5, mode: 'run' }), (3.5 + 0.2 * (6500 / 60)) / 3.5);
+  assert.equal(treadmillMet({ speedKmh: 0 }), null);
+  // 30 min at 6 km/h for a 92 kg person: (MET − 1) × 92 × 0.5
+  close(netActivityCalories(treadmillMet({ speedKmh: 6 }), 92, 30), (13.5 / 3.5 - 1) * 46);
+});
+
+test('weight on a date follows the database rule', () => {
+  const w = [{ recorded_on: '2026-09-20', weight_kg: 72.5 }, { recorded_on: '2026-09-24', weight_kg: 70.25 }];
+  assert.equal(weightOn('2026-09-25', w), 70.25);
+  assert.equal(weightOn('2026-09-22', w), 72.5);
+  assert.equal(weightOn('2026-09-10', w), 72.5, 'before the first weigh-in → the earliest one');
+  assert.equal(weightOn('2026-09-10', [], 80), 80);
+  assert.equal(weightOn('2026-09-10', [], null), null);
 });

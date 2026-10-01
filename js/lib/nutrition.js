@@ -1,7 +1,10 @@
-// Pure nutrition math: energy targets, macro targets, portion scaling, totals.
-// No DOM, no network — unit-tested in tests/nutrition.test.mjs.
+// Pure nutrition math: energy targets, goal-date plans, macro targets, portion scaling, totals.
+// No DOM, no network — unit-tested in tests/unit/nutrition.test.mjs.
+import { addDays, daysBetween, today as todayIso } from './utils.js';
 
 export const KCAL_PER_GRAM = { protein: 4, carbs: 4, fat: 9 };
+/** Energy in 1 kg of body-weight change (the standard 7,700 kcal rule). */
+export const KCAL_PER_KG = 7700;
 export const NUTRIENTS = ['calories', 'protein', 'carbs', 'fat', 'fiber'];
 
 // Standard activity multipliers applied to BMR (they include typical exercise).
@@ -126,27 +129,83 @@ export function macroTargets({ calories, weightKg, heightCm, goal = 'maintain', 
   return { protein, carbs, fat, fiber };
 }
 
+/** Fastest weekly change NutriLog plans for: 1% of body weight (max 1 kg) when losing. */
+export function maxWeeklyChangeKg(goal, weightKg) {
+  if (goal === 'lose') return Math.min(1, 0.01 * (Number(weightKg) || 0));
+  return goal === 'muscle' ? 0.25 : 0.5;
+}
+
 /**
- * Full recommendation from a profile (kg/cm units), rounded for display, or null if the
- * profile is incomplete. exerciseMode 'add' bases the target on a sedentary TDEE because
- * logged workouts are then added to each day's budget.
+ * Plan toward a target weight, optionally by a target date. Returns null when the goal has
+ * no target weight (or is "maintain").
+ *   status 'reached'  — at or past the target: eat at maintenance (TDEE)
+ *           'dated'    — the daily deficit/surplus that reaches the target exactly on the date
+ *           'capped'   — the date needs a faster pace than is safe; the safe maximum is used
+ *           'past'     — the date is today or earlier; the standard goal pace is used
+ *           'default'  — no date; the standard goal pace (see calorieTarget)
+ * Daily energy change = (target − current) kg × 7,700 kcal ÷ days left. Losing never goes
+ * below the safety floor or above TDEE. projectedDate is when the planned pace gets there.
  */
-export function recommendTargets(profile, { exerciseMode = 'included' } = {}) {
-  const { weight_kg: weightKg, height_cm: heightCm, age, sex, activity_level: activityLevel, goal, macro_style: macroStyle } = profile || {};
+export function goalPlan({ weightKg, targetKg, targetDate, today = todayIso(), tdee: t, goal, sex }) {
+  const w = Number(weightKg), target = Number(targetKg);
+  if (!['lose', 'gain', 'muscle'].includes(goal) || !(target > 0) || !(w > 0) || !(t > 0)) return null;
+  const changeKg = target - w;
+  const losing = goal === 'lose';
+  if (losing ? changeKg > -0.05 : changeKg < 0.05) {
+    return { status: 'reached', changeKg, days: null, calories: t, requiredDaily: null, plannedDaily: 0, requiredWeeklyKg: null, plannedWeeklyKg: 0, projectedDate: null };
+  }
+  const days = targetDate ? daysBetween(today, targetDate) : null;
+  let status, requiredDaily = null, plannedDaily;
+  if (targetDate && days >= 1) {
+    const maxDaily = (maxWeeklyChangeKg(goal, w) * KCAL_PER_KG) / 7;
+    requiredDaily = (changeKg * KCAL_PER_KG) / days;
+    plannedDaily = clamp(requiredDaily, -maxDaily, maxDaily);
+    status = 'dated';
+  } else {
+    plannedDaily = calorieTarget(t, goal, sex) - t;
+    status = targetDate ? 'past' : 'default';
+  }
+  let calories = t + plannedDaily;
+  if (losing) calories = Math.min(t, Math.max(calories, calorieFloor(sex)));
+  plannedDaily = calories - t;
+  if (requiredDaily != null && Math.abs(plannedDaily - requiredDaily) > 0.5) status = 'capped';
+  const daysNeeded = Math.abs(plannedDaily) > 0.5 ? Math.ceil((changeKg * KCAL_PER_KG) / plannedDaily) : null;
+  return {
+    status, changeKg, days, calories, requiredDaily, plannedDaily,
+    requiredWeeklyKg: requiredDaily == null ? null : (requiredDaily * 7) / KCAL_PER_KG,
+    plannedWeeklyKg: (plannedDaily * 7) / KCAL_PER_KG,
+    projectedDate: daysNeeded > 0 ? addDays(today, daysNeeded) : null,
+  };
+}
+
+/**
+ * Full recommendation from a profile (kg/cm units), or null if the profile is incomplete.
+ * Calories are whole kcal and macros one decimal — never rounded to "nice" numbers.
+ * exerciseMode 'add' bases the target on a sedentary TDEE because logged workouts are then
+ * added to each day's budget.
+ */
+export function recommendTargets(profile, { exerciseMode = 'included', today = todayIso() } = {}) {
+  const {
+    weight_kg: weightKg, height_cm: heightCm, age, sex, activity_level: activityLevel, goal, macro_style: macroStyle,
+    target_weight_kg: targetKg, target_date: targetDate,
+  } = profile || {};
   const b = bmr({ weightKg: Number(weightKg), heightCm: Number(heightCm), age: Number(age), sex });
   if (!b) return null;
   // In "add logged exercise" mode the base target is sedentary; workouts are added per day.
   const t = tdee(b, exerciseMode === 'add' ? 'sedentary' : activityLevel);
-  const cal = calorieTarget(t, goal, sex);
+  const plan = goalPlan({ weightKg, targetKg, targetDate, today, tdee: t, goal, sex });
+  // The database accepts 800–10,000 kcal targets; only extreme profiles ever reach these bounds.
+  const cal = clamp(plan ? plan.calories : calorieTarget(t, goal, sex), 800, 10000);
   const m = macroTargets({ calories: cal, weightKg: Number(weightKg), heightCm: Number(heightCm), goal, macroStyle });
   return {
-    bmr: Math.round(b),
-    tdee: Math.round(t),
-    calories: Math.round(cal / 10) * 10,
-    protein: Math.round(m.protein),
-    carbs: Math.round(m.carbs),
-    fat: Math.round(m.fat),
-    fiber: Math.round(m.fiber),
+    bmr: b,
+    tdee: t,
+    calories: Math.round(cal),
+    protein: round1(m.protein),
+    carbs: round1(m.carbs),
+    fat: round1(m.fat),
+    fiber: round1(m.fiber),
+    plan,
   };
 }
 
@@ -218,10 +277,17 @@ export function cmToFtIn(cm) {
 }
 export const ftInToCm = (ft, inch) => ((Number(ft) || 0) * 12 + (Number(inch) || 0)) * CM_PER_IN;
 
-export function formatWeight(kg, unit, digits = 1) {
+/** Weight in the user's unit with up to `digits` decimals (trailing zeros dropped): 91.55 kg, 91.5 kg, 80 kg. */
+export function formatWeight(kg, unit, digits = 2) {
   if (kg == null || !Number.isFinite(Number(kg))) return '—';
   const v = unit === 'lb' ? kgToLb(Number(kg)) : Number(kg);
-  return `${v.toFixed(digits).replace(/\.0$/, '')} ${unit === 'lb' ? 'lb' : 'kg'}`;
+  return `${trimNumber(v, digits)} ${unit === 'lb' ? 'lb' : 'kg'}`;
+}
+
+/** Fixed decimals without trailing zeros: 91.50 → "91.5", 80.00 → "80". */
+export function trimNumber(v, digits = 2) {
+  const s = Number(v).toFixed(digits);
+  return s.includes('.') ? s.replace(/\.?0+$/, '') : s;
 }
 export function formatHeight(cm, unit) {
   if (!(cm > 0)) return '—';

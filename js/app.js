@@ -3,7 +3,7 @@
 //   open site → no session      → welcome / log in / create account
 //             → session, new     → profile setup (onboarding)
 //             → session          → dashboard (restored instantly from cache, then synced)
-import { html, setHTML, GENERIC_ERROR, debounce, today } from './lib/utils.js';
+import { html, setHTML, GENERIC_ERROR, debounce, today, fmtInt } from './lib/utils.js';
 import { state, on, emit } from './store.js';
 import { configProblem } from './services/supabase.js';
 import * as auth from './services/auth.js';
@@ -22,7 +22,8 @@ import { mountProgress } from './views/progress.js';
 import { mountSettings } from './views/settings.js';
 import { openFoodLogger } from './views/food-logger.js';
 import { openCoach } from './views/chat.js';
-import { loadFoods } from './services/foods.js';
+import { openScale } from './views/weigh-in.js';
+import { formatWeight } from './lib/nutrition.js';
 
 const appEl = document.getElementById('app');
 const AUTH_ROUTES = new Set(['welcome', 'signup', 'login', 'forgot', 'recover', 'check-email']);
@@ -34,6 +35,8 @@ let unmountView = null;
 let viewRoute = null;
 let bootstrappedFor = null;
 let accountError = null;
+let lastWeighIn = null;      // latest weigh-in seen, to announce target changes it causes
+let announceTargets = false;
 
 // ── Startup ───────────────────────────────────────────────────────────────
 function hideBoot() {
@@ -153,8 +156,6 @@ async function bootstrapUser(user) {
     }
   });
   data.subscribeRealtime(onRemoteChange);
-  // Warm the food database so search works instantly (and offline) later.
-  (window.requestIdleCallback || setTimeout)(() => loadFoods().catch(() => {}));
   startReminders(() => toast("Reminder: you haven't logged anything today.", 'info', { action: 'Add food', onAction: () => openFoodLogger() }));
 }
 
@@ -164,6 +165,8 @@ function teardownUser() {
   data.endDataSession();
   bootstrappedFor = null;
   Object.assign(state, { profile: null, prefs: null, goals: null, day: null, weights: [], loggedDates: [], date: today(), passwordRecovery: false });
+  lastWeighIn = null;
+  announceTargets = false;
   unmountApp();
 }
 
@@ -198,6 +201,30 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('online', () => { state.online = true; emit('sync'); data.flush(); if (bootstrappedFor) refreshDay(); });
 window.addEventListener('offline', () => { state.online = false; emit('sync'); });
 on('toast', ({ message, type }) => toast(message, type));
+
+// ── Automatic targets ─────────────────────────────────────────────────────
+// Non-custom targets follow the latest weigh-in, the profile and the goal date.
+const latestWeighInKey = () => { const w = state.weights[state.weights.length - 1]; return w ? `${w.recorded_on}:${w.weight_kg}` : null; };
+const runTargetSync = debounce(async () => {
+  if (!bootstrappedFor) return;
+  const announce = announceTargets;
+  announceTargets = false;
+  try {
+    const r = await data.syncAutoTargets();
+    if (r && announce) {
+      const w = state.weights[state.weights.length - 1];
+      toast(`Targets updated for ${formatWeight(w?.weight_kg, state.prefs?.weight_unit)}: ${fmtInt(r.after.calories)} kcal a day.`, 'success');
+    }
+  } catch (e) { console.warn('[NutriLog] target sync', e); }
+}, 700);
+const syncTargets = (announce) => { announceTargets ||= announce; runTargetSync(); };
+on('account', () => syncTargets(false));
+on('weights', () => {
+  const key = latestWeighInKey();
+  const changed = lastWeighIn !== null && key !== lastWeighIn;
+  lastWeighIn = key;
+  syncTargets(changed);
+});
 
 // ── Rendering ─────────────────────────────────────────────────────────────
 function unmountApp() {
@@ -287,6 +314,7 @@ function mountShell() {
       <div class="topbar-right">
         <span id="sync-pill" hidden></span>
         <span class="streak-pill" id="streak-pill" title="Logging streak" hidden></span>
+        <button type="button" class="btn btn-secondary btn-sm topbar-measure" id="measure-top" aria-label="Measure with smart scale">${icon('scale', 16)}<span>Measure</span></button>
         <button type="button" class="btn btn-secondary btn-sm topbar-chat" id="chat-top" aria-label="Open Nutri AI coach">${icon('chat', 16)} Nutri AI</button>
         <button type="button" class="icon-btn" id="theme-toggle" aria-label="Change theme"></button>
       </div>
@@ -298,6 +326,7 @@ function mountShell() {
   $('#add-fab').addEventListener('click', () => openFoodLogger());
   $('#chat-fab').addEventListener('click', () => openCoach());
   $('#chat-top').addEventListener('click', () => openCoach());
+  $('#measure-top').addEventListener('click', () => openScale());
   $('#theme-toggle').addEventListener('click', () => {
     const next = nextTheme(getThemePref());
     applyTheme(next);

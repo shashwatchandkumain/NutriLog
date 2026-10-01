@@ -5,7 +5,6 @@
   "description": "NutriLog \u2014 personal nutrition and calorie tracker (static PWA + Supabase)",
   "scripts": {
     "serve": "python3 -m http.server 8080",
-    "build:foods": "node scripts/build-food-db.mjs",
     "build:icons": "node scripts/build-icons.mjs",
     "setup:supabase": "bash scripts/setup-supabase.sh",
     "lint": "eslint .",

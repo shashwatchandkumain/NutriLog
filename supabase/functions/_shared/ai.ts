@@ -9,7 +9,8 @@ export type Provider = 'gemini' | 'claude';
 export type ChatTurn = { role: 'user' | 'assistant'; content: string };
 
 export interface JsonRequest {
-  system: string;
+  system: string;     // static instructions — identical across requests, so Claude caches them
+  context?: string;   // per-request data (the user's day, profile…) — appended, never cached
   text: string;
   image?: { mediaType: string; base64: string };
   history?: ChatTurn[];
@@ -20,7 +21,7 @@ export interface JsonRequest {
 const GEMINI_API_KEY = env('GEMINI_API_KEY');
 const CLAUDE_API_KEY = env('CLAUDE_API_KEY', 'ANTHROPIC_API_KEY');
 const GEMINI_MODEL = env('GEMINI_MODEL') || 'gemini-3.5-flash';
-const GEMINI_FALLBACK_MODEL = env('GEMINI_FALLBACK_MODEL') || 'gemini-3.1-flash-lite';
+const GEMINI_FALLBACK_MODEL = env('GEMINI_FALLBACK_MODEL') || 'gemini-3.5-flash-lite';
 const CLAUDE_MODEL = env('CLAUDE_MODEL') || 'claude-opus-5-5';
 
 const available: Record<Provider, boolean> = { gemini: !!GEMINI_API_KEY, claude: !!CLAUDE_API_KEY };
@@ -32,20 +33,25 @@ export function requireAiConfigured(): void {
   }
 }
 
-/** Provider order for a task: the configured preference first, the other as fallback. */
+/** Provider order: the preference first, the other as fallback, skipping unconfigured ones. */
 function providerOrder(preferred: string): Provider[] {
   const first: Provider = preferred === 'claude' ? 'claude' : 'gemini';
   const second: Provider = first === 'gemini' ? 'claude' : 'gemini';
   return [first, second].filter((p) => available[p]);
 }
 
+/** The user's choice from the request ('gemini' | 'claude'), else the server default. */
+export function pickProvider(requested: unknown, task: 'food' | 'chat'): Provider {
+  if (requested === 'gemini' || requested === 'claude') return requested;
+  const fallback = task === 'food' ? env('AI_FOOD_PROVIDER') : env('AI_CHAT_PROVIDER');
+  return fallback === 'claude' ? 'claude' : 'gemini';
+}
+
 /**
  * Runs a JSON-producing request on the preferred provider, falling back to the other one if
- * it fails. `task` picks the preference: AI_FOOD_PROVIDER (default gemini) or
- * AI_CHAT_PROVIDER (default claude).
+ * it fails. Returns the parsed JSON and which provider produced it.
  */
-export async function generateJson(task: 'food' | 'chat', req: JsonRequest): Promise<unknown> {
-  const preferred = task === 'food' ? (env('AI_FOOD_PROVIDER') || 'gemini') : (env('AI_CHAT_PROVIDER') || 'claude');
+export async function generateJson(preferred: Provider, req: JsonRequest): Promise<{ data: unknown; provider: Provider }> {
   const order = providerOrder(preferred);
   if (!order.length) {
     throw new HttpError(503, 'ai_not_configured', 'AI features are not available yet.', 'No GEMINI_API_KEY or CLAUDE_API_KEY secret is set.');
@@ -53,21 +59,21 @@ export async function generateJson(task: 'food' | 'chat', req: JsonRequest): Pro
   let lastError: unknown;
   for (const p of order) {
     try {
-      const out = p === 'claude' ? await claudeJson(req) : await geminiJson(req);
-      return out;
+      const data = p === 'claude' ? await claudeJson(req) : await geminiJson(req);
+      return { data, provider: p };
     } catch (e) {
       console.error(`[ai] ${p} failed:`, e instanceof Error ? e.message : e);
       lastError = e;
     }
   }
-  throw new HttpError(503, 'ai_unavailable', 'AI is unavailable right now. You can still search foods or add them manually.', lastError);
+  throw new HttpError(503, 'ai_unavailable', 'AI is unavailable right now. Please try again, or add the food manually.', lastError);
 }
 
 // ── Claude ────────────────────────────────────────────────────────────────
 let anthropic: Anthropic | null = null;
 
 async function claudeJson(req: JsonRequest): Promise<unknown> {
-  anthropic ??= new Anthropic({ apiKey: CLAUDE_API_KEY, maxRetries: 2, timeout: 90_000 });
+  anthropic ??= new Anthropic({ apiKey: CLAUDE_API_KEY, maxRetries: 1, timeout: 60_000 });
   const userContent: Anthropic.Beta.BetaContentBlockParam[] = [];
   if (req.image) {
     userContent.push({
@@ -85,7 +91,12 @@ async function claudeJson(req: JsonRequest): Promise<unknown> {
   const params: Anthropic.Beta.MessageCreateParamsNonStreaming = {
     model: CLAUDE_MODEL,
     max_tokens: 16000,
-    system: req.system,
+    // The rules + reference table are identical across requests, so they are cached; the
+    // per-user context comes after the cache breakpoint.
+    system: [
+      { type: 'text', text: req.system, cache_control: { type: 'ephemeral' } },
+      ...(req.context ? [{ type: 'text' as const, text: req.context }] : []),
+    ],
     messages,
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default',
@@ -99,42 +110,63 @@ async function claudeJson(req: JsonRequest): Promise<unknown> {
 }
 
 // ── Gemini ────────────────────────────────────────────────────────────────
-async function geminiJson(req: JsonRequest, model = GEMINI_MODEL): Promise<unknown> {
+/**
+ * Gemini with its own fallback: the main model (retried once on 429/5xx), then the lighter
+ * fallback model. Time limits keep the whole chain — including a final Claude fallback —
+ * inside the Edge Function's wall-clock limit.
+ */
+async function geminiJson(req: JsonRequest): Promise<unknown> {
+  const models = [GEMINI_MODEL, GEMINI_FALLBACK_MODEL].filter((m, i, all) => m && all.indexOf(m) === i);
+  let lastError: unknown;
+  for (const [i, model] of models.entries()) {
+    try {
+      return await geminiCall(req, model, i === 0 ? 40_000 : 30_000);
+    } catch (e) {
+      console.error(`[ai] gemini ${model} failed:`, e instanceof Error ? e.message : e);
+      lastError = e;
+    }
+  }
+  throw lastError;
+}
+
+async function geminiCall(req: JsonRequest, model: string, timeoutMs: number): Promise<unknown> {
   const parts: Record<string, unknown>[] = [];
   if (req.image) parts.push({ inline_data: { mime_type: req.image.mediaType, data: req.image.base64 } });
   parts.push({ text: req.text });
   const body = {
     system_instruction: {
-      parts: [{ text: `${req.system}\n\nRespond ONLY with JSON that matches this JSON Schema:\n${JSON.stringify(req.schema)}` }],
+      parts: [{ text: `${req.system}${req.context ? `\n\n${req.context}` : ''}\n\nRespond ONLY with JSON that matches this JSON Schema:\n${JSON.stringify(req.schema)}` }],
     },
     contents: [
       ...(req.history ?? []).map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
       { role: 'user', parts },
     ],
-    generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8192 },
+    generationConfig: {
+      responseMimeType: 'application/json',
+      maxOutputTokens: 8192,
+      // Gemini 3 models: low thinking answers several times faster with the same estimates.
+      ...(model.startsWith('gemini-3') ? { thinkingConfig: { thinkingLevel: req.effort === 'high' ? 'high' : 'low' } } : {}),
+    },
   };
-  let res: Response | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
-    if (res.status === 429 || res.status >= 500) {
-      await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
+    if ((res.status === 429 || res.status >= 500) && attempt === 0) {
+      await res.body?.cancel();
+      await new Promise((r) => setTimeout(r, 1000));
       continue;
     }
-    break;
+    if (!res.ok) throw new Error(`Gemini ${model} HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    const data = await res.json();
+    const cand = data?.candidates?.[0];
+    const textParts = (cand?.content?.parts ?? []).filter((p: { text?: string; thought?: boolean }) => typeof p.text === 'string' && !p.thought);
+    if (!textParts.length) throw new Error(`Gemini ${model} returned no content (finishReason=${cand?.finishReason})`);
+    return parseJsonLoose(textParts.map((p: { text: string }) => p.text).join(''));
   }
-  if (!res) throw new Error('Gemini request failed');
-  if (res.status === 404 && model !== GEMINI_FALLBACK_MODEL) return geminiJson(req, GEMINI_FALLBACK_MODEL);
-  if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const data = await res.json();
-  const cand = data?.candidates?.[0];
-  const textParts = (cand?.content?.parts ?? []).filter((p: { text?: string; thought?: boolean }) => typeof p.text === 'string' && !p.thought);
-  if (!textParts.length) throw new Error(`Gemini returned no content (finishReason=${cand?.finishReason})`);
-  return parseJsonLoose(textParts.map((p: { text: string }) => p.text).join(''));
 }
 
 /** Parses JSON, tolerating code fences or surrounding prose. */

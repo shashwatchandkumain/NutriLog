@@ -2,9 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   bmr, tdee, calorieTarget, macroTargets, recommendTargets, proteinBasisWeight, suggestActivityLevel,
-  scaleNutrition, sumNutrition, checkConsistency, isValidNutrition, macroCalories,
-  kgToLb, lbToKg, cmToFtIn, ftInToCm, formatWeight, formatHeight,
+  scaleNutrition, sumNutrition, checkConsistency, isValidNutrition, macroCalories, goalPlan,
+  kgToLb, lbToKg, cmToFtIn, ftInToCm, formatWeight, formatHeight, trimNumber,
 } from '../../js/lib/nutrition.js';
+import { addDays } from '../../js/lib/utils.js';
 
 const close = (a, b, eps = 0.01) => assert.ok(Math.abs(a - b) <= eps, `${a} ≈ ${b}`);
 
@@ -58,13 +59,58 @@ test('protein uses an adjusted weight above BMI 25', () => {
   close(proteinBasisWeight(100, 170), 72.25 + 0.4 * 27.75); // ref 25·1.7² = 72.25
 });
 
-test('recommendTargets end to end and exercise mode', () => {
+test('recommendTargets end to end and exercise mode (exact, not rounded to tens)', () => {
   const p = { weight_kg: 80, height_cm: 180, age: 30, sex: 'male', activity_level: 'moderate', goal: 'lose' };
   const r = recommendTargets(p);
-  assert.deepEqual([r.bmr, r.tdee, r.calories, r.protein], [1780, 2759, 2260, 144]);
+  assert.deepEqual([r.bmr, r.tdee, r.calories, r.protein], [1780, 2759, 2259, 144]);
+  assert.equal(r.plan, null, 'no target weight → no plan');
+  close(macroCalories(r), 2259, 1);
   const add = recommendTargets(p, { exerciseMode: 'add' });
-  assert.equal(add.tdee, 2136); // sedentary base, workouts added per day
+  close(add.tdee, 2136); // sedentary base, workouts added per day
   assert.equal(recommendTargets({ weight_kg: 80 }), null);
+});
+
+test('goal date: the daily deficit that reaches the target weight exactly on the date', () => {
+  const today = '2026-10-01';
+  const p = goalPlan({ weightKg: 92, targetKg: 85, targetDate: addDays(today, 100), today, tdee: 2800, goal: 'lose', sex: 'male' });
+  assert.equal(p.status, 'dated');
+  close(p.requiredDaily, -539);                   // −7 kg × 7,700 kcal ÷ 100 days
+  close(p.calories, 2261);
+  close(p.plannedWeeklyKg, -0.49);
+  assert.equal(p.projectedDate, addDays(today, 100));
+
+  // Too soon: capped at 1% of body weight per week.
+  const fast = goalPlan({ weightKg: 92, targetKg: 85, targetDate: addDays(today, 30), today, tdee: 2800, goal: 'lose', sex: 'male' });
+  assert.equal(fast.status, 'capped');
+  close(fast.plannedDaily, -(0.92 * 7700) / 7);
+  assert.equal(fast.projectedDate, addDays(today, 54));
+
+  // Never below the safety floor.
+  const floor = goalPlan({ weightKg: 70, targetKg: 60, targetDate: addDays(today, 60), today, tdee: 1700, goal: 'lose', sex: 'female' });
+  assert.deepEqual([floor.status, floor.calories], ['capped', 1200]);
+
+  // Gaining: up to 0.5 kg a week (0.25 kg for muscle).
+  const gain = goalPlan({ weightKg: 60, targetKg: 65, targetDate: addDays(today, 70), today, tdee: 2200, goal: 'gain', sex: 'male' });
+  assert.equal(gain.status, 'dated');
+  close(gain.calories, 2750);
+  assert.equal(goalPlan({ weightKg: 70, targetKg: 72, targetDate: addDays(today, 30), today, tdee: 2500, goal: 'muscle', sex: 'male' }).status, 'capped');
+
+  // At or past the target → maintenance; past date → standard pace; maintain → no plan.
+  const reached = goalPlan({ weightKg: 84.9, targetKg: 85, targetDate: addDays(today, 30), today, tdee: 2800, goal: 'lose', sex: 'male' });
+  assert.deepEqual([reached.status, reached.calories], ['reached', 2800]);
+  const past = goalPlan({ weightKg: 92, targetKg: 85, targetDate: today, today, tdee: 2800, goal: 'lose', sex: 'male' });
+  assert.deepEqual([past.status, past.calories], ['past', 2300]);
+  const def = goalPlan({ weightKg: 92, targetKg: 85, targetDate: null, today, tdee: 2800, goal: 'lose', sex: 'male' });
+  assert.equal(def.status, 'default');
+  assert.equal(def.projectedDate, addDays(today, Math.ceil((7 * 7700) / 500)));
+  assert.equal(goalPlan({ weightKg: 92, targetKg: 85, targetDate: addDays(today, 30), today, tdee: 2800, goal: 'maintain' }), null);
+
+  // recommendTargets uses the plan.
+  const r = recommendTargets({ weight_kg: 92, height_cm: 175, age: 30, sex: 'male', activity_level: 'moderate', goal: 'lose',
+    target_weight_kg: 85, target_date: addDays(today, 100) }, { today });
+  close(r.tdee, 1868.75 * 1.55);
+  assert.equal(r.calories, Math.round(1868.75 * 1.55 - 539));
+  assert.equal(r.plan.status, 'dated');
 });
 
 test('activity level suggestion from steps and workouts', () => {
@@ -112,7 +158,11 @@ test('unit conversions round-trip', () => {
   assert.deepEqual(cmToFtIn(180), { ft: 5, in: 11 });
   assert.deepEqual(cmToFtIn(182.8), { ft: 6, in: 0 });
   close(ftInToCm(5, 11), 180.34, 0.001);
-  assert.equal(formatWeight(80, 'lb'), '176.4 lb');
+  assert.equal(formatWeight(80, 'lb'), '176.37 lb');
   assert.equal(formatWeight(80, 'kg'), '80 kg');
+  assert.equal(formatWeight(91.55, 'kg'), '91.55 kg');
+  assert.equal(formatWeight(91.5, 'kg'), '91.5 kg');
+  assert.equal(trimNumber(312.40, 1), '312.4');
+  assert.equal(trimNumber(100, 1), '100');
   assert.equal(formatHeight(180, 'ftin'), '5′ 11″');
 });

@@ -1,21 +1,26 @@
 // deno test supabase/functions/_shared/
 import { assertEquals, assert } from 'jsr:@std/assert@1';
-import { normalizeFoods, normalizeActivities } from './nutrition.ts';
+import { normalizeFoods, normalizeActivities, energyFromMacros, FOOD_RULES } from './nutrition.ts';
+import { REFERENCE_COUNT } from './reference-foods.ts';
 import { parseJsonLoose } from './ai.ts';
 
-Deno.test('totals are computed from per-100 g values, not trusted from the model', () => {
+Deno.test('totals are computed from per-100 g macros, not trusted from the model', () => {
   const [item] = normalizeFoods({ items: [{ food_name: 'Chicken breast', portion_description: '1 piece', grams: 150, confidence: 'high',
-    per_100g: { calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0 }, calories: 9999 }] });
-  assertEquals(item.calories, 247.5);
+    per_100g: { calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, alcohol: 0 }, calories: 9999 }] });
+  assertEquals(item.per_100g.calories, 156.4);           // 31·4 + 3.6·9
+  assertEquals(item.calories, 234.6);
   assertEquals(item.protein, 46.5);
-  assertEquals(item.warnings, []);
 });
 
-Deno.test('inconsistent calories are matched to macros and flagged', () => {
-  const [item] = normalizeFoods({ items: [{ food_name: 'Soup', portion_description: 'bowl', grams: 200, confidence: 'medium',
-    per_100g: { calories: 27, protein: 12.9, carbs: 1.1, fat: 13.5, fiber: 0.8 } }] });
-  assert(item.warnings.includes('calories_adjusted_to_macros'));
-  assertEquals(item.per_100g.calories, Math.round(12.9 * 4 + 1.1 * 4 + 13.5 * 9));
+Deno.test('energy always follows the macros, so a low or high calorie guess cannot leak through', () => {
+  const low = normalizeFoods({ items: [{ food_name: 'Dal', grams: 150, per_100g: { calories: 80, protein: 6, carbs: 16, fat: 1.8, fiber: 4 } }] })[0];
+  const high = normalizeFoods({ items: [{ food_name: 'Dal', grams: 150, per_100g: { calories: 140, protein: 6, carbs: 16, fat: 1.8, fiber: 4 } }] })[0];
+  assertEquals(low.calories, high.calories);
+  assertEquals(low.per_100g.calories, Math.round(energyFromMacros(6, 16, 1.8) * 100) / 100);
+  // Alcohol counts 7 kcal/g; fiber can never exceed total carbohydrate.
+  const beer = normalizeFoods({ items: [{ food_name: 'Beer', grams: 330, per_100g: { calories: 43, protein: 0.5, carbs: 3.6, fat: 0, fiber: 9, alcohol: 3.9 } }] })[0];
+  assertEquals(beer.per_100g.calories, Math.round((0.5 * 4 + 3.6 * 4 + 3.9 * 7) * 100) / 100);
+  assertEquals(beer.per_100g.fiber, 3.6);
 });
 
 Deno.test('impossible or malformed items are dropped; values are clamped', () => {
@@ -31,9 +36,16 @@ Deno.test('impossible or malformed items are dropped; values are clamped', () =>
   assertEquals(normalizeFoods(null), []);
 });
 
-Deno.test('activities use net MET calories', () => {
-  const [a] = normalizeActivities({ items: [{ activity_name: 'Running', duration_min: 30, met: 9.8 }] }, 80) as { calories_burned: number }[];
-  assertEquals(a.calories_burned, Math.round(8.8 * 80 * 0.5));
+Deno.test('activities use net MET calories with the weight on that day, unrounded', () => {
+  const [a] = normalizeActivities({ items: [{ activity_name: 'Treadmill walk', duration_min: 30, met: 3.857 }] }, 92) as { met: number; calories_burned: number }[];
+  assertEquals(a.met, 3.86);
+  assertEquals(a.calories_burned, Math.round(2.86 * 92 * 0.5 * 100) / 100);
+});
+
+Deno.test('both models share the same rules and reference table', () => {
+  assert(REFERENCE_COUNT >= 100);
+  assert(FOOD_RULES.includes('Roti / Chapati'));
+  assert(FOOD_RULES.includes('MOST LIKELY'));
 });
 
 Deno.test('JSON extraction tolerates fences and prose', () => {

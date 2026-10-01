@@ -1,50 +1,14 @@
-// Food database access (lazy-loaded), portion units, barcode lookup, image preparation.
-import { buildIndex, searchFoods } from '../lib/food-search.js';
+// Barcode products (Open Food Facts), their portion units, and photo preparation for AI.
 import { checkConsistency, scaleNutrition } from '../lib/nutrition.js';
 import { UserError } from '../lib/utils.js';
 
-let foods = null;
-let index = null;
-let byId = null;
-let loading = null;
-
 /**
- * Loads the food database once. Browsers remember a failed module import for the page's
- * lifetime, so a retry after a network failure uses a fresh URL.
- */
-export function loadFoods() {
-  if (foods) return Promise.resolve(foods);
-  loading ||= (async () => {
-    let mod;
-    try { mod = await import('../../food_db.js'); } catch (e) {
-      console.warn('[NutriLog] food database load failed, retrying', e);
-      try { mod = await import(`../../food_db.js?retry=${Date.now()}`); } catch (e2) {
-        loading = null;
-        throw new UserError("Couldn't load the food database. Check your connection and try again.", e2);
-      }
-    }
-    foods = mod.FOODS;
-    index = buildIndex(foods);
-    byId = new Map(foods.map((f) => [f.id, f]));
-    return foods;
-  })();
-  return loading;
-}
-
-export async function search(query, limit = 15) {
-  await loadFoods();
-  return searchFoods(index, query, limit);
-}
-
-export const getFood = (id) => byId?.get(id) || null;
-
-/**
- * Units a food can be logged in. Each unit converts to grams (or ml for drinks).
- * Portions come first so "1 medium roti" is the default instead of "100 g".
+ * Units a product can be logged in. Each unit converts to grams (or ml for drinks).
+ * The pack's serving comes first so "1 serving" is the default instead of "100 g".
  */
 export function unitsFor(food) {
   const base = food.servingUnit === 'ml' ? 'ml' : 'g';
-  // `short` is what gets stored as the unit: "1 medium roti" → "medium roti", so 3 of them reads "3 medium roti".
+  // `short` is what gets stored as the unit: "1 serving — 30 g" → "serving", so 2 of them reads "2 serving".
   const units = (food.portions || []).map((p, i) => ({
     id: `p${i}`, label: `${p.label} (${fmtG(p.grams)} ${base})`, grams: p.grams,
     short: p.label.replace(/^1\s+/, '').split(' — ')[0].slice(0, 60),
@@ -60,8 +24,8 @@ export function defaultQuantity(food) {
 
 const fmtG = (g) => (Math.round(g * 10) / 10).toString();
 
-/** A meal item (for logging) from a database food and a chosen quantity/unit. */
-export function itemFromFood(food, quantity, unit, source = 'database') {
+/** A meal item (for logging) from a product and a chosen quantity/unit. */
+export function itemFromFood(food, quantity, unit, source = 'barcode') {
   const grams = quantity * unit.grams;
   const n = scaleNutrition(food, grams);
   return {
@@ -86,10 +50,10 @@ export async function lookupBarcode(code) {
   } catch (e) {
     throw new UserError("Couldn't reach the product database. Check your connection.", e);
   }
-  if (res.status === 404) throw new UserError('Product not found. Try searching by name or describe it to AI.');
+  if (res.status === 404) throw new UserError('Product not found. Describe it to AI instead.');
   if (!res.ok) throw new UserError('The product database is unavailable right now.');
   const data = await res.json();
-  if (data.status !== 1 || !data.product) throw new UserError('Product not found. Try searching by name or describe it to AI.');
+  if (data.status !== 1 || !data.product) throw new UserError('Product not found. Describe it to AI instead.');
   const p = data.product;
   const n = p.nutriments || {};
   const num = (v) => { const x = Number(v); return Number.isFinite(x) && x >= 0 ? x : null; };

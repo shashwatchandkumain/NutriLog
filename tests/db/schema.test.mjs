@@ -52,7 +52,7 @@ before(async () => {
   await db.exec(SUPABASE_STUB);
   await db.exec(`insert into auth.users (id, email) values ('${A}', 'a@example.com'), ('${B}', 'b@example.com'),
                  ('${ANON_LEGACY}', null)`);
-  for (const f of ['001_initial_schema.sql', '002_legacy_import.sql']) {
+  for (const f of ['001_initial_schema.sql', '002_legacy_import.sql', '003_scale_goals_ai.sql']) {
     await db.exec(readFileSync(new URL(`../../supabase/migrations/${f}`, import.meta.url), 'utf8'));
   }
 });
@@ -152,6 +152,61 @@ test('weight history keeps profiles.weight_kg equal to the latest entry', async 
   });
 });
 
+test('weigh-ins keep 0.01 kg precision, their source and a body-composition snapshot', async () => {
+  await as(A, async () => {
+    await db.query(`insert into weight_history (recorded_on, weight_kg, source, measured_at, bmi, body_fat_pct, fat_mass_kg,
+                      lean_mass_kg, body_water_pct, body_water_l, bmr_kcal, heart_rate_bpm)
+                    values ('2026-09-21', 91.55, 'scale', now(), 29.89, 30.12, 27.57, 63.98, 49.6, 45.41, 1872.75, 72)`);
+    const { rows: [w] } = await db.query(`select weight_kg, source, heart_rate_bpm, bmr_kcal from weight_history where recorded_on = '2026-09-21'`);
+    assert.deepEqual([Number(w.weight_kg), w.source, w.heart_rate_bpm, Number(w.bmr_kcal)], [91.55, 'scale', 72, 1872.75]);
+    await assert.rejects(db.query(`insert into weight_history (recorded_on, weight_kg, heart_rate_bpm) values ('2026-09-22', 80, 400)`), /check/);
+    await assert.rejects(db.query(`insert into weight_history (recorded_on, weight_kg, source) values ('2026-09-22', 80, 'guess')`), /check/);
+    await db.query(`delete from weight_history where recorded_on = '2026-09-21'`);
+    // The profile keeps the exact latest weight too.
+    await db.query(`update profiles set target_weight_kg = 85.25, target_date = '2026-12-31'`);
+    const { rows: [p] } = await db.query('select target_weight_kg, target_date::text d from profiles');
+    assert.deepEqual([Number(p.target_weight_kg), p.d], [85.25, '2026-12-31']);
+  });
+});
+
+test('activities burn net calories from the weight on their date and follow weigh-in changes', async () => {
+  const kcal = async (id) => Number((await db.query(`select calories_burned from activities where id = '${id}'`)).rows[0].calories_burned);
+  const ACT = 'bbbbbbbb-0000-4000-8000-000000000001';
+  const EARLY = 'bbbbbbbb-0000-4000-8000-000000000002';
+  const MANUAL = 'bbbbbbbb-0000-4000-8000-000000000003';
+  await as(A, async () => {
+    // A's weigh-ins at this point: 2026-09-20 → 72.5 kg.
+    await db.query(`insert into activities (id, activity_date, name, duration_min, met, calories_burned) values
+      ('${ACT}', '2026-09-25', 'Treadmill', 30, 8, 1), ('${EARLY}', '2026-09-10', 'Walk', 30, 8, 1)`);
+    assert.equal(await kcal(ACT), 253.75, '(8 − 1) × 72.5 kg × 0.5 h, whatever the client sent');
+    assert.equal(await kcal(EARLY), 253.75, 'before the first weigh-in the earliest weight is used');
+    await db.query(`insert into weight_history (recorded_on, weight_kg) values ('2026-09-24', 70.25)`);
+    assert.equal(await kcal(ACT), 245.88, 'recomputed with the new weight on that date');
+    assert.equal(await kcal(EARLY), 253.75, 'earlier activities keep the weight from their own date');
+    await db.query(`update weight_history set weight_kg = 92 where recorded_on = '2026-09-24'`);
+    assert.equal(await kcal(ACT), 322);
+    await db.query(`delete from weight_history where recorded_on = '2026-09-24'`);
+    assert.equal(await kcal(ACT), 253.75);
+    await db.query(`update activities set duration_min = 45 where id = '${ACT}'`);
+    assert.equal(await kcal(ACT), 380.63);
+    await db.query(`insert into activities (id, activity_date, name, duration_min, calories_burned) values ('${MANUAL}', '2026-09-25', 'Other', 20, 123.45)`);
+    assert.equal(await kcal(MANUAL), 123.45, 'entries without a MET keep the calories given');
+  });
+  await as(B, async () => {
+    assert.equal((await db.query(`select count(*)::int n from activities where id = '${ACT}'`)).rows[0].n, 0);
+    assert.equal((await db.query(`select weight_on('${A}', '2026-09-25') w`)).rows[0].w, null, "can't read another user's weight");
+  });
+});
+
+test('AI model preference defaults to Gemini and only accepts known models', async () => {
+  await as(B, async () => {
+    assert.equal((await db.query('select ai_provider from user_preferences')).rows[0].ai_provider, 'gemini');
+    await db.query(`update user_preferences set ai_provider = 'claude'`);
+    assert.equal((await db.query('select ai_provider from user_preferences')).rows[0].ai_provider, 'claude');
+    await assert.rejects(db.query(`update user_preferences set ai_provider = 'gpt'`), /check/);
+  });
+});
+
 test('AI quota is enforced per user', async () => {
   await as(A, async () => {
     const results = [];
@@ -219,6 +274,7 @@ test('deleting an auth user cascades to all of their data', async () => {
     (select count(*) from meal_items where user_id = '${A}')::int +
     (select count(*) from meals where user_id = '${A}')::int +
     (select count(*) from weight_history where user_id = '${A}')::int +
+    (select count(*) from activities where user_id = '${A}')::int +
     (select count(*) from ai_usage where user_id = '${A}')::int as n`);
   assert.equal(rows[0].n, 0);
 });

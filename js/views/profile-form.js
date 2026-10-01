@@ -1,6 +1,6 @@
 // Profile fields shared by onboarding and Settings. Values are stored in kg/cm; the form
 // shows the user's preferred units and converts on read.
-import { html } from '../lib/utils.js';
+import { html, today, addDays } from '../lib/utils.js';
 import { ACTIVITY_LEVELS, GOALS, MACRO_STYLES, kgToLb, lbToKg, cmToFtIn, ftInToCm, suggestActivityLevel } from '../lib/nutrition.js';
 
 export const DIET_TYPES = [
@@ -16,6 +16,7 @@ const STEP_OPTIONS = [
 ];
 
 const r1 = (v) => Math.round(v * 10) / 10;
+const r2 = (v) => Math.round(v * 100) / 100;
 const pressed = (a, b) => String(a === b);
 
 export function basicsFields(p, prefs) {
@@ -49,7 +50,7 @@ export function basicsFields(p, prefs) {
 
 export function bodyFields(p, prefs) {
   const wu = prefs.weight_unit === 'lb' ? 'lb' : 'kg';
-  const showW = (kg) => (kg ? r1(wu === 'lb' ? kgToLb(Number(kg)) : Number(kg)) : '');
+  const showW = (kg) => (kg ? r2(wu === 'lb' ? kgToLb(Number(kg)) : Number(kg)) : '');
   let heightInputs;
   if (prefs.height_unit === 'ftin') {
     const { ft, in: inch } = p.height_cm ? cmToFtIn(Number(p.height_cm)) : { ft: '', in: '' };
@@ -63,10 +64,13 @@ export function bodyFields(p, prefs) {
     <div class="field"><label for="pf-ft">Height</label>${heightInputs}</div>
     <div class="grid-2">
       <div class="field"><label for="pf-w">Current weight</label>
-        <div class="input-group"><input class="input" id="pf-w" name="weight" type="number" inputmode="decimal" step="0.1" min="${wu === 'lb' ? 55 : 25}" max="${wu === 'lb' ? 880 : 400}" value="${showW(p.weight_kg)}" required><span class="input-suffix">${wu}</span></div></div>
+        <div class="input-group"><input class="input" id="pf-w" name="weight" type="number" inputmode="decimal" step="0.01" min="${wu === 'lb' ? 55 : 25}" max="${wu === 'lb' ? 880 : 400}" value="${showW(p.weight_kg)}" required><span class="input-suffix">${wu}</span></div></div>
       <div class="field"><label for="pf-tw">Target weight <span class="faint">(optional)</span></label>
-        <div class="input-group"><input class="input" id="pf-tw" name="target_weight" type="number" inputmode="decimal" step="0.1" value="${showW(p.target_weight_kg)}"><span class="input-suffix">${wu}</span></div></div>
-    </div>`;
+        <div class="input-group"><input class="input" id="pf-tw" name="target_weight" type="number" inputmode="decimal" step="0.01" value="${showW(p.target_weight_kg)}"><span class="input-suffix">${wu}</span></div></div>
+    </div>
+    <div class="field"><label for="pf-td">Reach my target by <span class="faint">(optional)</span></label>
+      <input class="input" id="pf-td" name="target_date" type="date" min="${addDays(today(), 1)}" value="${p.target_date || ''}">
+      <span class="hint">With a date, NutriLog plans your daily calories to reach your target weight on that day (at a safe pace).</span></div>`;
 }
 
 export function goalFields(p) {
@@ -165,6 +169,7 @@ export function readInto(form, model) {
   if (f('height_ft')) model.height_cm = val('height_ft') === '' ? null : r1(ftInToCm(val('height_ft'), val('height_in') || 0));
   if (f('weight')) model.weight_kg = toKg(val('weight'));
   if (f('target_weight')) model.target_weight_kg = toKg(val('target_weight'));
+  if (f('target_date')) model.target_date = val('target_date') || null;
   if (f('daily_steps')) model.daily_steps = val('daily_steps') === '' ? null : Number(val('daily_steps'));
   if (f('workouts_per_week')) model.workouts_per_week = Number(val('workouts_per_week')) || 0;
   if (form.querySelector('[data-allergy]')) {
@@ -185,15 +190,21 @@ export function validateProfile(m, { requireBody = true } = {}) {
     if (!(m.weight_kg >= 25 && m.weight_kg <= 400)) errs.push('Enter a weight between 25 and 400 kg (55 – 880 lb).');
   }
   if (m.target_weight_kg != null && !(m.target_weight_kg >= 25 && m.target_weight_kg <= 400)) errs.push('Target weight looks out of range.');
+  if (m.target_date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(m.target_date) || m.target_date <= today()) errs.push('Pick a target date after today.');
+    else if (m.target_weight_kg == null) errs.push('Add a target weight to go with your target date.');
+  }
   return errs;
 }
 
 /** Columns of `profiles` that the forms edit. */
 export function profilePatch(m) {
   const round1 = (v) => (v == null ? null : r1(v));
+  const round2 = (v) => (v == null ? null : r2(v));
   return {
     display_name: m.display_name ?? null, age: m.age ?? null, sex: m.sex || null,
-    height_cm: round1(m.height_cm), weight_kg: round1(m.weight_kg), target_weight_kg: round1(m.target_weight_kg),
+    height_cm: round1(m.height_cm), weight_kg: round2(m.weight_kg), target_weight_kg: round2(m.target_weight_kg),
+    target_date: m.target_date || null,
     goal: m.goal || 'maintain', activity_level: m.activity_level || 'sedentary',
     daily_steps: m.daily_steps ?? null, workouts_per_week: m.workouts_per_week ?? null,
     diet_type: m.diet_type || null, macro_style: m.macro_style || 'balanced', allergies: m.allergies || [],

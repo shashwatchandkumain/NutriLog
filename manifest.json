@@ -2,7 +2,7 @@
   "id": "./",
   "name": "NutriLog — Nutrition & Calorie Tracker",
   "short_name": "NutriLog",
-  "description": "Track meals, calories, macros and weight. Search foods, log by photo or barcode, and sync across your devices.",
+  "description": "Track meals, calories, macros and weight. Log food with AI, measure with a Bluetooth smart scale, and sync across your devices.",
   "start_url": "./#/dashboard",
   "scope": "./",
   "display": "standalone",

@@ -5,8 +5,11 @@
 // when online. Every operation is idempotent on the server (client-generated ids, upserts,
 // ON CONFLICT DO NOTHING), so a retry after a lost response can't create duplicates.
 import { sb } from './supabase.js';
-import { state, emit } from '../store.js';
+import { state, emit, effectiveProfile } from '../store.js';
 import { uuid, today, addDays, UserError, friendlyError } from '../lib/utils.js';
+import { recommendTargets } from '../lib/nutrition.js';
+import { bodyComposition } from '../lib/body-composition.js';
+import { netActivityCalories, weightOn } from '../lib/activity.js';
 
 let uid = null;
 let queue = [];
@@ -189,8 +192,15 @@ export async function fetchItemsRange(start, end) {
 }
 
 export async function fetchActivitiesRange(start, end) {
-  return fetchAll(() => sb.from('activities').select('id, activity_date, calories_burned')
+  const rows = await fetchAll(() => sb.from('activities').select('id, activity_date, duration_min, met, calories_burned')
     .gte('activity_date', start).lte('activity_date', end));
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  for (const op of queue) {
+    if (op.date < start || op.date > end) continue;
+    if (op.t === 'activity') byId.set(op.row.id, op.row);
+    if (op.t === 'deleteActivity') byId.delete(op.id);
+  }
+  return [...byId.values()];
 }
 
 export async function fetchLoggedDates() {
@@ -204,17 +214,26 @@ export async function fetchLoggedDates() {
 }
 
 // ── Weights ───────────────────────────────────────────────────────────────
+const WEIGHT_COLUMNS = 'recorded_on, weight_kg, source, measured_at, bmi, body_fat_pct, fat_mass_kg, lean_mass_kg, body_water_pct, body_water_l, bmr_kcal, heart_rate_bpm';
+const WEIGHT_NUMERIC = ['weight_kg', 'bmi', 'body_fat_pct', 'fat_mass_kg', 'lean_mass_kg', 'body_water_pct', 'body_water_l', 'bmr_kcal', 'heart_rate_bpm'];
+
+function normalizeWeight(w) {
+  const out = { ...w };
+  for (const k of WEIGHT_NUMERIC) out[k] = w[k] == null ? null : Number(w[k]);
+  return out;
+}
+
 function overlayWeights(rows) {
-  const map = new Map(rows.map((w) => [w.recorded_on, { recorded_on: w.recorded_on, weight_kg: Number(w.weight_kg) }]));
+  const map = new Map(rows.map((w) => [w.recorded_on, normalizeWeight(w)]));
   for (const op of queue) {
-    if (op.t === 'weight') map.set(op.date, { recorded_on: op.date, weight_kg: op.kg, pending: true });
+    if (op.t === 'weight') map.set(op.date, { ...normalizeWeight({ ...op.record, weight_kg: op.kg }), recorded_on: op.date, pending: true });
     if (op.t === 'deleteWeight') map.delete(op.date);
   }
   return [...map.values()].sort((a, b) => a.recorded_on.localeCompare(b.recorded_on));
 }
 
 export async function fetchWeights() {
-  const rows = await fetchAll(() => sb.from('weight_history').select('recorded_on, weight_kg').order('recorded_on'));
+  const rows = await fetchAll(() => sb.from('weight_history').select(WEIGHT_COLUMNS).order('recorded_on'));
   cache.weightsBase = rows;
   state.weights = cache.weights = overlayWeights(rows);
   saveCache();
@@ -226,6 +245,32 @@ function refreshLocalWeights() {
   state.weights = cache.weights = overlayWeights(cache.weightsBase || state.weights);
   saveCache();
   emit('weights');
+}
+
+const r2 = (v) => Math.round(Number(v) * 100) / 100;
+/** Rounds to 2 decimals, or null when the value is missing or outside the column's range. */
+const within = (v, lo, hi) => (v != null && Number.isFinite(Number(v)) && Number(v) >= lo && Number(v) <= hi ? r2(v) : null);
+
+/**
+ * A weigh-in row: the exact weight (0.01 kg) plus a body-composition snapshot computed from
+ * `profile` (height, age, sex) at the time of the measurement.
+ */
+export function weighInRecord(kg, { source = 'manual', measuredAt = null, heartRate = null, profile = state.profile || {} } = {}) {
+  const c = bodyComposition({ weightKg: kg, heightCm: profile.height_cm, age: profile.age, sex: profile.sex });
+  const hr = Math.round(Number(heartRate));
+  return {
+    weight_kg: r2(kg),
+    source: ['manual', 'scale', 'import', 'legacy'].includes(source) ? source : 'manual',
+    measured_at: measuredAt || null,
+    bmi: within(c.bmi, 5, 150),
+    body_fat_pct: within(c.bodyFatPct, 0, 80),
+    fat_mass_kg: within(c.fatMassKg, 0, 400),
+    lean_mass_kg: within(c.leanMassKg, 0, 400),
+    body_water_pct: within(c.bodyWaterPct, 0, 100),
+    body_water_l: within(c.bodyWaterL, 0, 300),
+    bmr_kcal: within(c.bmrKcal, 0, 10000),
+    heart_rate_bpm: hr >= 30 && hr <= 230 ? hr : null,
+  };
 }
 
 // ── Write operations (queued) ─────────────────────────────────────────────
@@ -288,11 +333,29 @@ export function setWater(date, glasses) {
   updateCachedDay(date);
 }
 
-export function logActivity(date, { name, duration_min, calories_burned, source }) {
-  const row = { id: uuid(), activity_date: date, name: String(name).slice(0, 120), duration_min: Math.round(duration_min) || 0, calories_burned: Math.round(calories_burned) || 0, source };
+/** The user's weight on `date` (latest weigh-in on/before it), like public.weight_on(). */
+export const weightOnDate = (date) => weightOn(date, state.weights, state.profile?.weight_kg);
+
+/**
+ * Calories an activity burned. MET-based entries are always recomputed from the weight on
+ * the activity's date — exactly what the database stores — so a new weigh-in shows up at once.
+ */
+export function activityCalories(a) {
+  if (a?.met == null) return Number(a?.calories_burned) || 0;
+  const w = weightOnDate(a.activity_date);
+  return w ? netActivityCalories(Number(a.met), w, Number(a.duration_min)) : Number(a.calories_burned) || 0;
+}
+
+/** Logs an activity. With a MET, calories come from the weight on that date (not rounded). */
+export function logActivity(date, { name, duration_min, met = null, calories_burned = 0, source }) {
+  const minutes = Math.min(1440, Math.max(0, Math.round(Number(duration_min)) || 0));
+  const m = Number(met) >= 1 ? Math.min(25, r2(met)) : null;
+  const row = { id: uuid(), activity_date: date, name: String(name).slice(0, 120), duration_min: minutes, met: m, calories_burned: 0, source };
+  row.calories_burned = r2(m != null ? activityCalories(row) : Math.max(0, Number(calories_burned) || 0));
   enqueue({ t: 'activity', date, row });
   updateCachedDay(date);
   emit('data-changed');
+  return row;
 }
 
 export function deleteActivity(act) {
@@ -301,10 +364,18 @@ export function deleteActivity(act) {
   emit('data-changed');
 }
 
-export function logWeight(date, kg) {
+/**
+ * Logs a weigh-in (one per day — a second one on the same day replaces it). `details` sets the
+ * source ('manual' | 'scale' | …), measurement time and heart rate; body composition is computed
+ * from the profile unless `details.record` already carries it.
+ */
+export function logWeight(date, kg, details = {}) {
+  const record = details.record || weighInRecord(kg, details);
   dropQueued((op) => (op.t === 'weight' || op.t === 'deleteWeight') && op.date === date);
-  enqueue({ t: 'weight', date, kg: Math.round(kg * 10) / 10 });
+  enqueue({ t: 'weight', date, kg: record.weight_kg, record });
   refreshLocalWeights();
+  emit('data-changed');
+  return record;
 }
 
 export function deleteWeight(date) {
@@ -330,7 +401,7 @@ async function execute(op) {
     case 'deleteActivity':
       return check(await sb.from('activities').delete().eq('id', op.id));
     case 'weight':
-      return check(await sb.from('weight_history').upsert({ user_id: uid, recorded_on: op.date, weight_kg: op.kg }, { onConflict: 'user_id,recorded_on' }));
+      return check(await sb.from('weight_history').upsert({ ...(op.record || {}), user_id: uid, recorded_on: op.date, weight_kg: op.kg }, { onConflict: 'user_id,recorded_on' }));
     case 'deleteWeight':
       return check(await sb.from('weight_history').delete().eq('recorded_on', op.date));
     default:
@@ -391,8 +462,40 @@ export async function flush() {
   // Reconcile with the server's copy of anything we just wrote.
   if (!queue.length) {
     for (const d of touchedDates) if (d && cache.days[d]) fetchDay(d).then((day) => { if (d === state.date) { state.day = day; emit('day'); } }).catch(() => {});
-    if (touchedWeights) fetchWeights().catch(() => {});
+    if (touchedWeights) {
+      // The database updates the profile weight and recomputes activity calories.
+      fetchWeights().catch(() => {});
+      loadAccount().catch(() => {});
+      if (state.date && !touchedDates.has(state.date) && cache.days[state.date]) {
+        fetchDay(state.date).then((day) => { state.day = day; emit('day'); }).catch(() => {});
+      }
+    }
   }
+}
+
+// ── Automatic targets ─────────────────────────────────────────────────────
+let targetsSync = null;
+const near = (a, b, eps) => Math.abs((Number(a) || 0) - (Number(b) || 0)) < eps;
+
+/**
+ * Keeps automatic (non-custom) targets in line with the profile, the latest weigh-in and the
+ * goal date. Custom targets are never touched. Resolves to { before, after } when it changed
+ * them, otherwise null.
+ */
+export function syncAutoTargets() {
+  if (targetsSync) return targetsSync;
+  targetsSync = (async () => {
+    const g = state.goals;
+    if (!uid || !g || g.is_custom || !state.profile?.onboarding_completed || !navigator.onLine) return null;
+    const rec = recommendTargets(effectiveProfile(), { exerciseMode: state.prefs?.exercise_mode });
+    if (!rec) return null;
+    if (near(g.calories, rec.calories, 1) && near(g.protein_g, rec.protein, 0.06) && near(g.carbs_g, rec.carbs, 0.06)
+      && near(g.fat_g, rec.fat, 0.06) && near(g.fiber_g, rec.fiber, 0.06)) return null;
+    const before = { ...g };
+    const after = await saveGoals({ ...rec, isCustom: false });
+    return { before, after, rec };
+  })().finally(() => { targetsSync = null; });
+  return targetsSync;
 }
 
 // ── Export / legacy / realtime ────────────────────────────────────────────
@@ -438,7 +541,8 @@ export async function importLegacyData() {
     for (const w of oldWeights) {
       const kg = Number(w.weight);
       if (/^\d{4}-\d{2}-\d{2}$/.test(w.date) && kg >= 20 && kg <= 400 && !existing.has(w.date)) {
-        enqueue({ t: 'weight', date: w.date, kg: Math.round(kg * 10) / 10 });
+        const record = weighInRecord(kg, { source: 'legacy' });
+        enqueue({ t: 'weight', date: w.date, kg: record.weight_kg, record });
         imported.weights++;
       }
     }
@@ -447,6 +551,57 @@ export async function importLegacyData() {
   }
   LS.set(flag, true);
   return imported;
+}
+
+// ── Import (another NutriLog account's export, or a smart-scale backup) ────
+const chunk = (list, n) => { const out = []; for (let i = 0; i < list.length; i += n) out.push(list.slice(i, i + n)); return out; };
+
+/**
+ * Bulk-imports prepared records (see lib/import-formats.js) straight into the database.
+ * Rows carry deterministic ids and use ON CONFLICT DO NOTHING, so importing the same file
+ * twice changes nothing, and days that already have a weigh-in or water entry are kept.
+ * `onProgress(done, total)` reports progress. Returns the number of rows sent per kind.
+ */
+export async function importRecords({ weights = [], items = [], activities = [], water = [] }, onProgress) {
+  if (!uid || !sb) throw new UserError('Please log in again.');
+  if (!navigator.onLine) throw new UserError('Importing needs an internet connection.');
+  const total = weights.length + items.length + activities.length + water.length;
+  let done = 0;
+  const step = (n) => { done += n; onProgress?.(done, total); };
+
+  for (const part of chunk(weights, 500)) {
+    check(await sb.from('weight_history').upsert(part.map((w) => ({ ...w, user_id: uid })), { onConflict: 'user_id,recorded_on', ignoreDuplicates: true }));
+    step(part.length);
+  }
+  if (items.length) {
+    const meals = [...new Map(items.map((it) => [`${it.meal_date}|${it.meal_type}`, { user_id: uid, meal_date: it.meal_date, meal_type: it.meal_type }])).values()];
+    for (const part of chunk(meals, 500)) {
+      check(await sb.from('meals').upsert(part, { onConflict: 'user_id,meal_date,meal_type', ignoreDuplicates: true }));
+    }
+    const dates = items.map((it) => it.meal_date).sort();
+    const rows = await fetchAll(() => sb.from('meals').select('id, meal_date, meal_type').gte('meal_date', dates[0]).lte('meal_date', dates[dates.length - 1]));
+    const mealId = new Map(rows.map((m) => [`${m.meal_date}|${m.meal_type}`, m.id]));
+    for (const part of chunk(items, 500)) {
+      const payload = part.map(({ meal_date, meal_type, ...it }) => ({ ...it, user_id: uid, meal_id: mealId.get(`${meal_date}|${meal_type}`), meal_date, meal_type }));
+      check(await sb.from('meal_items').upsert(payload.filter((it) => it.meal_id), { onConflict: 'id', ignoreDuplicates: true }));
+      step(part.length);
+    }
+  }
+  for (const part of chunk(activities, 500)) {
+    check(await sb.from('activities').upsert(part.map((a) => ({ ...a, user_id: uid })), { onConflict: 'id', ignoreDuplicates: true }));
+    step(part.length);
+  }
+  for (const part of chunk(water, 500)) {
+    check(await sb.from('water_logs').upsert(part.map((w) => ({ ...w, user_id: uid })), { onConflict: 'user_id,log_date', ignoreDuplicates: true }));
+    step(part.length);
+  }
+  // Show the imported data everywhere.
+  cache.days = {};
+  saveCache();
+  await Promise.allSettled([fetchWeights(), fetchLoggedDates(), loadAccount()]);
+  emit('remote-day', state.date);
+  emit('data-changed');
+  return { weights: weights.length, items: items.length, activities: activities.length, water: water.length };
 }
 
 let channel = null;

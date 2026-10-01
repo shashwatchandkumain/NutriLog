@@ -1,16 +1,16 @@
 // Dashboard: today's calories & macros, meals, quick add, water, weight, score, week chart.
-import { html, setHTML, fmtInt, fmt1, today, addDays, relativeDayLabel, formatDay, parseISODate, MEAL_TYPES, debounce } from '../lib/utils.js';
-import { sumNutrition, scaleNutrition, formatWeight, kgToLb, lbToKg } from '../lib/nutrition.js';
+import { html, setHTML, fmtInt, fmt1, fmtNum, today, addDays, relativeDayLabel, formatDay, parseISODate, MEAL_TYPES, debounce } from '../lib/utils.js';
+import { sumNutrition, formatWeight, kgToLb } from '../lib/nutrition.js';
 import { totalsByDate, dailyScore, weightChange, sortWeights } from '../lib/stats.js';
 import { state, on, currentGoals, weightUnit } from '../store.js';
 import { $, bindActions, toast, openSheet } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { ring, barChart, sparkline } from '../ui/charts.js';
-import { cachedDay, fetchDay, fetchItemsRange, setWater, updateItem, deleteItem, logWeight, logItems } from '../services/data.js';
+import { cachedDay, fetchDay, fetchItemsRange, setWater, updateItem, deleteItem, logItems, activityCalories } from '../services/data.js';
 import { openFoodLogger, openCamera, pickPhoto, openBarcode } from './food-logger.js';
 import { openCoach } from './chat.js';
 import { openCalendar } from './calendar.js';
-import { loadFoods, getFood, unitsFor } from '../services/foods.js';
+import { openScale, openWeightSheet } from './weigh-in.js';
 
 const GLASS_ML = 250;
 
@@ -40,12 +40,12 @@ export function mountDashboard(root) {
       <div class="cards">
         <section class="card" id="d-hero" aria-label="Calories"></section>
         <div class="macros" id="d-macros"></div>
-        <button type="button" class="search-launch" data-action="search">${icon('search')}<span>Search foods — roti, dal, paneer…</span></button>
+        <button type="button" class="launch-bar" data-action="describe">${icon('sparkles')}<span>Describe what you ate — AI works out the nutrition</span></button>
         <div class="quick-actions">
           <button type="button" class="qa" data-action="camera">${icon('camera')}Camera</button>
           <button type="button" class="qa" data-action="gallery">${icon('image')}Gallery</button>
           <button type="button" class="qa" data-action="barcode">${icon('barcode')}Barcode</button>
-          <button type="button" class="qa" data-action="describe">${icon('sparkles')}Describe</button>
+          <button type="button" class="qa" data-action="measure">${icon('scale')}Measure</button>
         </div>
         <section class="card" id="d-meals" aria-label="Meals"></section>
       </div>
@@ -89,7 +89,7 @@ export function mountDashboard(root) {
       return;
     }
     const totals = sumNutrition(day.items);
-    const burned = day.activities.reduce((s, a) => s + (Number(a.calories_burned) || 0), 0);
+    const burned = day.activities.reduce((s, a) => s + activityCalories(a), 0);
     const addExercise = state.prefs?.exercise_mode === 'add';
     const budget = g.calories + (addExercise ? burned : 0);
     const remaining = budget - totals.calories;
@@ -107,10 +107,10 @@ export function mountDashboard(root) {
         <div class="hero-body">
           <div class="eyebrow">${over ? 'Over target' : 'Calories remaining'}</div>
           <div class="hero-remaining ${over ? 'over' : ''}">${fmtInt(Math.abs(remaining))}</div>
-          <div class="hero-caption">kcal ${over ? 'over' : 'left'} · target ${fmtInt(budget)} kcal${addExercise && burned ? ` (incl. ${fmtInt(burned)} exercise)` : ''}</div>
+          <div class="hero-caption">kcal ${over ? 'over' : 'left'} · target ${fmtInt(budget)} kcal${addExercise && burned ? ` (incl. ${fmtNum(burned, 1)} exercise)` : ''}</div>
           <div class="hero-stats">
             <div class="hero-stat"><div class="v">${fmtInt(totals.calories)}</div><div class="l">Eaten</div></div>
-            <div class="hero-stat"><div class="v">${fmtInt(burned)}</div><div class="l">Exercise</div></div>
+            <div class="hero-stat"><div class="v">${fmtNum(burned, 1)}</div><div class="l">Exercise</div></div>
             <div class="hero-stat"><div class="v">${fmtInt(g.calories)}</div><div class="l">Goal</div></div>
           </div>
         </div>
@@ -137,8 +137,8 @@ export function mountDashboard(root) {
     setHTML($('#d-meals', root), html`
       <div class="card-head"><h2 class="card-title">${state.date === today() ? "Today's meals" : `Meals · ${formatDay(state.date)}`}</h2><span class="small muted">${count} item${count === 1 ? '' : 's'}</span></div>
       ${count === 0 ? html`<div class="empty"><div class="empty-icon">🍽️</div><div class="empty-title">No meals logged${state.date === today() ? ' today' : ''}</div>
-        <div class="empty-sub">Search a food, snap a photo, scan a barcode or describe your meal.</div>
-        <button type="button" class="btn btn-primary btn-sm" data-action="search">${icon('plus', 16)} Add food</button></div>` : ''}
+        <div class="empty-sub">Describe your meal, snap a photo or scan a barcode — AI estimates the nutrition.</div>
+        <button type="button" class="btn btn-primary btn-sm" data-action="describe">${icon('plus', 16)} Add food</button></div>` : ''}
       ${count === 0 ? '' : groups.map((gr) => {
         const t = sumNutrition(gr.items);
         return html`<div class="meal-group">
@@ -185,13 +185,20 @@ export function mountDashboard(root) {
     const latest = w[w.length - 1];
     const ch = weightChange(w, 7);
     const target = state.profile?.target_weight_kg;
+    const extra = latest ? [
+      latest.body_fat_pct != null ? `${fmtNum(latest.body_fat_pct, 1)}% body fat` : null,
+      latest.heart_rate_bpm ? `${latest.heart_rate_bpm} bpm` : null,
+    ].filter(Boolean).join(' · ') : '';
     setHTML($('#d-weight', root), html`
-      <div class="card-head"><h2 class="card-title">${icon('scale', 18)} Weight</h2><button type="button" class="btn btn-secondary btn-sm" data-action="log-weight">+ Log</button></div>
+      <div class="card-head"><h2 class="card-title">${icon('scale', 18)} Weight</h2>
+        <div class="row"><button type="button" class="btn btn-primary btn-sm" data-action="measure">${icon('scale', 16)} Measure</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="log-weight">+ Log</button></div></div>
       ${latest ? html`<div class="row between">
         <div><div style="font-size:1.6rem;font-weight:800">${formatWeight(latest.weight_kg, unit)}</div>
-          <div class="small muted">${ch ? `${ch.change > 0 ? '+' : ch.change < 0 ? '−' : '±'}${formatWeight(Math.abs(ch.change), unit)} vs ${formatDay(ch.from.recorded_on, { month: 'short', day: 'numeric' })}` : `Logged ${relativeDayLabel(latest.recorded_on).toLowerCase()}`}${target ? ` · target ${formatWeight(target, unit)}` : ''}</div></div>
+          <div class="small muted">${ch ? `${ch.change > 0 ? '+' : ch.change < 0 ? '−' : '±'}${formatWeight(Math.abs(ch.change), unit)} vs ${formatDay(ch.from.recorded_on, { month: 'short', day: 'numeric' })}` : `Logged ${relativeDayLabel(latest.recorded_on).toLowerCase()}`}${target ? ` · target ${formatWeight(target, unit)}` : ''}</div>
+          ${extra ? html`<div class="tiny faint">${extra}</div>` : ''}</div>
         ${sparkline(w.slice(-14).map((x) => (unit === 'lb' ? kgToLb(x.weight_kg) : x.weight_kg)))}
-      </div>` : html`<p class="small muted">No weigh-ins yet. Log your weight to track progress.</p>`}`);
+      </div>` : html`<p class="small muted">No weigh-ins yet. Measure with your smart scale or log your weight to track progress.</p>`}`);
   };
 
   const renderWeek = async () => {
@@ -253,12 +260,12 @@ export function mountDashboard(root) {
     prev: () => setDate(addDays(state.date, -1)),
     next: () => setDate(addDays(state.date, 1)),
     calendar: () => openCalendar({ selected: state.date, onPick: setDate }),
-    search: () => openFoodLogger({ tab: 'search' }),
     describe: () => openFoodLogger({ tab: 'ai' }),
     camera: () => openCamera(),
     gallery: () => pickPhoto(),
     barcode: () => openBarcode(),
-    'add-to': (el) => openFoodLogger({ tab: 'search', mealType: el.dataset.meal }),
+    measure: () => openScale(),
+    'add-to': (el) => openFoodLogger({ tab: 'ai', mealType: el.dataset.meal }),
     edit: (el) => { const it = state.day?.items.find((x) => x.id === el.dataset.id); if (it) editItem(it); },
     water: (el) => { const n = (state.day?.water || 0) + Number(el.dataset.delta); if (n >= 0) setWater(state.date, n); },
     'log-weight': () => openWeightSheet(),
@@ -285,41 +292,26 @@ export function mountDashboard(root) {
 }
 
 // ── Edit item sheet ───────────────────────────────────────────────────────
-async function editItem(item) {
-  await loadFoods().catch(() => {});
-  const food = item.food_id && !item.food_id.startsWith('off:') ? getFood(item.food_id) : null;
+/** Changes the amount (nutrition scales linearly from what was logged) or the meal. */
+function editItem(item) {
   let meal = item.meal_type;
   const sheet = openSheet({ title: 'Edit entry', footer: true });
-  const units = food ? unitsFor(food) : null;
-  const matched = units ? units.find((u) => u.short === item.unit || u.id === item.unit) : null;
-  // If the stored unit no longer matches a portion, edit in grams instead of reusing the old count.
-  const currentUnit = units ? (matched || units[units.length - 1]) : null;
-  const startQty = units && !matched && item.grams ? item.grams : item.quantity;
   setHTML(sheet.body, html`
     <div class="stack">
       <div><h3>${item.food_name}</h3><p class="small muted">${fmtInt(item.calories)} kcal · P ${fmt1(item.protein)} · C ${fmt1(item.carbs)} · F ${fmt1(item.fat)} · Fib ${fmt1(item.fiber)}</p></div>
       <div class="qty-row">
-        <div class="field"><label for="e-qty">Amount</label><input class="input" id="e-qty" type="number" inputmode="decimal" min="0.1" step="any" value="${fmt1(startQty)}"></div>
-        <div class="field"><label for="e-unit">Unit</label>
-          ${units ? html`<select class="select" id="e-unit">${units.map((u) => html`<option value="${u.id}" ${u === currentUnit ? 'selected' : ''}>${u.label}</option>`)}</select>`
-            : html`<input class="input" id="e-unit" value="${item.unit}" disabled>`}</div>
+        <div class="field"><label for="e-qty">Amount</label><input class="input" id="e-qty" type="number" inputmode="decimal" min="0.1" step="any" value="${fmt1(item.quantity)}"></div>
+        <div class="field"><label for="e-unit">Unit</label><input class="input" id="e-unit" value="${item.unit}" disabled></div>
       </div>
       <p class="small muted" id="e-preview" aria-live="polite"></p>
       <div class="chips" role="group" aria-label="Meal">${MEAL_TYPES.map((m) => html`<button type="button" class="chip" data-meal="${m.id}" aria-pressed="${m.id === meal}">${m.icon} ${m.label}</button>`)}</div>
     </div>`);
   setHTML(sheet.foot, html`<button type="button" class="btn btn-danger" data-del>${icon('trash', 16)} Delete</button><button type="button" class="btn btn-primary" data-save>Save</button>`);
   const qty = $('#e-qty', sheet.body);
-  const unitSel = $('#e-unit', sheet.body);
   const compute = () => {
     const q = Number(qty.value);
     if (!(q > 0)) return null;
-    if (food) {
-      const u = units.find((x) => x.id === unitSel.value) || currentUnit;
-      const grams = q * u.grams;
-      return { quantity: q, unit: u.id === 'g' || u.id === 'ml' ? u.id : u.short, grams, ...scaleNutrition(food, grams) };
-    }
-    // Items without a database entry (AI, barcode, manual) scale linearly from what was logged.
-    const f = q / Number(item.quantity || 1);
+    const f = q / (Number(item.quantity) || 1);
     return { quantity: q, grams: item.grams ? item.grams * f : null, calories: item.calories * f, protein: item.protein * f, carbs: item.carbs * f, fat: item.fat * f, fiber: item.fiber * f };
   };
   const preview = () => {
@@ -327,16 +319,6 @@ async function editItem(item) {
     $('#e-preview', sheet.body).textContent = n ? `New total: ${fmtInt(n.calories)} kcal · P ${fmt1(n.protein)} g · C ${fmt1(n.carbs)} g · F ${fmt1(n.fat)} g · Fiber ${fmt1(n.fiber)} g` : 'Enter an amount greater than zero.';
   };
   qty.addEventListener('input', preview);
-  unitSel.addEventListener('change', () => {
-    if (!units) return;
-    const prev = units.find((x) => x.id === unitSel.dataset.prev) || currentUnit;
-    const u = units.find((x) => x.id === unitSel.value);
-    const grams = Number(qty.value) * prev.grams;
-    if (u && grams > 0) qty.value = String(Math.round((grams / u.grams) * 100) / 100);
-    unitSel.dataset.prev = unitSel.value;
-    preview();
-  });
-  if (unitSel && units) unitSel.dataset.prev = unitSel.value;
   sheet.body.addEventListener('click', (e) => {
     const m = e.target.closest('[data-meal]');
     if (!m) return;
@@ -360,34 +342,3 @@ async function editItem(item) {
   });
   preview();
 }
-
-// ── Weight sheet ─────────────────────────────────────────────────────────
-export function openWeightSheet({ date = today() } = {}) {
-  const unit = weightUnit();
-  const latest = sortWeights(state.weights).slice(-1)[0];
-  const sheet = openSheet({ title: 'Log weight', footer: true });
-  const shown = latest ? Math.round((unit === 'lb' ? kgToLb(latest.weight_kg) : latest.weight_kg) * 10) / 10 : '';
-  setHTML(sheet.body, html`
-    <form class="stack" id="w-form" novalidate>
-      <div class="grid-2">
-        <div class="field"><label for="w-val">Weight</label><div class="input-group"><input class="input" id="w-val" type="number" inputmode="decimal" step="0.1" value="${shown}" required><span class="input-suffix">${unit}</span></div></div>
-        <div class="field"><label for="w-date">Date</label><input class="input" id="w-date" type="date" max="${today()}" value="${date}" required></div>
-      </div>
-      <p class="hint">One entry per day — logging again on the same day replaces it.</p>
-    </form>`);
-  setHTML(sheet.foot, html`<button type="button" class="btn btn-secondary" data-cancel>Cancel</button><button type="button" class="btn btn-primary" data-save>Save</button>`);
-  const save = () => {
-    const v = Number($('#w-val', sheet.body).value);
-    const d = $('#w-date', sheet.body).value;
-    const kg = unit === 'lb' ? lbToKg(v) : v;
-    if (!(kg >= 20 && kg <= 400)) { toast(`Enter a weight between ${unit === 'lb' ? '44 and 880 lb' : '20 and 400 kg'}.`, 'error'); return; }
-    if (!d || d > today()) { toast('Pick a date that is not in the future.', 'error'); return; }
-    logWeight(d, kg);
-    sheet.close();
-    toast(`Weight saved: ${formatWeight(kg, unit)}.`, 'success');
-  };
-  sheet.foot.querySelector('[data-save]').addEventListener('click', save);
-  sheet.foot.querySelector('[data-cancel]').addEventListener('click', () => sheet.close());
-  $('#w-form', sheet.body).addEventListener('submit', (e) => { e.preventDefault(); save(); });
-}
-

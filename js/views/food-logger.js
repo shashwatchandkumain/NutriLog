@@ -1,16 +1,14 @@
-// "Add food" flows: database search → quantity, AI description → review, photo (camera /
-// gallery) → review, barcode → quantity, and manual entry. Every path ends in a screen where
-// the user can check and adjust amounts before anything is saved.
+// "Add food": describe it to AI (default), snap or pick a photo, scan a barcode, or enter it
+// manually. Every path ends in a screen where the user can check and adjust amounts before
+// anything is saved.
 import { html, setHTML, fmtInt, fmt1, mealTypeForTime, MEAL_TYPES, today, relativeDayLabel, UserError } from '../lib/utils.js';
 import { checkConsistency, scaleNutrition, sumNutrition, isValidNutrition } from '../lib/nutrition.js';
-import { state } from '../store.js';
+import { state, aiProvider } from '../store.js';
 import { openSheet, toast, showError, withBusy, $, $$ } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
-import { search, loadFoods, unitsFor, defaultQuantity, itemFromFood, lookupBarcode, prepareImage } from '../services/foods.js';
-import { analyzeFoodText, analyzeFoodImage } from '../services/ai.js';
+import { unitsFor, defaultQuantity, itemFromFood, lookupBarcode, prepareImage } from '../services/foods.js';
+import { analyzeFoodText, analyzeFoodImage, PROVIDER_LABEL } from '../services/ai.js';
 import { logItems, deleteItem } from '../services/data.js';
-
-const QUICK_PICKS = ['Roti', 'Rice', 'Dal', 'Egg', 'Banana', 'Milk', 'Chai', 'Paneer', 'Curd', 'Chicken breast'];
 
 function defaultMealType() {
   return state.date === today() ? mealTypeForTime() : 'lunch';
@@ -52,16 +50,14 @@ function commit(items, mealType) {
 }
 
 // ── Main sheet ────────────────────────────────────────────────────────────
-export function openFoodLogger({ tab = 'search', mealType, query = '' } = {}) {
+export function openFoodLogger({ tab = 'ai', mealType, query = '' } = {}) {
   let meal = mealType || defaultMealType();
   const sheet = openSheet({ title: 'Add food', wide: true });
-  loadFoods().catch((e) => console.error(e));
 
   const renderTabs = (active) => {
     setHTML(sheet.body, html`
       <div class="tabs" role="tablist">
-        <button role="tab" type="button" data-tab="search" aria-selected="${active === 'search'}">Search</button>
-        <button role="tab" type="button" data-tab="ai" aria-selected="${active === 'ai'}">Describe with AI</button>
+        <button role="tab" type="button" data-tab="ai" aria-selected="${active === 'ai'}">${icon('sparkles', 16)} Analyze with AI</button>
         <button role="tab" type="button" data-tab="manual" aria-selected="${active === 'manual'}">Manual</button>
       </div>
       <div class="stack" id="fl-panel"></div>`);
@@ -70,97 +66,52 @@ export function openFoodLogger({ tab = 'search', mealType, query = '' } = {}) {
       if (t) renderTabs(t.dataset.tab);
     });
     const panel = $('#fl-panel', sheet.body);
-    if (active === 'search') searchPanel(panel);
-    else if (active === 'ai') aiPanel(panel);
-    else manualPanel(panel);
+    if (active === 'manual') manualPanel(panel); else aiPanel(panel);
   };
 
-  // Search
-  const searchPanel = (panel) => {
-    setHTML(panel, html`
-      <div class="search-box">${icon('search')}
-        <input class="input" id="fl-q" type="search" placeholder="Search roti, dal, paneer, banana…" autocomplete="off" enterkeyhint="search" aria-label="Search foods" value="${query}">
-      </div>
-      <div class="results" id="fl-results" role="listbox" aria-label="Search results"></div>`);
-    const input = $('#fl-q', panel);
-    const results = $('#fl-results', panel);
-    let seq = 0;
-    const run = async () => {
-      const q = input.value.trim();
-      query = q;
-      const my = ++seq;
-      if (q.length < 2) {
-        setHTML(results, html`<p class="small muted" style="margin:6px 2px 8px">Popular</p>
-          <div class="chips">${QUICK_PICKS.map((p) => html`<button type="button" class="chip" data-pick="${p}">${p}</button>`)}</div>`);
-        return;
-      }
-      let found;
-      try { found = await search(q); } catch (e) {
-        if (my !== seq) return;
-        setHTML(results, html`<div class="empty"><div class="empty-title">${e?.userMessage || "Couldn't search right now."}</div>
-          <div class="empty-sub">You can still describe the food to AI or add it manually.</div></div>`);
-        return;
-      }
-      if (my !== seq) return;
-      if (!found.length) {
-        setHTML(results, html`<div class="empty"><div class="empty-title">No match for “${q}”</div>
-          <div class="empty-sub">Describe it to AI instead, or add it manually.</div>
-          <div class="row" style="justify-content:center">
-            <button type="button" class="btn btn-primary btn-sm" data-go="ai">${icon('sparkles')} Describe with AI</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-go="manual">Add manually</button>
-          </div></div>`);
-        return;
-      }
-      setHTML(results, html`${found.map((f) => html`
-        <button type="button" class="result" role="option" data-food="${f.id}">
-          <div class="result-main">
-            <div class="result-name">${f.name}</div>
-            <div class="result-meta">${f.portions?.[0] ? `${f.portions[0].label} · ` : ''}per 100 ${f.servingUnit} · P ${fmt1(f.protein)} · C ${fmt1(f.carbs)} · F ${fmt1(f.fat)} · Fib ${fmt1(f.fiber)}</div>
-          </div>
-          <div class="result-kcal">${fmtInt(f.calories)}<small>kcal/100${f.servingUnit}</small></div>
-        </button>`)}
-        <button type="button" class="result" data-go="ai"><div class="result-main"><div class="result-name">${icon('sparkles', 16)} Not listed? Describe “${q}” to AI</div></div></button>`);
-    };
-    let t;
-    input.addEventListener('input', () => { clearTimeout(t); t = setTimeout(run, 120); });
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); results.querySelector('[data-food]')?.click(); }
-    });
-    results.addEventListener('click', async (e) => {
-      const pick = e.target.closest('[data-pick]');
-      if (pick) { input.value = pick.dataset.pick; run(); input.focus(); return; }
-      const go = e.target.closest('[data-go]');
-      if (go) { renderTabs(go.dataset.go); return; }
-      const b = e.target.closest('[data-food]');
-      if (!b) return;
-      const food = (await search(input.value.trim(), 30).catch(() => [])).find((f) => f.id === b.dataset.food);
-      if (food) quantityView(sheet, food, { meal, onMeal: (m) => { meal = m; }, onBack: () => renderTabs('search') });
-    });
-    run();
-  };
-
-  // AI describe
+  // AI: describe, photo, camera or barcode
   const aiPanel = (panel) => {
     setHTML(panel, html`
       <div class="field">
         <label for="fl-ai">What did you eat?</label>
         <textarea class="textarea" id="fl-ai" maxlength="1000" placeholder="e.g. 2 rotis, 1 katori dal tadka, a bowl of curd and a cup of chai with sugar">${query}</textarea>
-        <span class="hint">Include amounts if you know them. AI estimates each item; you can adjust before saving.</span>
+        <span class="hint">Include amounts if you know them (2 roti, 1 katori, 200 g). You can adjust every item before saving.</span>
       </div>
-      <button type="button" class="btn btn-primary btn-block" id="fl-analyze">${icon('sparkles')} Analyze</button>`);
+      <div class="row between wrap">
+        <div class="row wrap">
+          <button type="button" class="btn btn-secondary btn-sm" data-go="camera">${icon('camera', 16)} Camera</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-go="photo">${icon('image', 16)} Photo</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-go="barcode">${icon('barcode', 16)} Barcode</button>
+        </div>
+        <button type="button" class="btn btn-primary" id="fl-analyze" style="margin-left:auto">${icon('sparkles', 18)} Analyze</button>
+      </div>
+      <p class="tiny faint">Estimated by ${PROVIDER_LABEL[aiProvider()]} · <a href="#/settings" data-close-sheet>change AI model</a></p>`);
     const ta = $('#fl-ai', panel);
     const btn = $('#fl-analyze', panel);
-    const go = () => withBusy(btn, 'Analyzing food…', async () => {
+    const go = () => withBusy(btn, 'Analyzing…', async () => {
       const text = ta.value.trim();
-      if (!text) { toast('Describe what you ate first.', 'error'); return; }
+      query = text;
+      if (!text) { toast('Describe what you ate first.', 'error'); ta.focus(); return; }
       try {
-        const items = await analyzeFoodText(text);
-        if (!items.length) { toast("AI couldn't find any food in that. Try rephrasing.", 'error'); return; }
-        reviewView(sheet, items, { meal, source: 'ai_text', onMeal: (m) => { meal = m; }, onBack: () => renderTabs('ai') });
+        const res = await analyzeFoodText(text);
+        if (!res.items.length) { toast("AI couldn't find any food in that. Try rephrasing.", 'error'); return; }
+        reviewView(sheet, res.items, { meal, source: 'ai_text', provider: res.provider, onMeal: (m) => { meal = m; }, onBack: () => renderTabs('ai') });
       } catch (e) { showError(e, 'AI text analysis'); }
     });
     btn.addEventListener('click', go);
     ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) go(); });
+    panel.addEventListener('click', (e) => {
+      const g = e.target.closest('[data-go]');
+      if (g) {
+        sheet.close();
+        if (g.dataset.go === 'camera') openCamera();
+        else if (g.dataset.go === 'photo') pickPhoto();
+        else openBarcode();
+        return;
+      }
+      if (e.target.closest('[data-close-sheet]')) sheet.close();
+    });
+    requestAnimationFrame(() => ta.focus({ preventScroll: true }));
   };
 
   // Manual
@@ -208,11 +159,11 @@ export function openFoodLogger({ tab = 'search', mealType, query = '' } = {}) {
     });
   };
 
-  renderTabs(tab);
+  renderTabs(tab === 'manual' ? 'manual' : 'ai');
   return sheet;
 }
 
-// ── Quantity view (database or barcode food) ──────────────────────────────
+// ── Quantity view (barcode product) ───────────────────────────────────────
 function quantityView(sheet, food, { meal, onMeal, onBack }) {
   const units = unitsFor(food);
   let { unit, quantity } = defaultQuantity(food);
@@ -224,8 +175,8 @@ function quantityView(sheet, food, { meal, onMeal, onBack }) {
       ${onBack ? html`<button type="button" class="link-btn" data-back style="align-self:flex-start">${icon('chevronLeft', 16)} Back</button>` : ''}
       <div>
         <h3>${food.name}</h3>
-        <p class="small muted">${food.category || ''}${food.category ? ' · ' : ''}${fmtInt(food.calories)} kcal per 100 ${food.servingUnit}${food.source === 'core' ? ' · reference value' : ''}</p>
-        ${food.missing ? html`<p class="tag warn" style="margin-top:6px">This product has no nutrition data. Enter it manually instead.</p>` : ''}
+        <p class="small muted">${food.category || ''}${food.category ? ' · ' : ''}${fmtInt(food.calories)} kcal per 100 ${food.servingUnit}</p>
+        ${food.missing ? html`<p class="tag warn" style="margin-top:6px">This product has no nutrition data. Describe it to AI or enter it manually instead.</p>` : ''}
         ${!consistent && !food.missing ? html`<p class="tag warn" style="margin-top:6px">Calories and macros on this label don't quite agree — values shown as listed.</p>` : ''}
       </div>
       <div class="qty-row">
@@ -259,7 +210,7 @@ function quantityView(sheet, food, { meal, onMeal, onBack }) {
   root.querySelector('[data-back]')?.addEventListener('click', onBack);
   $('#q-add', root).addEventListener('click', () => {
     if (!(quantity > 0)) { toast('Enter an amount greater than zero.', 'error'); amount.focus(); return; }
-    commit([itemFromFood(food, quantity, unit, food.source === 'barcode' ? 'barcode' : 'database')], meal);
+    commit([itemFromFood(food, quantity, unit, 'barcode')], meal);
     sheet.close();
   });
   update();
@@ -268,7 +219,7 @@ function quantityView(sheet, food, { meal, onMeal, onBack }) {
 }
 
 // ── Review view (AI results) ──────────────────────────────────────────────
-function reviewView(sheet, aiItems, { meal, source, onMeal, onBack, photoUrl }) {
+function reviewView(sheet, aiItems, { meal, source, onMeal, onBack, photoUrl, provider }) {
   const rows = aiItems.map((it) => ({ ...it, keep: true }));
   const itemOf = (r) => {
     const per = r.per_100g;
@@ -284,7 +235,7 @@ function reviewView(sheet, aiItems, { meal, source, onMeal, onBack, photoUrl }) 
       <div class="stack">
         ${onBack ? html`<button type="button" class="link-btn" data-back style="align-self:flex-start">${icon('chevronLeft', 16)} Back</button>` : ''}
         ${photoUrl ? html`<img class="photo-preview" src="${photoUrl}" alt="Your food photo">` : ''}
-        <div class="form-note">AI estimates can be off. Check each amount — nutrition updates as you change grams.</div>
+        <div class="form-note">${provider ? html`<b>Estimated by ${PROVIDER_LABEL[provider] || provider}${provider !== aiProvider() ? ` (${PROVIDER_LABEL[aiProvider()]} was unavailable)` : ''}.</b> ` : ''}AI estimates can be off. Check each amount — nutrition updates as you change grams.</div>
         ${rows.map((r, i) => {
           const n = itemOf(r);
           return html`
@@ -292,13 +243,12 @@ function reviewView(sheet, aiItems, { meal, source, onMeal, onBack, photoUrl }) 
             <div class="row between">
               <div class="grow"><b>${r.food_name}</b>
                 <div class="tiny muted">${r.portion_description} · ${fmtInt(r.per_100g.calories)} kcal/100 g
-                  ${r.confidence === 'low' ? html` · <span class="tag warn">low confidence</span>` : ''}
-                  ${r.warnings?.includes('calories_adjusted_to_macros') ? html` · <span class="tag">calories matched to macros</span>` : ''}</div>
+                  ${r.confidence === 'low' ? html` · <span class="tag warn">low confidence</span>` : ''}</div>
               </div>
               <button type="button" class="btn btn-ghost btn-sm" data-toggle="${i}">${r.keep ? 'Remove' : 'Keep'}</button>
             </div>
             <div class="row">
-              <div class="input-group" style="width:150px"><input class="input" type="number" inputmode="decimal" min="1" step="any" data-grams="${i}" value="${Math.round(r.grams)}" aria-label="Grams of ${r.food_name}" ${r.keep ? '' : 'disabled'}><span class="input-suffix">g</span></div>
+              <div class="input-group" style="width:150px"><input class="input" type="number" inputmode="decimal" min="1" step="any" data-grams="${i}" value="${Math.round(r.grams * 10) / 10}" aria-label="Grams of ${r.food_name}" ${r.keep ? '' : 'disabled'}><span class="input-suffix">g</span></div>
               <div class="grow small right"><b>${fmtInt(n.calories)} kcal</b> · P ${fmt1(n.protein)} · C ${fmt1(n.carbs)} · F ${fmt1(n.fat)} · Fib ${fmt1(n.fiber)}</div>
             </div>
           </div>`;
@@ -336,9 +286,9 @@ function reviewView(sheet, aiItems, { meal, source, onMeal, onBack, photoUrl }) 
 }
 
 /** Opens the review sheet directly (used by the AI coach's "add to log"). */
-export function openReview(items, { source = 'chat', mealType } = {}) {
+export function openReview(items, { source = 'chat', mealType, provider } = {}) {
   const sheet = openSheet({ title: 'Review & add', wide: true });
-  reviewView(sheet, items, { meal: mealType || defaultMealType(), source });
+  reviewView(sheet, items, { meal: mealType || defaultMealType(), source, provider });
 }
 
 // ── Photo (gallery + camera) ──────────────────────────────────────────────
@@ -359,15 +309,15 @@ async function analyzePhoto(source) {
   try {
     const image = await prepareImage(source);
     if (sheet.closed) return;
-    const items = await analyzeFoodImage(image);
+    const res = await analyzeFoodImage(image);
     if (sheet.closed) return;
-    if (!items.length) {
+    if (!res.items.length) {
       sheet.setTitle('No food found');
       setHTML(sheet.body, html`<div class="empty"><div class="empty-icon">📷</div><div class="empty-title">No food recognised</div>
-        <div class="empty-sub">Try a clearer photo from above, or search / describe the food instead.</div></div>`);
+        <div class="empty-sub">Try a clearer photo from above, or describe the food instead.</div></div>`);
       return;
     }
-    reviewView(sheet, items, { meal: defaultMealType(), source: 'ai_photo', photoUrl: image.dataUrl });
+    reviewView(sheet, res.items, { meal: defaultMealType(), source: 'ai_photo', photoUrl: image.dataUrl, provider: res.provider });
   } catch (e) {
     sheet.close();
     showError(e, 'photo analysis');

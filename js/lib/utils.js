@@ -60,12 +60,24 @@ export function relativeDayLabel(iso) {
 export const fmtInt = (v) => Math.round(Number(v) || 0).toLocaleString();
 export const fmt1 = (v) => { const r = Math.round((Number(v) || 0) * 10) / 10; return Number.isInteger(r) ? String(r) : r.toFixed(1); };
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+/** Locale-formatted number with up to `digits` decimals: 1872.75 → "1,872.8". Display only. */
+export const fmtNum = (v, digits = 1) => (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: digits });
 
 // ── Misc ───────────────────────────────────────────────────────────────────
 export function uuid() {
   if (crypto.randomUUID) return crypto.randomUUID();
   const b = crypto.getRandomValues(new Uint8Array(16));
   b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+/**
+ * Deterministic UUID (SHA-256 of `text`, RFC 9562 version 8): the same input always gives the
+ * same id, so importing the same file twice can never create duplicate rows.
+ */
+export async function uuidFrom(text) {
+  const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(text)))).slice(0, 16);
+  b[6] = (b[6] & 0x0f) | 0x80; b[8] = (b[8] & 0x3f) | 0x80;
   const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }

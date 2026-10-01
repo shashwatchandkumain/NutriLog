@@ -1,16 +1,17 @@
 # 🥗 NutriLog
 
-A personal nutrition and calorie tracker. Log meals by searching 1,100+ foods (Indian-first), by photo, by barcode or by describing them to AI. Track calories, macros, water, weight and workouts, and see your progress. It works on phones, tablets and desktops, installs as an app (PWA), and syncs across every device you log in to.
+A personal nutrition and calorie tracker. Describe a meal or snap a photo and AI (Gemini or Claude, your choice) works out the nutrition; scan barcodes; measure your weight, heart rate and body composition with a Bluetooth smart scale; set a target weight and date and get calories planned to reach it. Track calories, macros, water, weight and workouts, and see your progress. It works on phones, tablets and desktops, installs as an app (PWA), and syncs across every device you log in to.
 
 - **Frontend:** static HTML/CSS/JS (ES modules, no build step), hosted on GitHub Pages.
 - **Backend:** Supabase: Auth, Postgres with Row Level Security, Realtime, and Edge Functions.
 - **AI:** Google Gemini and Anthropic Claude, called **only** from Supabase Edge Functions. The browser never sees an API key.
+- **Smart scale:** the Cult Smart Scale over Web Bluetooth, straight from the browser — no extra app, server or database.
 
 ```
-Browser (GitHub Pages)  ──  Supabase Auth / Postgres (RLS) / Realtime
-        │
-        └──►  Supabase Edge Functions  ──►  Gemini / Claude APIs
-              (API keys live here, as secrets)
+Smart scale ──Bluetooth──► Browser (GitHub Pages)  ──  Supabase Auth / Postgres (RLS) / Realtime
+                                   │
+                                   └──►  Supabase Edge Functions  ──►  Gemini / Claude APIs
+                                         (API keys live here, as secrets)
 ```
 
 ---
@@ -26,7 +27,7 @@ Browser (GitHub Pages)  ──  Supabase Auth / Postgres (RLS) / Realtime
 | Supabase service_role / secret key | Nowhere. Edge Functions get it automatically. | **No, never put it in the website** |
 | Database password | Nowhere in this repo | **No** |
 
-Never put the Gemini key, the Claude key, the service_role key or the database password in `index.html`, anything under `js/`, `food_db.js`, `manifest.json`, localStorage, or any file served by GitHub Pages. The app refuses to start if `js/config.js` contains a service-role or secret key.
+Never put the Gemini key, the Claude key, the service_role key or the database password in `index.html`, anything under `js/`, `manifest.json`, localStorage, or any file served by GitHub Pages. The app refuses to start if `js/config.js` contains a service-role or secret key, and a test scans every website file for API keys.
 
 A template for the secrets lives in `supabase/functions/.env.example`:
 
@@ -53,7 +54,7 @@ CLAUDE_API_KEY=YOUR_CLAUDE_API_KEY_HERE
    };
    ```
 
-   If you'd rather not commit them, see [GitHub Pages deployment](#5-github-pages-deployment), option B.
+   If you'd rather not commit them, see [GitHub Pages deployment](#6-github-pages-deployment), option B.
 
 ## 2. Supabase database migration
 
@@ -63,40 +64,47 @@ The schema lives in `supabase/migrations/`:
 |---|---|
 | `001_initial_schema.sql` | Creates `profiles`, `user_preferences`, `daily_goals`, `meals`, `meal_items`, `weight_history`, `activities`, `water_logs`, and server-only tables for recovery codes and AI rate limiting. Enables **Row Level Security on every table** with `auth.uid()` policies. Adds the RPCs the app uses and enables Realtime. Renames tables from the previous app version to `legacy_*` without deleting anything. |
 | `002_legacy_import.sql` | Functions that move data from the previous version into the new tables. |
+| `003_scale_goals_ai.sql` | Weights to 0.01 kg, plus each weigh-in's source, heart rate and body-composition snapshot; the profile's **target date**; activity **MET** values with calories computed in the database from your weight on that day (and recomputed whenever weigh-ins change); the **AI model** preference. |
 
 Run them with either method.
 
-**A. Supabase CLI (recommended)**
+**A. One command (recommended)** — logs in, applies the migrations, uploads the AI keys from `supabase/functions/.env` and deploys the Edge Functions:
 ```bash
-npm i -g supabase            # or: brew install supabase/tap/supabase
-supabase login
-supabase link --project-ref YOUR_PROJECT_REF    # the "abcd1234" part of your URL
-supabase db push
+npm run setup:supabase
 ```
 
-**B. Dashboard:** open **SQL Editor**, then paste and run `001_initial_schema.sql`, then `002_legacy_import.sql`.
+**B. Supabase CLI by hand**
+```bash
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF    # the "abcd1234" part of your URL
+npx supabase db push
+```
 
-After either method, **Table Editor** should show a shield (RLS enabled) on every table.
+**C. Dashboard:** open **SQL Editor**, then paste and run each file in order.
+
+After any method, **Table Editor** should show a shield (RLS enabled) on every table.
+
+**Updating an existing deployment:** after pulling new code, run `npx supabase db push` (new migrations) and redeploy the Edge Functions (step 4). Both are safe to repeat.
 
 ## 3. Supabase Auth setup
 
 In the Supabase Dashboard:
 
 1. **Authentication → Sign In / Providers → Email**: keep it enabled. Turning on **Confirm email** is recommended; the app shows a "check your email" screen.
-2. **Authentication → URL Configuration**:
+2. **Authentication → URL Configuration** (also in `supabase/config.toml`, pushed with `npx supabase config push`):
    - **Site URL:** `https://YOUR_USERNAME.github.io/NutriLog/`
    - **Redirect URLs:** add `https://YOUR_USERNAME.github.io/NutriLog/` and, for local testing, `http://localhost:8080/`.
-   These are used by confirmation, magic-link and password-reset emails.
+   These are used by confirmation, magic-link and password-reset emails. If the Site URL is still `http://localhost:3000`, confirmation links open a broken page.
 3. **Authentication → Emails → SMTP settings**: Supabase's built-in email service only sends a few emails per hour. For real users, configure your own SMTP, for example Resend, Postmark or SES.
 4. **Authentication → Policies / Passwords**: minimum length 8 matches the app. Enable leaked-password protection if your plan has it.
-5. **Anonymous sign-ins**: the new app doesn't use them. If the old version was used in "Secure Mode", leave them on until those devices have created accounts, then turn them off.
+5. **Anonymous sign-ins**: the app doesn't use them. If the old version was used in "Secure Mode", leave them on until those devices have created accounts, then turn them off.
 6. **Optional, Google sign-in**: enable **Google** under Providers with your Google OAuth client, add the Supabase callback URL to Google, then set `ENABLE_GOOGLE_AUTH: true` in `js/config.js`.
 
 ## 4. Edge Functions
 
 | Function | Purpose | Auth |
 |---|---|---|
-| `ai-food-analysis` | Food text → items; food photo → items; activity text → activities | Signed-in user, rate limited |
+| `ai-food-analysis` | Food text → items; food photo → items; activity text → activities with MET values | Signed-in user, rate limited |
 | `ai-chat` | Nutri AI coach: chat, "review my day", "suggest what to eat" | Signed-in user, rate limited |
 | `account-recovery` | Create a recovery code (signed in); reset password with email + code (signed out) | Mixed, attempt-limited |
 | `delete-account` | Permanently deletes the user and all their data | Signed-in user |
@@ -104,15 +112,15 @@ In the Supabase Dashboard:
 Deploy them:
 
 ```bash
-supabase functions deploy ai-food-analysis
-supabase functions deploy ai-chat
-supabase functions deploy account-recovery
-supabase functions deploy delete-account
+npx supabase functions deploy ai-food-analysis --use-api
+npx supabase functions deploy ai-chat --use-api
+npx supabase functions deploy account-recovery --use-api
+npx supabase functions deploy delete-account --use-api
 ```
 
 `supabase/config.toml` sets `verify_jwt = false` for these functions because each one verifies the caller's session itself, which works with both old and new Supabase JWT keys. If you deploy another way, add `--no-verify-jwt`.
 
-The AI functions compute every total themselves from per-100 g values (`total = per100 × grams ÷ 100`), check calories against macros, and clamp impossible values. Arithmetic mistakes by the model can't reach your log. Users always review AI results before saving.
+**How AI estimates are kept accurate and consistent between Gemini and Claude:** both models get the same estimation protocol (most-likely values, explicit home-style vs. restaurant cooking-oil amounts, cooked weights, household portions) and the same reference table of 109 staple foods (`supabase/functions/_shared/reference-foods.ts`, USDA / IFCT values). The models only estimate macros per 100 g and the portion weight; the server computes energy from the macros (4·protein + 4·carbs + 9·fat + 7·alcohol) and every total as `per100 × grams ÷ 100`. So one model's habit of guessing calories low or high can't reach your log. Users always review AI results before saving, and the review shows which model answered.
 
 ## 5. Secret configuration (API keys)
 
@@ -125,35 +133,34 @@ Or from the CLI:
 ```bash
 cp supabase/functions/.env.example supabase/functions/.env   # git-ignored
 # edit supabase/functions/.env and paste your real keys
-supabase secrets set --env-file supabase/functions/.env
+npx supabase secrets set --env-file supabase/functions/.env
 ```
 
 Optional secrets, with defaults shown in `.env.example`:
 
 | Secret | Default | Meaning |
 |---|---|---|
-| `AI_FOOD_PROVIDER` | `gemini` | Provider for food/photo/activity analysis; the other one is the fallback |
-| `AI_CHAT_PROVIDER` | `claude` | Provider for the coach |
-| `GEMINI_MODEL` / `GEMINI_FALLBACK_MODEL` | `gemini-3.5-flash` / `gemini-3.1-flash-lite` | Gemini models |
+| `AI_FOOD_PROVIDER` / `AI_CHAT_PROVIDER` | `gemini` / `claude` | Used only when a request doesn't say which model; users choose in **Settings → AI model** |
+| `GEMINI_MODEL` / `GEMINI_FALLBACK_MODEL` | `gemini-3.5-flash` / `gemini-3.5-flash-lite` | Gemini models; the lighter one answers when the main one is busy |
 | `CLAUDE_MODEL` | `claude-opus-5-5` | Claude model |
 | `AI_HOURLY_LIMIT` / `AI_DAILY_LIMIT` | `30` / `150` | AI requests per user |
 | `ALLOWED_ORIGINS` | any | Set to `https://YOUR_USERNAME.github.io` to restrict CORS |
 
-You only need one of the two AI keys. With just one, both features use it. With neither, AI buttons show "AI features are not available yet" and everything else works.
+You only need one of the two AI keys. With just one, every feature uses it. If the chosen model fails, the other one answers. With neither, AI buttons show "AI features are not available yet" and everything else works.
 
 ## 6. GitHub Pages deployment
 
 All paths are relative and routing uses the URL hash (`#/dashboard`), so the site works at `https://YOUR_USERNAME.github.io/NutriLog/` and direct links never 404.
 
-**Option A: deploy from the branch (simplest)**
-1. Put your public URL and anon key in `js/config.js` and commit.
-2. Repository → **Settings → Pages → Source: Deploy from a branch** → `main` / root.
-3. When you change the app, bump `VERSION` in `sw.js` so installed copies update.
+**Option A: GitHub Actions (recommended — tests run first)**
+1. **Settings → Pages → Source: GitHub Actions.**
+2. Either commit `js/config.js` with your public URL and anon key, or add them as repository **Variables** (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, optional `ENABLE_GOOGLE_AUTH=true`) under **Settings → Secrets and variables → Actions**. These are public values, so *Variables* is fine.
+3. Push to `main`. `.github/workflows/deploy.yml` runs lint and tests, writes `js/config.js` from the variables if they are set, stamps the service-worker version with the commit, and deploys.
 
-**Option B: GitHub Actions (keys not committed, tests run first)**
-1. Repository → **Settings → Secrets and variables → Actions → Variables**: add `SUPABASE_URL` and `SUPABASE_ANON_KEY`. Add `ENABLE_GOOGLE_AUTH=true` if you use Google. These are public values, so *Variables* is fine.
-2. **Settings → Pages → Source: GitHub Actions.**
-3. Push to `main`. `.github/workflows/deploy.yml` runs lint and tests, writes `js/config.js` from the variables, stamps the service-worker version with the commit, and deploys.
+**Option B: deploy from the branch**
+1. Put your public URL and anon key in `js/config.js` and commit.
+2. **Settings → Pages → Source: Deploy from a branch** → `main` / root.
+3. When you change the app, bump `VERSION` in `sw.js` so installed copies update.
 
 ## 7. Local development
 
@@ -162,18 +169,38 @@ npm install          # dev tools only: tests, lint, PGlite, Playwright
 npm run serve        # http://localhost:8080  (or any static server)
 ```
 
-Add `http://localhost:8080/` to Supabase's redirect URLs to test email links locally.
+Add `http://localhost:8080/` to Supabase's redirect URLs to test email links locally. Web Bluetooth works on `localhost` too.
 
 | Command | What it does |
 |---|---|
-| `npm test` | Unit tests (nutrition math, food search, food database, stats, PWA, secrets scan) and database tests: runs the real migrations on an in-process Postgres (PGlite) and checks RLS isolation between users |
-| `npm run test:e2e` | Browser tests with Playwright against a mocked Supabase: signup → onboarding → logging → offline sync → second device → recovery → account deletion. First run `npx playwright install chromium` |
+| `npm test` | Unit tests (nutrition and goal-date math, smart-scale protocol, body composition, activity calories, import formats, stats, PWA, secrets scan) and database tests: runs the real migrations on an in-process Postgres (PGlite) and checks RLS isolation and the activity-calorie triggers |
+| `npm run test:e2e` | Browser tests with Playwright against a mocked Supabase and a simulated Bluetooth scale: signup → onboarding with a target date → AI logging → smart-scale weigh-in → targets update → treadmill → import → offline sync → second device → recovery → account deletion. First run `npx playwright install chromium` |
 | `npm run test:functions` / `npm run check:functions` | Deno tests and type-check for the Edge Functions |
 | `npm run lint` | ESLint |
-| `npm run build:foods` | Rebuilds `food_db.js` from `scripts/food-data/` and writes `scripts/food-data/CORRECTIONS.md` |
+| `npm run setup:supabase` | Applies migrations, uploads secrets and deploys Edge Functions to your project |
 | `npm run build:icons` | Renders PNG icons from `icons/*.svg` |
 
 ---
+
+## Smart scale
+
+NutriLog reads the **Cult Smart Scale** (CS-BF01) over Bluetooth directly from the browser.
+
+- **Where it works:** Chrome or Edge on Android, Windows, macOS, ChromeOS and Linux (with Bluetooth on), over HTTPS. Safari on iPhone/iPad doesn't support Web Bluetooth — use the free **Bluefy** browser there, or enter your weight manually.
+- **How:** tap **Measure** (top bar, dashboard or Progress), step on the scale to wake it, pick **Cult Smart Scale** in the list and stand still. The weight locks after three identical readings, then the scale reads your heart rate. Tap **Log this** to save — one weigh-in per day; logging again the same day replaces it.
+- **What you get:** weight to 0.01 kg and heart rate from the scale; BMI, body fat %, fat mass, lean mass, body water and BMR estimated from your weight, height, age and sex (Deurenberg, Watson and Mifflin–St Jeor equations). This scale doesn't expose a usable impedance over Bluetooth, so body composition is a trend estimate, not a lab measurement.
+- **What happens next:** automatic (non-custom) calorie and macro targets update to the new weight, and exercise calories for that day are recalculated for it.
+
+The frame format and weigh-in logic are in `js/lib/scale-protocol.js` (unit-tested with captured frames); the browser connection is `js/services/scale.js`.
+
+## Import a profile
+
+**Settings → Your data → Import a profile** accepts:
+
+- a **NutriLog export** (Settings → Export → JSON) from this or another person's account — pick weigh-ins, food log, activities, water, and optionally profile details and targets;
+- a **smart-scale backup** (the occult app's JSON export) with one or more household profiles — pick a profile; its daily weigh-ins (with heart rate) are added, and optionally its sex, age and height.
+
+Imports are additive: days that already have a weigh-in or water entry are kept, and importing the same file twice never creates duplicates (rows get deterministic ids).
 
 ## Importing data from the old version
 
@@ -197,15 +224,16 @@ Imports are idempotent, so running them twice never duplicates rows. The old app
 - **No secrets in the browser.** AI keys exist only as Edge Function secrets. The old app's keys stored in `localStorage` (`geminiKey`, `claudeKey`, `supaUrl`, `supaKey`) are deleted the first time the new app loads.
 - **XSS:** all dynamic HTML goes through an escaping `html` template tag; there are no inline event handlers, and a Content-Security-Policy restricts scripts to this site and jsDelivr. The barcode library is loaded with Subresource Integrity.
 - **Abuse limits:** per-user AI quotas (atomic, in Postgres), input size limits, and an image size cap.
+- **Bluetooth:** the browser asks before connecting to any device; readings go only from the scale to your account.
 - **Service worker:** caches only the app shell and public libraries. It never caches Supabase, Edge Function or Open Food Facts responses.
 - If you use a **custom Supabase domain**, add it to `connect-src` in the CSP `<meta>` tag in `index.html`.
 
 ## Nutrition data and calculations
 
-- **Food database** (`food_db.js`, 1,111 foods): 109 curated staples with reference values (USDA / IFCT) and household portions such as "1 medium roti (40 g)" and "1 katori dal (150 g)", plus 1,002 Indian recipes. Every food uses one model: `{ id, name, category, servingSize: 100, servingUnit, calories, protein, carbs, fat, fiber, portions }`. Nutrition for any amount is `value × grams ÷ 100`, stored unrounded and rounded only for display.
-- **Corrections to the old data:** 124 fried dishes counted the whole frying-oil vat (Poori was 738 kcal / 100 g). 29 soups had macros several times larger than their calories. A 45 kcal "boiled egg" and other dry-basis entries were wrong. Every change is listed in `scripts/food-data/CORRECTIONS.md`, and tests fail if calories and macros disagree for any food.
-- **Targets:** BMR uses Mifflin–St Jeor. TDEE is BMR × an activity multiplier (1.2–1.9). Weight loss uses −500 kcal, never more than 20% of TDEE and never below 1,200 (women) or 1,500 (men). Gain uses +10%; muscle gain uses +5%. Protein is 1.4–2.0 g/kg by goal, using an adjusted weight above BMI 25. Fat is a share of calories, carbs fill the rest, and fiber is 14 g per 1,000 kcal. The app shows every step. Custom targets are never overwritten.
-- **Exercise** uses net MET calories, `(MET − 1) × kg × hours`, and is either already covered by your activity level (default) or added to your daily budget. It is never counted twice.
+- **Food logging is AI-first.** Describe the meal ("2 roti, 1 katori dal tadka, chai with sugar") or snap a photo; the review screen lets you correct every portion before saving. Packaged foods can be scanned (Open Food Facts), and anything can be entered manually. Nutrition for any amount is `per-100 g value × grams ÷ 100`, stored unrounded and rounded only for display.
+- **Targets:** BMR uses Mifflin–St Jeor. TDEE is BMR × an activity multiplier (1.2–1.9). With a **target weight and date**, the daily deficit or surplus is `(target − current) kg × 7,700 kcal ÷ days left`, so you reach the target on that day — capped at a safe pace (losing: 1% of body weight a week, max 1 kg; gaining: 0.5 kg; muscle: 0.25 kg) and never below 1,200 (women) / 1,500 (men) kcal. Without a date, losing uses −500 kcal (never more than 20% of TDEE), gaining +10%, muscle +5%. Protein is 1.4–2.0 g/kg by goal, using an adjusted weight above BMI 25; fat is a share of calories, carbs fill the rest, and fiber is 14 g per 1,000 kcal. Targets are exact (whole kcal, 0.1 g) — never rounded to "nice" numbers — and the app shows every step.
+- **Automatic vs. custom:** automatic targets follow your latest weigh-in, profile and goal date. Custom targets are never overwritten.
+- **Exercise** uses net MET calories, `(MET − 1) × your weight on that day × hours`, to 0.01 kcal. Treadmill sessions use the ACSM walking/running equations for your speed and incline. Calories are computed in the database from your weigh-ins, so a new weigh-in updates them on every device. Exercise is either already covered by your activity level (default) or added to your daily budget — never counted twice.
 
 Nutrition values are estimates for guidance, not medical advice.
 
@@ -216,16 +244,17 @@ index.html              App shell (CSP, theme bootstrap, fonts)
 css/app.css             Design tokens (light/dark) and components
 js/config.js            PUBLIC config: Supabase URL + anon key
 js/theme-init.js        Applies the saved theme before first paint
-js/app.js               Auth-gated routing, app shell, sync and realtime wiring
+js/app.js               Auth-gated routing, app shell, sync, realtime and automatic targets
 js/router.js, store.js  Hash router, state + event bus
-js/lib/                 Pure logic: nutrition, food search, stats, activity, utils
-js/services/            Supabase client, auth, data (offline queue), foods, AI, reminders
+js/lib/                 Pure logic: nutrition + goal plans, body composition, scale protocol,
+                        activity, import formats, stats, utils
+js/services/            Supabase client, auth, data (offline queue), Bluetooth scale, barcode, AI, reminders
 js/ui/                  DOM helpers, charts (SVG), icons, theme
-js/views/               Auth, onboarding, dashboard, food logger, calories, progress, settings, chat
-food_db.js              Generated food database
+js/views/               Auth, onboarding, dashboard, food logger, weigh-in (scale), calories,
+                        progress, settings, import, chat
 sw.js, manifest.json    PWA
 supabase/migrations/    Database schema + RLS
-supabase/functions/     Edge Functions (Deno) + shared helpers
-scripts/                Food database and icon build scripts
-tests/                  unit/, db/ (PGlite), e2e/ (Playwright + mock Supabase)
+supabase/functions/     Edge Functions (Deno) + shared helpers and the AI reference table
+scripts/                Backend setup and icon build scripts
+tests/                  unit/, db/ (PGlite), e2e/ (Playwright + mock Supabase + simulated scale)
 ```

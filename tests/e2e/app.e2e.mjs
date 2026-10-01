@@ -9,6 +9,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { MockSupabase, MOCK_URL } from './mock-backend.mjs';
+import { addDays, today, isoDate } from '../../js/lib/utils.js';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
@@ -44,8 +45,38 @@ after(async () => {
   server?.close();
 });
 
-async function newDevice({ viewport = { width: 390, height: 844 }, colorScheme = 'light' } = {}) {
+/**
+ * A fake Cult smart scale behind navigator.bluetooth: after connecting it streams real 11-byte
+ * frames — settling, a locked 68.95 kg, then a heart rate of 74 bpm.
+ */
+const FAKE_SCALE = () => {
+  const frame = (kg, hr = 0, settling = false) => {
+    const raw = Math.round(kg * 100);
+    const b = new Uint8Array([0xcf, hr, 0xc0, raw & 255, raw >> 8, 0x5a, 0x11, 0x3c, 0, settling ? 1 : 0, 0]);
+    for (let i = 0; i < 10; i++) b[10] ^= b[i];
+    return new DataView(b.buffer);
+  };
+  class Characteristic extends EventTarget {
+    async startNotifications() {
+      const seq = [frame(0), frame(41.2, 0, true), frame(68.9, 0, true), frame(68.95, 0, true), frame(68.95, 0, true), frame(68.95, 0, true), frame(68.95, 74), frame(68.95, 74), frame(68.95, 74)];
+      seq.forEach((v, i) => setTimeout(() => { this.value = v; this.dispatchEvent(new Event('characteristicvaluechanged')); }, 120 * (i + 1)));
+      return this;
+    }
+    async stopNotifications() { return this; }
+  }
+  const device = new EventTarget();
+  device.name = 'Cult Smart Scale';
+  device.gatt = {
+    connected: false,
+    async connect() { this.connected = true; return { getPrimaryService: async () => ({ getCharacteristic: async () => new Characteristic() }) }; },
+    disconnect() { this.connected = false; },
+  };
+  Object.defineProperty(navigator, 'bluetooth', { configurable: true, value: { requestDevice: async () => device } });
+};
+
+async function newDevice({ viewport = { width: 390, height: 844 }, colorScheme = 'light', scale = false } = {}) {
   const ctx = await browser.newContext({ viewport, colorScheme, acceptDownloads: true, serviceWorkers: 'block' });
+  if (scale) await ctx.addInitScript(FAKE_SCALE);
   await ctx.route(`${MOCK_URL}/**`, (r) => backend.handle(r));
   await ctx.routeWebSocket(/mock\.supabase\.co/, (ws) => backend.realtime(ws));
   await ctx.route('https://world.openfoodfacts.org/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
@@ -57,24 +88,31 @@ async function newDevice({ viewport = { width: 390, height: 844 }, colorScheme =
   return { ctx, page };
 }
 
-const shot = (page, name) => (SHOTS ? page.screenshot({ path: join(SHOTS, `${name}.png`), fullPage: true }) : null);
+/** Saves a screenshot when E2E_SCREENSHOTS is set: the full page, or the viewport while a sheet is open. */
+async function shot(page, name) {
+  if (!SHOTS) return;
+  const sheetOpen = await page.locator('#modal-root .overlay').count();
+  await page.screenshot({ path: join(SHOTS, `${name}.png`), fullPage: !sheetOpen, animations: 'disabled' });
+}
 const EMAIL = 'asha@example.com';
 const PASSWORD = 'correct-horse-9';
 let device1;
 
 test('first visit shows the welcome screen — no API keys or Supabase setup', async () => {
-  device1 = await newDevice();
+  device1 = await newDevice({ scale: true });
   const { page } = device1;
   await page.goto(base);
   await page.getByRole('link', { name: 'Create account' }).waitFor();
   const text = await page.locator('body').innerText();
   assert.match(text, /Your personal nutrition companion/);
-  assert.doesNotMatch(text, /api key|anon key|supabase url|gemini|claude/i);
+  assert.doesNotMatch(text, /api key|anon key|supabase url/i);
   assert.equal(await page.locator('input[type=password]').count(), 0);
   await shot(page, '01-welcome');
 });
 
-test('create account → onboarding → dashboard with zero state', async () => {
+const TARGET_DATE = addDays(today(), 120);
+
+test('create account → onboarding with a target date → dashboard with zero state', async () => {
   const { page } = device1;
   await page.getByRole('link', { name: 'Create account' }).click();
   await page.getByLabel('Name').fill('Asha');
@@ -90,6 +128,7 @@ test('create account → onboarding → dashboard with zero state', async () => 
   await page.getByLabel('Height').fill('165');
   await page.getByLabel('Current weight').fill('70');
   await page.getByLabel('Target weight (optional)').fill('64');
+  await page.getByLabel('Reach my target by').fill(TARGET_DATE);
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: /Lose weight/ }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -99,12 +138,13 @@ test('create account → onboarding → dashboard with zero state', async () => 
   await page.getByRole('button', { name: 'See my plan' }).click();
 
   await page.getByRole('heading', { name: 'Your daily plan' }).waitFor();
-  // Mifflin–St Jeor: 10·70 + 6.25·165 − 5·30 − 161 = 1420.25 → 1,420; × 1.375 = 1952.8 → 1,953
+  // Mifflin–St Jeor: 10·70 + 6.25·165 − 5·30 − 161 = 1420.25; × 1.375 = 1952.84
+  // Target date: −6 kg × 7,700 kcal ÷ 120 days = −385 kcal/day → 1567.84 → 1,568 (not rounded to tens)
   const plan = await page.locator('main').innerText();
-  assert.match(plan, /1,420 kcal/);
-  assert.match(plan, /TDEE 1,953 kcal/);
-  // lose: −min(500, 20%·1952.8=390.6) → 1562.2 → rounded to 1,560
-  assert.match(plan, /1,560 kcal/);
+  assert.match(plan, /1,420\.3 kcal/);
+  assert.match(plan, /TDEE 1,952\.8 kcal/);
+  assert.match(plan, /1,568 kcal/);
+  assert.match(plan, /120 days\), eat 385 kcal a day below your TDEE/);
   await shot(page, '03-plan');
   await page.getByRole('button', { name: 'Start tracking' }).click();
   await page.getByRole('button', { name: 'Create my recovery code' }).click();
@@ -114,56 +154,44 @@ test('create account → onboarding → dashboard with zero state', async () => 
   await page.getByRole('heading', { name: /Good (morning|afternoon|evening), Asha/ }).waitFor();
   await page.getByText('No meals logged today').waitFor();
   const hero = await page.locator('#d-hero').innerText();
-  assert.match(hero, /1,560/);
-  assert.match(hero, /eaten/i);
+  assert.match(hero, /1,568/);
   assert.equal((await page.locator('#d-hero .hero-stat .v').first().innerText()).trim(), '0');
   const saved = backend.db.profiles.find((p) => p.display_name === 'Asha');
   assert.equal(saved.onboarding_completed, true);
-  assert.equal(saved.diet_type, 'vegetarian');
-  assert.equal(backend.db.daily_goals.find((g) => g.user_id === saved.id).calories, 1560);
+  assert.equal(saved.target_date, TARGET_DATE);
+  assert.equal(backend.db.daily_goals.find((g) => g.user_id === saved.id).calories, 1568);
   await page.waitForFunction(() => document.querySelector('#d-weight')?.innerText.includes('70 kg'));
   await shot(page, '04-dashboard-empty');
 });
 
-test('search roti → 2 medium rotis logs exactly 224 kcal', async () => {
+test('add food opens straight to AI; the Analyze button is compact', async () => {
   const { page } = device1;
-  await page.locator('.search-launch').click();
-  await page.getByLabel('Search foods').fill('chapati');
-  await page.locator('.result', { hasText: 'Roti / Chapati' }).first().click();
-  const unit = page.getByLabel('Unit');
-  assert.match(await unit.locator('option:checked').innerText(), /medium roti \(40 g\)/);
-  await page.getByLabel('Amount').fill('2');
-  await page.locator('#q-preview').getByText('224').waitFor();
-  await page.getByRole('button', { name: /Lunch/ }).click();
-  await page.getByRole('button', { name: 'Add to log' }).click();
-  await page.locator('.item', { hasText: 'Roti / Chapati' }).waitFor();
-  await page.waitForFunction(() => !document.querySelector('.item.pending'));
-  const items = backend.db.meal_items;
-  assert.equal(items.length, 1);
-  assert.equal(items[0].calories, 224);
-  assert.equal(items[0].grams, 80);
-  assert.equal(items[0].meal_type, 'lunch');
-  assert.equal(items[0].unit, 'medium roti');
-  await page.locator('.item', { hasText: '2 medium roti · 80 g' }).waitFor();
-  assert.equal((await page.locator('#d-hero .hero-stat .v').first().innerText()).trim(), '224');
+  await page.locator('.launch-bar').click();
+  await page.getByRole('tab', { name: /Analyze with AI/ }).waitFor();
+  assert.equal(await page.getByRole('tab', { name: 'Search' }).count(), 0, 'the food database search is gone');
+  const box = await page.locator('#fl-analyze').boundingBox();
+  assert.ok(box.height <= 52, `Analyze button is ${box.height}px tall`);
+  const icon = await page.locator('#fl-analyze svg').boundingBox();
+  assert.ok(icon.width <= 20 && icon.height <= 20, `icon is ${icon.width}×${icon.height}`);
+  await shot(page, '05-add-food');
 });
 
 test('describe with AI → review → adjust grams → totals are consistent', async () => {
   const { page } = device1;
-  await page.getByRole('button', { name: 'Describe' }).click();
   await page.getByLabel('What did you eat?').fill('1 katori dal tadka and jeera rice');
   await page.getByRole('button', { name: 'Analyze' }).click();
   await page.getByRole('heading', { name: 'Review & add' }).waitFor();
+  await page.getByText('Estimated by Gemini').waitFor();
   await page.getByLabel('Grams of Jeera rice').fill('200');
   await page.getByLabel('Grams of Jeera rice').press('Tab');
-  await page.getByText(/300 kcal/).first().waitFor(); // 150 kcal/100 g × 200 g
-  await shot(page, '05-ai-review');
+  await page.getByText(/302 kcal/).first().waitFor(); // (3·4 + 28·4 + 3·9) = 151 kcal/100 g × 200 g
+  await shot(page, '06-ai-review');
   await page.getByRole('button', { name: 'Add 2 items' }).click();
   await page.locator('.item', { hasText: 'Jeera rice' }).waitFor();
   await page.waitForFunction(() => !document.querySelector('.item.pending'));
   const total = backend.db.meal_items.reduce((s, i) => s + i.calories, 0);
-  assert.equal(total, 224 + 195 + 300);
-  assert.equal((await page.locator('#d-hero .hero-stat .v').first().innerText()).trim(), '719');
+  assert.equal(total, 193.5 + 302);
+  assert.equal((await page.locator('#d-hero .hero-stat .v').first().innerText()).trim(), '496');
   const macros = await page.locator('#d-macros').innerText();
   const protein = backend.db.meal_items.reduce((s, i) => s + i.protein, 0);
   assert.match(macros, new RegExp(`${Math.round(protein * 10) / 10}`));
@@ -172,7 +200,7 @@ test('describe with AI → review → adjust grams → totals are consistent', a
 test('AI failure shows a friendly message, not a raw error', async () => {
   const { page } = device1;
   backend.aiFailures = 1;
-  await page.getByRole('button', { name: 'Describe' }).click();
+  await page.locator('.launch-bar').click();
   await page.getByLabel('What did you eat?').fill('pizza');
   await page.getByRole('button', { name: 'Analyze' }).click();
   await page.locator('.toast.error', { hasText: 'AI is unavailable right now' }).waitFor();
@@ -181,18 +209,42 @@ test('AI failure shows a friendly message, not a raw error', async () => {
 
 test('edit an item and water tracking', async () => {
   const { page } = device1;
-  await page.locator('.item', { hasText: 'Roti / Chapati' }).click();
-  await page.getByLabel('Amount').fill('3');
-  await page.getByText(/New total: 336 kcal/).waitFor();
+  await page.locator('.item', { hasText: 'Dal tadka' }).click();
+  await page.getByLabel('Amount').fill('300');
+  await page.getByText(/New total: 387 kcal/).waitFor();
   await page.getByRole('button', { name: 'Save' }).click();
-  await page.waitForFunction(() => document.querySelector('#d-hero').innerText.includes('831'));
+  await page.waitForFunction(() => document.querySelector('#d-hero').innerText.includes('689'));
   await page.getByRole('button', { name: 'Add a glass' }).click();
   await page.getByRole('button', { name: 'Add a glass' }).click();
   await page.waitForFunction(() => document.querySelector('#d-water').innerText.includes('500 ml'));
   await page.waitForTimeout(600);
   assert.equal(backend.db.water_logs[0].glasses, 2);
-  assert.equal(backend.db.meal_items.find((i) => i.food_name.startsWith('Roti')).calories, 336);
-  await shot(page, '06-dashboard-logged');
+  assert.equal(backend.db.meal_items.find((i) => i.food_name === 'Dal tadka').calories, 387);
+  await shot(page, '07-dashboard-logged');
+});
+
+test('smart scale: measure over Bluetooth, see body composition, log it, targets follow', async () => {
+  const { page } = device1;
+  await page.locator('.qa', { hasText: 'Measure' }).click();
+  await page.getByRole('heading', { name: 'Measurement complete' }).waitFor();
+  const result = await page.locator('.sheet').innerText();
+  assert.match(result, /68\.95\s*kg/);
+  assert.match(result, /74\s*bpm/);
+  // BMI 68.95 / 1.65² = 25.33; body fat (Deurenberg, female, 30) = 1.2·25.33 + 0.23·30 − 5.4 = 31.9%
+  assert.match(result, /25\.3/);
+  assert.match(result, /31\.9%/);
+  await shot(page, '08-scale-result');
+  await page.getByRole('button', { name: 'Log this' }).click();
+  await page.locator('.toast', { hasText: 'Targets updated for 68.95 kg: 1,621 kcal a day.' }).waitFor();
+  const w = backend.db.weight_history.find((x) => x.recorded_on === today());
+  assert.equal(w.weight_kg, 68.95);
+  assert.equal(w.source, 'scale');
+  assert.equal(w.heart_rate_bpm, 74);
+  assert.equal(w.body_fat_pct, 31.89);
+  // New weight → TDEE 1938.41; −4.95 kg × 7,700 ÷ 120 days = −317.6 → 1,621 kcal (automatic targets)
+  assert.equal(backend.db.daily_goals.find((g) => g.calories).calories, 1621);
+  await page.waitForFunction(() => document.querySelector('#d-weight')?.innerText.includes('68.95 kg'));
+  assert.match(await page.locator('#d-weight').innerText(), /31\.9% body fat · 74 bpm/);
 });
 
 test('reopening the site restores the session straight to the dashboard', async () => {
@@ -214,37 +266,104 @@ test('dark mode applies before first paint and persists', async () => {
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   assert.equal(bg, 'rgb(13, 19, 21)');
   await page.getByRole('heading', { name: 'Settings' }).waitFor();
-  await shot(page, '07-settings-dark');
+  await shot(page, '09-settings-dark');
   await page.getByRole('link', { name: 'Dashboard' }).first().click();
   await page.locator('.item', { hasText: 'Jeera rice' }).waitFor();
-  await shot(page, '08-dashboard-dark');
+  await shot(page, '10-dashboard-dark');
   await page.getByRole('link', { name: 'Settings' }).first().click();
   await page.getByRole('button', { name: 'System' }).click();
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'light');
 });
 
-test('progress page renders charts from real data', async () => {
+test('progress page renders charts and body composition from real data', async () => {
   const { page } = device1;
   await page.getByRole('link', { name: 'Progress' }).first().click();
   await page.locator('#p-cal svg').waitFor();
   const tiles = await page.locator('#p-tiles').innerText();
   assert.match(tiles, /Current streak\s*1/);
-  assert.match(tiles, /831/); // average of one logged day
-  await shot(page, '09-progress');
+  assert.match(tiles, /689/); // average of one logged day
+  assert.match(tiles, /On track for/);
+  const body = await page.locator('#p-body').innerText();
+  assert.match(body, /31\.9/);
+  assert.match(body, /74/);
+  await shot(page, '11-progress');
 });
 
-test('calories page: preset activity uses net MET calories', async () => {
+test('calories page: treadmill uses ACSM MET and the weight on that day — and follows a new weigh-in', async () => {
   const { page } = device1;
   await page.getByRole('link', { name: 'Calories' }).first().click();
-  await page.getByRole('button', { name: /Running/ }).click();
+  await page.getByRole('button', { name: /Treadmill/ }).click();
   await page.getByLabel('Duration in minutes').fill('30');
-  // (9.8 − 1) × 70 kg × 0.5 h = 308
-  await page.getByText('≈ 308 kcal').waitFor();
+  await page.getByLabel('Speed in km/h').fill('6');
+  // ACSM walking: VO₂ = 3.5 + 0.1·100 = 13.5 → MET 3.86; (3.86 − 1) × 68.95 kg × 0.5 h = 98.6 kcal
+  await page.getByText('≈ 98.6 kcal · MET 3.86 · at 68.95 kg').waitFor();
   await page.getByRole('button', { name: 'Log', exact: true }).click();
-  await page.locator('#c-list .item', { hasText: 'Running' }).waitFor();
+  await page.locator('#c-list .item', { hasText: 'Treadmill walk · 6 km/h' }).waitFor();
   await page.waitForTimeout(500);
-  assert.equal(backend.db.activities[0].calories_burned, 308);
-  await shot(page, '10-calories');
+  const act = backend.db.activities[0];
+  assert.deepEqual([act.met, act.calories_burned, act.weight_kg], [3.86, 98.6, 68.95]);
+  await shot(page, '12-calories');
+
+  // A new weigh-in for today → the same 30 minutes is recalculated for 70.5 kg.
+  await page.getByRole('link', { name: 'Dashboard' }).first().click();
+  await page.getByRole('button', { name: '+ Log' }).click();
+  await page.locator('#w-val').fill('70.5');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('link', { name: 'Calories' }).first().click();
+  await page.locator('#c-list .item', { hasText: 'at 70.5 kg' }).waitFor();
+  assert.match(await page.locator('#c-list').innerText(), /100\.8\s*kcal/); // 2.86 × 70.5 × 0.5 = 100.815
+  await page.waitForTimeout(800);
+  assert.equal(backend.db.activities[0].calories_burned, 100.82, 'the database recomputed it too');
+});
+
+test('Settings: choosing Claude sends food analysis to Claude', async () => {
+  const { page } = device1;
+  await page.getByRole('link', { name: 'Settings' }).first().click();
+  await page.getByRole('button', { name: 'Claude', exact: true }).click();
+  await page.locator('.toast', { hasText: 'AI model: Claude.' }).waitFor();
+  assert.equal(backend.db.user_preferences.find((p) => p.ai_provider === 'claude')?.ai_provider, 'claude');
+  await page.getByRole('link', { name: 'Dashboard' }).first().click();
+  await page.locator('.launch-bar').click();
+  await page.getByText('Estimated by Claude').waitFor();
+  await page.getByLabel('What did you eat?').fill('dal rice');
+  await page.getByRole('button', { name: 'Analyze' }).click();
+  await page.getByText('Estimated by Claude.').waitFor();
+  assert.equal(backend.lastProvider, 'claude');
+  await page.keyboard.press('Escape');
+});
+
+test('import a smart-scale backup profile: weigh-ins added once, existing days kept', async () => {
+  const { page } = device1;
+  const at = (daysAgo) => { const d = new Date(); d.setDate(d.getDate() - daysAgo); d.setHours(9, 0, 0, 0); return d.toISOString(); };
+  const backup = {
+    version: 1, exportedAt: new Date().toISOString(), settings: [],
+    profiles: [{ id: 1, name: 'Asha', sex: 'female', birthYear: new Date().getFullYear() - 30, heightCm: 165 }, { id: 2, name: 'Ravi', sex: 'male', birthYear: 1990, heightCm: 178 }],
+    readings: [
+      { id: 1, profileId: 1, ts: at(10), weightKg: 71.4, heartRate: 70 },
+      { id: 2, profileId: 1, ts: at(5), weightKg: 70.85 },
+      { id: 3, profileId: 1, ts: at(0), weightKg: 99 },   // today already has a weigh-in → kept as is
+      { id: 4, profileId: 2, ts: at(3), weightKg: 80 },
+    ],
+  };
+  const file = { name: 'occult_backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) };
+  const importOnce = async () => {
+    await page.getByRole('link', { name: 'Settings' }).first().click();
+    await page.locator('[data-import]').click();
+    await page.locator('#imp-file').setInputFiles(file);
+    await page.getByRole('heading', { name: 'Import from smart scale' }).waitFor();
+    await page.getByText(/2 new for you|0 new for you/).waitFor();
+    await page.locator('.sheet').getByRole('button', { name: 'Import', exact: true }).click();
+    await page.locator('.toast', { hasText: 'Imported' }).waitFor();
+  };
+  await importOnce();
+  const mine = () => backend.db.weight_history.filter((w) => w.user_id === backend.db.profiles.find((p) => p.display_name === 'Asha').id);
+  assert.equal(mine().length, 3);
+  const old = mine().find((w) => w.recorded_on === isoDate(new Date(at(10))));
+  assert.deepEqual([old.weight_kg, old.source, old.heart_rate_bpm], [71.4, 'import', 70]);
+  assert.equal(mine().find((w) => w.recorded_on === today()).weight_kg, 70.5, "today's weigh-in is kept");
+  await page.locator('.toast').first().waitFor({ state: 'detached', timeout: 10000 }).catch(() => {});
+  await importOnce();
+  assert.equal(mine().length, 3, 'importing the same file again adds nothing');
 });
 
 test('barcode lookup (manual entry) logs a serving', async () => {
@@ -267,9 +386,11 @@ test('offline changes queue and sync exactly once', async () => {
   const before = backend.db.meal_items.length;
   await ctx.setOffline(true);
   await page.evaluate(() => window.dispatchEvent(new Event('offline')));
-  await page.locator('.search-launch').click();
-  await page.getByLabel('Search foods').fill('banana');
-  await page.locator('.result', { hasText: 'Banana' }).first().click();
+  await page.locator('.launch-bar').click();
+  await page.getByRole('tab', { name: 'Manual' }).click();
+  await page.locator('#m-name').fill('Banana');
+  await page.locator('#m-cal').fill('105');
+  await page.locator('#m-c').fill('27');
   await page.getByRole('button', { name: 'Add to log' }).click();
   await page.locator('#sync-pill', { hasText: 'Offline' }).waitFor();
   await page.locator('.item.pending', { hasText: 'Banana' }).waitFor();
@@ -279,7 +400,7 @@ test('offline changes queue and sync exactly once', async () => {
   await page.waitForFunction(() => !document.querySelector('.item.pending'));
   await page.waitForTimeout(500);
   assert.equal(backend.db.meal_items.filter((i) => i.food_name === 'Banana').length, 1);
-  assert.equal(backend.db.meal_items.find((i) => i.food_name === 'Banana').calories, Math.round(89 * 1.18 * 100) / 100);
+  assert.equal(backend.db.meal_items.find((i) => i.food_name === 'Banana').calories, 105);
 });
 
 test('a second device sees the same data after logging in', async () => {

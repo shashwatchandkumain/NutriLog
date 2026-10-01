@@ -37,8 +37,8 @@ export class MockSupabase {
   }
   createDefaults(uid) {
     const now = new Date().toISOString();
-    this.db.profiles.push({ id: uid, display_name: null, age: null, sex: null, height_cm: null, weight_kg: null, start_weight_kg: null, target_weight_kg: null, goal: 'maintain', activity_level: 'sedentary', daily_steps: null, workouts_per_week: null, diet_type: null, macro_style: 'balanced', allergies: [], onboarding_completed: false, created_at: now, updated_at: now });
-    this.db.user_preferences.push({ user_id: uid, weight_unit: 'kg', height_unit: 'cm', theme: 'system', water_goal: 8, exercise_mode: 'included', reminders_enabled: false, reminder_time: '20:00:00', updated_at: now });
+    this.db.profiles.push({ id: uid, display_name: null, age: null, sex: null, height_cm: null, weight_kg: null, start_weight_kg: null, target_weight_kg: null, target_date: null, goal: 'maintain', activity_level: 'sedentary', daily_steps: null, workouts_per_week: null, diet_type: null, macro_style: 'balanced', allergies: [], onboarding_completed: false, created_at: now, updated_at: now });
+    this.db.user_preferences.push({ user_id: uid, weight_unit: 'kg', height_unit: 'cm', theme: 'system', water_goal: 8, exercise_mode: 'included', reminders_enabled: false, reminder_time: '20:00:00', ai_provider: 'gemini', updated_at: now });
     this.db.daily_goals.push({ user_id: uid, calories: null, protein_g: null, carbs_g: null, fat_g: null, fiber_g: null, is_custom: false, updated_at: now });
   }
   rows(table, uid) { return this.db[table].filter((r) => r[OWNER[table]] === uid); }
@@ -46,6 +46,21 @@ export class MockSupabase {
     const latest = this.rows('weight_history', uid).sort((a, b) => b.recorded_on.localeCompare(a.recorded_on))[0];
     const p = this.db.profiles.find((x) => x.id === uid);
     if (latest && p) p.weight_kg = latest.weight_kg;
+    for (const a of this.rows('activities', uid)) this.computeActivity(a);
+  }
+  /** public.weight_on() */
+  weightOn(uid, date) {
+    const w = this.rows('weight_history', uid).sort((a, b) => a.recorded_on.localeCompare(b.recorded_on));
+    const on = [...w].reverse().find((x) => x.recorded_on <= date) || w[0];
+    return on ? Number(on.weight_kg) : Number(this.db.profiles.find((x) => x.id === uid)?.weight_kg) || null;
+  }
+  /** The activities_net_calories trigger. */
+  computeActivity(a) {
+    if (a.met == null) { a.weight_kg = null; return; }
+    const w = this.weightOn(a.user_id, a.activity_date);
+    if (!w) return;
+    a.weight_kg = w;
+    a.calories_burned = Math.round(Math.max(0, Number(a.met) - 1) * w * Number(a.duration_min) / 60 * 100) / 100;
   }
 
   // ── request entry point ──────────────────────────────────────────────
@@ -172,12 +187,15 @@ export class MockSupabase {
           result.push(row);
         }
       }
+      if (table === 'activities') result.forEach((a) => this.computeActivity(a));
       if (table === 'weight_history') this.syncProfileWeight(u.id);
       return out(result, 201);
     }
     if (method === 'PATCH') {
       const rows = this.db[table].filter(match);
       for (const r of rows) Object.assign(r, body, { updated_at: new Date().toISOString() });
+      if (table === 'activities') rows.forEach((a) => this.computeActivity(a));
+      if (table === 'weight_history') this.syncProfileWeight(u.id);
       return out(rows);
     }
     if (method === 'DELETE') {
@@ -224,18 +242,24 @@ export class MockSupabase {
     const u = this.userFrom(headers);
     if (name === 'ai-food-analysis') {
       if (!u) return reply(401, { error: { code: 'unauthorized', message: 'Please log in again.' } });
-      if (this.aiFailures > 0) { this.aiFailures--; return reply(503, { error: { code: 'ai_unavailable', message: 'AI is unavailable right now. You can still search foods or add them manually.' } }); }
-      if (body.mode === 'activity') return reply(200, { items: [{ name: 'Badminton', duration_min: 45, met: 5.5, calories_burned: 236 }] });
-      const item = (food_name, grams, per) => ({ food_name, portion_description: `${grams} g`, grams, per_100g: per, confidence: 'high', warnings: [],
-        ...Object.fromEntries(Object.entries(per).map(([k, v]) => [k, Math.round(v * grams) / 100])) });
+      if (this.aiFailures > 0) { this.aiFailures--; return reply(503, { error: { code: 'ai_unavailable', message: 'AI is unavailable right now. Please try again, or add the food manually.' } }); }
+      this.lastProvider = body.provider;
+      const provider = body.provider === 'claude' ? 'claude' : 'gemini';
+      if (body.mode === 'activity') return reply(200, { items: [{ name: 'Badminton', duration_min: 45, met: 5.5, calories_burned: Math.round(4.5 * (Number(body.weight_kg) || 70) * 0.75 * 100) / 100 }], provider });
+      // Like the real function: energy is always computed from the macros.
+      const item = (food_name, grams, m) => {
+        const per = { ...m, calories: m.protein * 4 + m.carbs * 4 + m.fat * 9 };
+        return { food_name, portion_description: `${grams} g`, grams, per_100g: per, confidence: 'high',
+          ...Object.fromEntries(Object.entries(per).map(([k, v]) => [k, Math.round(v * grams) / 100])) };
+      };
       return reply(200, { items: [
-        item('Dal tadka', 150, { calories: 130, protein: 6, carbs: 15, fat: 5, fiber: 4 }),
-        item('Jeera rice', 158, { calories: 150, protein: 3, carbs: 28, fat: 3, fiber: 1 }),
-      ] });
+        item('Dal tadka', 150, { protein: 6, carbs: 15, fat: 5, fiber: 4 }),
+        item('Jeera rice', 158, { protein: 3, carbs: 28, fat: 3, fiber: 1 }),
+      ], provider });
     }
     if (name === 'ai-chat') {
       if (!u) return reply(401, { error: { code: 'unauthorized', message: 'Please log in again.' } });
-      return reply(200, { reply: 'You are doing well today. Add some protein at dinner.', foods: [] });
+      return reply(200, { reply: 'You are doing well today. Add some protein at dinner.', foods: [], provider: body.provider === 'claude' ? 'claude' : 'gemini' });
     }
     if (name === 'account-recovery') {
       if (body.action === 'generate') { if (!u) return reply(401, {}); const code = 'NUTRI-AB2C-DE3F'; this.recovery.set(u.id, code); return reply(200, { code }); }

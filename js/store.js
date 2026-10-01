@@ -9,7 +9,7 @@ export const state = {
   goals: null,
   date: today(),
   day: null,            // { items, activities, water }
-  weights: [],          // [{ recorded_on, weight_kg }] ascending
+  weights: [],          // [{ recorded_on, weight_kg, source, body_fat_pct, … }] ascending
   loggedDates: [],      // ['YYYY-MM-DD', ...]
   online: navigator.onLine,
   pending: 0,           // queued offline writes
@@ -46,5 +46,13 @@ export function currentGoals() {
   };
 }
 
+/** The profile with its weight replaced by the latest weigh-in (including unsynced ones). */
+export function effectiveProfile() {
+  const p = state.profile || {};
+  const latest = state.weights?.length ? Number(state.weights[state.weights.length - 1].weight_kg) : null;
+  return latest > 0 ? { ...p, weight_kg: latest } : p;
+}
+
 export const weightUnit = () => state.prefs?.weight_unit || 'kg';
+export const aiProvider = () => (state.prefs?.ai_provider === 'claude' ? 'claude' : 'gemini');
 export const heightUnit = () => state.prefs?.height_unit || 'cm';

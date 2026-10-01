@@ -29,7 +29,7 @@ test('manifest icons exist and paths are relative (GitHub Pages sub-path)', () =
 test('no absolute root paths or secrets in the website files', () => {
   const html = readFileSync(join(root, 'index.html'), 'utf8');
   assert.doesNotMatch(html, /(src|href)="\/(?!\/)/, 'use relative paths so /NutriLog/ works');
-  const files = ['index.html', 'manifest.json', 'sw.js', 'food_db.js', ...walk('js')];
+  const files = ['index.html', 'manifest.json', 'sw.js', ...walk('js')];
   for (const f of files) {
     const text = readFileSync(join(root, f), 'utf8');
     assert.doesNotMatch(text, /AIza[0-9A-Za-z_-]{30,}/, `${f}: Google API key`);

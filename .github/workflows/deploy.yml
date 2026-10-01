@@ -60,7 +60,7 @@ jobs:
       - name: Assemble site
         run: |
           mkdir _site
-          cp -r index.html manifest.json sw.js food_db.js .nojekyll css js icons _site/
+          cp -r index.html manifest.json sw.js .nojekyll css js icons _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: _site }

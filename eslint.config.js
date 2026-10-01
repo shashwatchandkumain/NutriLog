@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 export default [
-  { ignores: ['node_modules/', 'supabase/functions/', 'food_db.js', 'test-results/', 'playwright-report/'] },
+  { ignores: ['node_modules/', 'supabase/functions/', 'test-results/', 'playwright-report/'] },
   js.configs.recommended,
   {
     files: ['js/**/*.js', 'sw.js'],
