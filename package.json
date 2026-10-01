@@ -7,6 +7,7 @@
     "serve": "python3 -m http.server 8080",
     "build:foods": "node scripts/build-food-db.mjs",
     "build:icons": "node scripts/build-icons.mjs",
+    "setup:supabase": "bash scripts/setup-supabase.sh",
     "lint": "eslint .",
     "test": "node --test tests/unit/*.test.mjs tests/db/*.test.mjs",
     "test:e2e": "node --test --test-timeout=300000 tests/e2e/*.e2e.mjs",

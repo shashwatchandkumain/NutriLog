@@ -18,8 +18,8 @@
 // repository variables at deploy time, so you don't have to commit the values.
 // ─────────────────────────────────────────────────────────────────────────────
 export const CONFIG = {
-  SUPABASE_URL: 'YOUR_SUPABASE_URL',
-  SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
+  SUPABASE_URL: 'https://tvzvsbkfmbnbeifrsfmb.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2enZzYmtmbWJuYmVpZnJzZm1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5NDgxMjYsImV4cCI6MjA5MzUyNDEyNn0.NJKgV_f3iH7gKLZ0LXZT6sYQ-DTghmRWQ_zNuc3yGTk',
 
   // Show "Continue with Google" (requires Google to be enabled in Supabase → Authentication → Providers).
   ENABLE_GOOGLE_AUTH: false,
