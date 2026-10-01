@@ -15,3 +15,8 @@ verify_jwt = false
 
 [functions.delete-account]
 verify_jwt = false
+
+# Auth redirect targets (pushed with `supabase config push`; undeclared settings stay unchanged).
+[auth]
+site_url = "https://shashwatchandkumain.github.io/NutriLog/"
+additional_redirect_urls = ["https://shashwatchandkumain.github.io/NutriLog/", "http://localhost:8080/"]
