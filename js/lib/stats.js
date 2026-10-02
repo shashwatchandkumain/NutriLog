@@ -92,3 +92,36 @@ export function goalProgress(startKg, currentKg, targetKg) {
   const p = (s - c) / (s - t);
   return Math.max(0, Math.min(1, p));
 }
+
+/**
+ * Trailing average weight for each weigh-in: the mean of entries in the `days` days ending on
+ * that date. Smooths day-to-day water swings so the trend is easier to read.
+ */
+export function movingAverage(weights, days = 7) {
+  const w = sortWeights(weights);
+  return w.map((x) => {
+    const from = addDays(x.recorded_on, -(days - 1));
+    const win = w.filter((y) => y.recorded_on >= from && y.recorded_on <= x.recorded_on);
+    return { recorded_on: x.recorded_on, value: win.reduce((s, y) => s + Number(y.weight_kg), 0) / win.length };
+  });
+}
+
+const dayNumber = (iso) => Math.round(Date.parse(`${iso}T12:00:00Z`) / 86400000);
+
+/**
+ * Weight trend in kg per week: the least-squares slope through the weigh-ins between `start`
+ * and `end`. Needs at least 3 weigh-ins spread over 7+ days, so a single day's swing can't
+ * read as a trend; returns null otherwise.
+ */
+export function weightTrend(weights, start, end = todayIso()) {
+  const pts = sortWeights(weights).filter((x) => x.recorded_on >= start && x.recorded_on <= end);
+  if (pts.length < 3) return null;
+  const xs = pts.map((p) => dayNumber(p.recorded_on));
+  if (xs[xs.length - 1] - xs[0] < 7) return null;
+  const ys = pts.map((p) => Number(p.weight_kg));
+  const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
+  const my = ys.reduce((a, b) => a + b, 0) / ys.length;
+  let num = 0, den = 0;
+  for (let i = 0; i < xs.length; i++) { num += (xs[i] - mx) * (ys[i] - my); den += (xs[i] - mx) ** 2; }
+  return den ? (num / den) * 7 : null;
+}

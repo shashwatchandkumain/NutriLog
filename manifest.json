@@ -1,15 +1,17 @@
 {
   "id": "./",
-  "name": "NutriLog — Nutrition & Calorie Tracker",
+  "name": "NutriLog — Personal Nutrition & Fitness Tracker",
   "short_name": "NutriLog",
-  "description": "Track meals, calories, macros and weight. Log food with AI, measure with a Bluetooth smart scale, and sync across your devices.",
+  "description": "Track meals, calories, macros, water, workouts and weight. Log food with AI, measure with a Bluetooth smart scale, and sync across your devices.",
   "start_url": "./#/dashboard",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#f8f7f2",
   "theme_color": "#0f766e",
-  "categories": ["health", "food", "lifestyle"],
+  "lang": "en",
+  "categories": ["health", "food", "fitness", "lifestyle"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
@@ -17,7 +19,8 @@
     { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "shortcuts": [
-    { "name": "Dashboard", "url": "./#/dashboard" },
-    { "name": "Progress", "url": "./#/progress" }
+    { "name": "Log food", "url": "./#/food", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Measure weight", "url": "./#/measure", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Progress", "url": "./#/progress", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

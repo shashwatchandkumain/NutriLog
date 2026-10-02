@@ -3,16 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>NutriLog — Your personal nutrition companion</title>
-  <meta name="description" content="Track meals, calories, macros and weight. Log food by describing it or snapping a photo (AI), measure with a Bluetooth smart scale, and sync across all your devices.">
-  <meta name="theme-color" content="#f8f7f2">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://images.openfoodfacts.org https://static.openfoodfacts.org; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://world.openfoodfacts.org; media-src 'self' blob: mediastream:; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+  <title>NutriLog — Personal Nutrition &amp; Fitness Tracker</title>
+  <meta name="description" content="Track meals, calories, macros, water, workouts and weight. Log food by describing it or snapping a photo (AI), measure with a Bluetooth smart scale, and sync across your devices.">
+  <meta name="theme-color" content="#f8f7f2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1315" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <!-- Scripts: this site + jsDelivr (supabase-js, barcode scanner). Data: Supabase + Open Food Facts. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://world.openfoodfacts.org; media-src 'self' blob: mediastream:; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <script src="js/theme-init.js"></script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="NutriLog">
+  <meta name="application-name" content="NutriLog">
+  <meta property="og:title" content="NutriLog — Personal Nutrition &amp; Fitness Tracker">
+  <meta property="og:description" content="Track meals, macros, water, workouts and weight, with AI food logging and smart-scale weigh-ins.">
+  <meta property="og:type" content="website">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
@@ -30,7 +37,7 @@
     <div class="boot-inner">
       <span class="logo lg"><span class="logo-mark" aria-hidden="true">🥗</span><span>Nutri<strong>Log</strong></span></span>
       <div class="spinner" aria-hidden="true"></div>
-      <span id="boot-text">Loading…</span>
+      <span id="boot-text">Starting NutriLog…</span>
     </div>
   </div>
   <div id="app"></div>

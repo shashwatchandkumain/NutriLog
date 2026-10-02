@@ -60,6 +60,11 @@ export function relativeDayLabel(iso) {
 export const fmtInt = (v) => Math.round(Number(v) || 0).toLocaleString();
 export const fmt1 = (v) => { const r = Math.round((Number(v) || 0) * 10) / 10; return Number.isInteger(r) ? String(r) : r.toFixed(1); };
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+/** Water amount for display: 750 → "750 ml", 1500 → "1.5 L". */
+export function formatVolume(ml) {
+  const v = Math.max(0, Math.round(Number(ml) || 0));
+  return v >= 1000 ? `${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 2 })} L` : `${v} ml`;
+}
 /** Locale-formatted number with up to `digits` decimals: 1872.75 → "1,872.8". Display only. */
 export const fmtNum = (v, digits = 1) => (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: digits });
 

@@ -2,9 +2,10 @@
   "name": "nutrilog",
   "private": true,
   "type": "module",
-  "description": "NutriLog \u2014 personal nutrition and calorie tracker (static PWA + Supabase)",
+  "description": "NutriLog — personal nutrition and calorie tracker (static PWA + Supabase)",
   "scripts": {
     "serve": "python3 -m http.server 8080",
+    "build": "node scripts/build.mjs",
     "build:icons": "node scripts/build-icons.mjs",
     "setup:supabase": "bash scripts/setup-supabase.sh",
     "lint": "eslint .",

@@ -23,7 +23,7 @@ function toUserError(err) {
     if (/adapter|not available|unavailable|turned off/i.test(msg)) return new UserError('Bluetooth is off or unavailable. Turn it on and try again.', err);
     return Object.assign(new UserError('No scale was selected.', err), { dismissed: true });
   }
-  if (name === 'SecurityError' || name === 'NotAllowedError') return new UserError('Bluetooth access is blocked. Allow Bluetooth for this site in your browser settings and try again.', err);
+  if (name === 'SecurityError' || name === 'NotAllowedError') return new UserError('Bluetooth permission is required to connect to your scale. Allow Bluetooth for this site in your browser settings, then try again.', err);
   if (name === 'NetworkError') return new UserError("Couldn't connect to the scale. Step on it to wake it up, close the Cult app if it is connected, and try again.", err);
   return new UserError("Couldn't connect to the scale. Please try again.", err);
 }
@@ -31,7 +31,7 @@ function toUserError(err) {
 /**
  * Connects to the scale and runs one weigh-in. Call it from a click: the browser then shows its
  * device chooser. `on` handlers (all optional):
- *   status('choose' | 'connecting' | 'connected' | 'no-data')
+ *   status('choose' | 'found' | 'connecting' | 'connected' | 'no-data')
  *   live({ weightKg, heartRate, locked }), locked({ weightKg }), heart({ heartRate, ticks })
  *   complete({ weightKg, heartRate, reason }) — exactly once
  *   error(UserError), disconnected() — the scale went away before a weight locked
@@ -106,6 +106,7 @@ export function startWeighIn(on = {}) {
       if (abandoned()) return;
       device = picked;
       device.addEventListener('gattserverdisconnected', onDisconnect);
+      emit('status', 'found');
       emit('status', 'connecting');
       const server = await picked.gatt.connect();
       if (abandoned()) return;

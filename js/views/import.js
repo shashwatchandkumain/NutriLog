@@ -5,7 +5,7 @@ import { html, setHTML, fmtInt, today, daysBetween, formatDay } from '../lib/uti
 import { formatWeight, formatHeight } from '../lib/nutrition.js';
 import {
   detectFormat, scaleProfiles, scaleWeighIns, scaleProfilePatch,
-  nutrilogSummary, nutrilogProfilePatch, nutrilogGoals, nutrilogWeighIns, nutrilogItems, nutrilogActivities, nutrilogWater,
+  nutrilogSummary, nutrilogProfilePatch, nutrilogGoals, nutrilogWeighIns, nutrilogItems, nutrilogActivities, nutrilogWater, nutrilogFavorites,
 } from '../lib/import-formats.js';
 import { state, weightUnit, heightUnit } from '../store.js';
 import { openSheet, toast, showError, withBusy, $ } from '../ui/dom.js';
@@ -110,6 +110,7 @@ export function openImport() {
         ${check('items', `Food log (${fmtInt(sum.items)} entries)`, '', sum.items > 0)}
         ${check('activities', `Activities (${fmtInt(sum.activities)})`, 'Calories are recalculated for your weight on each day.', sum.activities > 0)}
         ${check('water', `Water (${fmtInt(sum.water)} days)`, '', sum.water > 0)}
+        ${sum.favorites ? check('favorites', `Favorite foods (${fmtInt(sum.favorites)})`, '', true) : ''}
         ${sum.hasProfile ? check('profile', 'Profile details', 'Name, age, sex, height, goal, target weight and date, activity level and diet — replaces yours.', false) : ''}
         ${sum.hasGoals ? check('goals', 'Nutrition targets', 'Replaces your current targets.', false) : ''}
         <p class="small muted" id="imp-progress" aria-live="polite"></p>
@@ -129,12 +130,13 @@ export function openImport() {
         items: on('items') ? await nutrilogItems(data, uid) : [],
         activities: on('activities') ? await nutrilogActivities(data, uid) : [],
         water: on('water') ? nutrilogWater(data) : [],
+        favorites: on('favorites') ? nutrilogFavorites(data) : [],
       });
     }));
   };
 
-  const run = async ({ patch = null, goals = null, weights = [], items = [], activities = [], water = [] }) => {
-    if (!patch && !goals && !weights.length && !items.length && !activities.length && !water.length) {
+  const run = async ({ patch = null, goals = null, weights = [], items = [], activities = [], water = [], favorites = [] }) => {
+    if (!patch && !goals && !weights.length && !items.length && !activities.length && !water.length && !favorites.length) {
       toast('Choose something to import.', 'error');
       return;
     }
@@ -142,12 +144,12 @@ export function openImport() {
     try {
       if (patch) await saveProfile(patch);
       if (goals) await saveGoals(goals);
-      const n = await importRecords({ weights, items, activities, water }, (done, total) => {
+      const n = await importRecords({ weights, items, activities, water, favorites }, (done, total) => {
         if (progress) progress.textContent = `Importing… ${fmtInt(done)} of ${fmtInt(total)}`;
       });
       if (!goals) await syncAutoTargets().catch(() => null);
       sheet.close();
-      const parts = [n.weights && `${fmtInt(n.weights)} weigh-ins`, n.items && `${fmtInt(n.items)} food entries`, n.activities && `${fmtInt(n.activities)} activities`, n.water && `${fmtInt(n.water)} water days`, patch && 'profile details', goals && 'targets'].filter(Boolean);
+      const parts = [n.weights && `${fmtInt(n.weights)} weigh-ins`, n.items && `${fmtInt(n.items)} food entries`, n.activities && `${fmtInt(n.activities)} activities`, n.water && `${fmtInt(n.water)} water days`, n.favorites && `${fmtInt(n.favorites)} favorites`, patch && 'profile details', goals && 'targets'].filter(Boolean);
       toast(`Imported ${parts.join(', ')}.`, 'success', { duration: 6000 });
     } catch (err) {
       showError(err, 'import');

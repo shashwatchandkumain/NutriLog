@@ -8,3 +8,4 @@ supabase/.branches/
 test-results/
 playwright-report/
 deno.lock
+_site/

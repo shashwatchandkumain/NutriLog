@@ -52,3 +52,12 @@ Deno.test('JSON extraction tolerates fences and prose', () => {
   assertEquals(parseJsonLoose('```json\n{"items":[]}\n```'), { items: [] });
   assertEquals(parseJsonLoose('Sure! {"a":{"b":"}"}} thanks'), { a: { b: '}' } });
 });
+
+Deno.test('CORS is restricted to the NutriLog site by default (never *)', async () => {
+  const { corsHeaders, ALLOWED_ORIGINS } = await import('./http.ts');
+  assert(!ALLOWED_ORIGINS.includes('*'));
+  const ok = corsHeaders(new Request('https://x.supabase.co/functions/v1/ai-chat', { headers: { Origin: ALLOWED_ORIGINS[0] } }));
+  assertEquals(ok['Access-Control-Allow-Origin'], ALLOWED_ORIGINS[0]);
+  const evil = corsHeaders(new Request('https://x.supabase.co/functions/v1/ai-chat', { headers: { Origin: 'https://evil.example' } }));
+  assertEquals(evil['Access-Control-Allow-Origin'], ALLOWED_ORIGINS[0]);
+});

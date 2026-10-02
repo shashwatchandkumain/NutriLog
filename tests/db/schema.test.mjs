@@ -52,7 +52,7 @@ before(async () => {
   await db.exec(SUPABASE_STUB);
   await db.exec(`insert into auth.users (id, email) values ('${A}', 'a@example.com'), ('${B}', 'b@example.com'),
                  ('${ANON_LEGACY}', null)`);
-  for (const f of ['001_initial_schema.sql', '002_legacy_import.sql', '003_scale_goals_ai.sql']) {
+  for (const f of ['001_initial_schema.sql', '002_legacy_import.sql', '003_scale_goals_ai.sql', '004_water_ml_favorites.sql']) {
     await db.exec(readFileSync(new URL(`../../supabase/migrations/${f}`, import.meta.url), 'utf8'));
   }
 });
@@ -135,6 +135,10 @@ test('update_meal_item edits quantity and moves between meals', async () => {
     assert.equal(it.meal_type, 'dinner');
     assert.equal(Number(it.calories), 312);
     assert.equal(Number(it.protein), 9, 'fields not in the patch are unchanged');
+    const { rows: [renamed] } = await db.query(`select * from update_meal_item('aaaaaaaa-0000-4000-8000-000000000002', null, '{"food_name":"  Dal fry  "}'::jsonb)`);
+    assert.equal(renamed.food_name, 'Dal fry');
+    const { rows: [blank] } = await db.query(`select * from update_meal_item('aaaaaaaa-0000-4000-8000-000000000002', null, '{"food_name":"  "}'::jsonb)`);
+    assert.equal(blank.food_name, 'Dal fry', 'a blank name is ignored');
   });
   await as(B, async () => {
     await assert.rejects(db.query(`select * from update_meal_item('aaaaaaaa-0000-4000-8000-000000000001', null, '{"calories":1}'::jsonb)`), /not found/);
@@ -204,6 +208,45 @@ test('AI model preference defaults to Gemini and only accepts known models', asy
     await db.query(`update user_preferences set ai_provider = 'claude'`);
     assert.equal((await db.query('select ai_provider from user_preferences')).rows[0].ai_provider, 'claude');
     await assert.rejects(db.query(`update user_preferences set ai_provider = 'gpt'`), /check/);
+  });
+});
+
+test('water is stored in millilitres and stays in sync with glasses both ways', async () => {
+  const read = async () => (await db.query(`select ml, glasses from water_logs where log_date = '2026-09-30'`)).rows[0];
+  await as(B, async () => {
+    await db.query(`insert into water_logs (log_date, ml) values ('2026-09-30', 750)`);
+    assert.deepEqual(await read(), { ml: 750, glasses: 3 });
+    // An older app version that only knows glasses keeps working.
+    await db.query(`insert into water_logs (log_date, glasses) values ('2026-09-30', 5)
+                    on conflict (user_id, log_date) do update set glasses = excluded.glasses`);
+    assert.deepEqual(await read(), { ml: 1250, glasses: 5 });
+    await db.query(`update water_logs set ml = 1100 where log_date = '2026-09-30'`);
+    assert.deepEqual(await read(), { ml: 1100, glasses: 4 });
+    await assert.rejects(db.query(`update water_logs set ml = 30000 where log_date = '2026-09-30'`), /check/);
+
+    await db.query('update user_preferences set water_goal_ml = 3000');
+    let { rows: [p] } = await db.query('select water_goal, water_goal_ml from user_preferences');
+    assert.deepEqual([p.water_goal, p.water_goal_ml], [12, 3000]);
+    await db.query('update user_preferences set water_goal = 10');
+    ({ rows: [p] } = await db.query('select water_goal, water_goal_ml from user_preferences'));
+    assert.deepEqual([p.water_goal, p.water_goal_ml], [10, 2500]);
+  });
+});
+
+test('favorite foods are private to each user', async () => {
+  await as(B, async () => {
+    await db.query(`insert into favorite_foods (food_name, quantity, unit, grams, calories, protein) values ('Poha', 1, 'plate', 200, 360, 7)`);
+    await assert.rejects(db.query(`insert into favorite_foods (food_name, quantity, unit, calories) values ('Poha', 1, 'plate', 300)`), /duplicate|unique/);
+    assert.equal((await db.query('select count(*)::int n from favorite_foods')).rows[0].n, 1);
+  });
+  await as(ANON_LEGACY, async () => {
+    assert.equal((await db.query('select count(*)::int n from favorite_foods')).rows[0].n, 0);
+    assert.equal((await db.query('update favorite_foods set calories = 1 returning id')).rows.length, 0);
+    assert.equal((await db.query('delete from favorite_foods returning id')).rows.length, 0);
+    await assert.rejects(db.query(`insert into favorite_foods (user_id, food_name, calories) values ('${B}', 'x', 1)`), /row-level security/);
+  });
+  await as(null, async () => {
+    await assert.rejects(db.query('select * from favorite_foods'), /permission denied/);
   });
 });
 

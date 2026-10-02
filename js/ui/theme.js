@@ -20,7 +20,7 @@ export function applyTheme(pref = getThemePref()) {
   const root = document.documentElement;
   root.setAttribute('data-theme', theme);
   root.setAttribute('data-theme-pref', pref);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0d1315' : '#f8f7f2');
+  for (const m of document.querySelectorAll('meta[name="theme-color"]')) { m.setAttribute('content', theme === 'dark' ? '#0d1315' : '#f8f7f2'); m.removeAttribute('media'); }
   emit('theme', { pref, theme });
 }
 

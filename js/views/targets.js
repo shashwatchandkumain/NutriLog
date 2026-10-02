@@ -1,6 +1,8 @@
 // Shows how targets are derived (BMR → TDEE → goal plan → macros) and edits custom ones.
-import { html, fmtInt, fmtNum, formatDay } from '../lib/utils.js';
-import { ACTIVITY_LEVELS, GOALS, macroCalories, formatWeight } from '../lib/nutrition.js';
+import { html, setHTML, fmtInt, fmtNum, formatDay } from '../lib/utils.js';
+import { ACTIVITY_LEVELS, GOALS, MACRO_STYLES, macroCalories, formatWeight, recommendTargets } from '../lib/nutrition.js';
+import { state, currentGoals, effectiveProfile } from '../store.js';
+import { openSheet } from '../ui/dom.js';
 
 const macroRow = (label, color, grams, note) => html`
   <div class="target"><div class="l"><i class="dot" style="background:var(${color})"></i>${label}</div><div class="v">${fmtNum(grams, 1)} g</div><div class="tiny muted">${note}</div></div>`;
@@ -69,4 +71,42 @@ export function readCustomTargets(form) {
   v.calories = Math.round(v.calories);
   for (const k of ['protein', 'carbs', 'fat', 'fiber']) v[k] = Math.round(v[k] * 10) / 10;
   return { targets: v };
+}
+
+/**
+ * "How your target is calculated": the chain from the current weight to the macro targets,
+ * with the user's own numbers. Uses the same functions that set the targets.
+ */
+export function openTargetsExplainer() {
+  const p = effectiveProfile();
+  const prefs = state.prefs || {};
+  const unit = prefs.weight_unit;
+  const exerciseMode = prefs.exercise_mode || 'included';
+  const rec = recommendTargets(p, { exerciseMode });
+  const g = currentGoals();
+  const sheet = openSheet({ title: 'How your target is calculated', wide: true });
+  if (!rec) {
+    setHTML(sheet.body, html`<div class="empty"><div class="empty-title">Add your details first</div>
+      <div class="empty-sub">Your age, height and weight are needed to calculate your targets.</div>
+      <a class="btn btn-primary btn-sm" href="#/settings" data-close>Open Settings</a></div>`);
+    sheet.body.querySelector('[data-close]')?.addEventListener('click', () => sheet.close());
+    return sheet;
+  }
+  const level = exerciseMode === 'add' ? ACTIVITY_LEVELS.sedentary : ACTIVITY_LEVELS[p.activity_level] || ACTIVITY_LEVELS.sedentary;
+  const adj = rec.calories - rec.tdee;
+  const step = (n, title, value, detail) => html`<li class="calc-step"><span class="calc-num" aria-hidden="true">${n}</span>
+    <div class="grow"><div class="row between"><b>${title}</b><span class="calc-value">${value}</span></div><p class="small muted">${detail}</p></div></li>`;
+  setHTML(sheet.body, html`<div class="stack">
+    <ol class="calc">
+      ${step(1, 'Current weight', formatWeight(p.weight_kg, unit), 'Your latest weigh-in. Targets update automatically when it changes.')}
+      ${step(2, 'BMR', `${fmtNum(rec.bmr, 1)} kcal`, `Energy your body uses at rest — Mifflin–St Jeor: 10 × weight + 6.25 × height − 5 × age ${p.sex === 'male' ? '+ 5' : p.sex === 'female' ? '− 161' : '− 78 (average of both)'}.`)}
+      ${step(3, 'Activity level', `× ${level.multiplier}`, `${level.label}: ${level.description}.${exerciseMode === 'add' ? ' You chose to add logged workouts each day, so the base uses the sedentary level.' : ''}`)}
+      ${step(4, 'TDEE', `${fmtNum(rec.tdee, 1)} kcal`, 'Total daily energy expenditure = BMR × activity level. Eating this much keeps your weight steady.')}
+      ${step(5, 'Goal', `${adj > 0 ? '+' : adj < 0 ? '−' : '±'}${fmtNum(Math.abs(adj), 1)} kcal`, rec.plan ? planSummary(rec.plan, p, unit) : `${(GOALS[p.goal] || GOALS.maintain).label}.`)}
+      ${step(6, 'Daily calorie target', `${fmtInt(rec.calories)} kcal`, g.isCustom ? `You use a custom target of ${fmtInt(g.calories)} kcal, which NutriLog never changes.` : 'TDEE adjusted for your goal, never below a safe minimum.')}
+      ${step(7, 'Macro targets', `P ${fmtNum(rec.protein, 1)} · C ${fmtNum(rec.carbs, 1)} · F ${fmtNum(rec.fat, 1)} g`, `Protein is set per kg of body weight for your goal; fat is a share of calories (${(MACRO_STYLES[p.macro_style] || MACRO_STYLES.balanced).label.toLowerCase()} style); carbs fill the rest; fiber is 14 g per 1,000 kcal (${fmtNum(rec.fiber, 1)} g).`)}
+    </ol>
+    <p class="tiny faint">These are estimates for guidance, not medical advice. Change your goal, target date or activity level in Settings → Profile.</p>
+  </div>`);
+  return sheet;
 }

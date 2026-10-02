@@ -1,6 +1,8 @@
 // Global app state + a tiny event bus. Views read `state` and re-render on events.
 import { today } from './lib/utils.js';
 
+export const APP_VERSION = '2.2.0';
+
 export const state = {
   session: null,
   user: null,
@@ -11,8 +13,10 @@ export const state = {
   day: null,            // { items, activities, water }
   weights: [],          // [{ recorded_on, weight_kg, source, body_fat_pct, … }] ascending
   loggedDates: [],      // ['YYYY-MM-DD', ...]
+  favorites: [],        // the user's saved foods
   online: navigator.onLine,
   pending: 0,           // queued offline writes
+  failed: 0,            // writes the server rejected, kept for retry
   syncing: false,
   passwordRecovery: false,
 };
@@ -54,5 +58,7 @@ export function effectiveProfile() {
 }
 
 export const weightUnit = () => state.prefs?.weight_unit || 'kg';
+/** Daily water goal in ml. */
+export const waterGoalMl = () => Number(state.prefs?.water_goal_ml) || (Number(state.prefs?.water_goal) || 8) * 250;
 export const aiProvider = () => (state.prefs?.ai_provider === 'claude' ? 'claude' : 'gemini');
 export const heightUnit = () => state.prefs?.height_unit || 'cm';

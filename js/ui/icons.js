@@ -1,6 +1,6 @@
 // Inline SVG icons (stroke = currentColor). These strings are static markup written here,
 // never user data, so they are marked trusted for the html`` template.
-import { trusted } from '../lib/utils.js';
+import { html, trusted } from '../lib/utils.js';
 
 const P = {
   x: '<path d="M18 6 6 18M6 6l12 12"/>',
@@ -27,6 +27,19 @@ const P = {
   drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
   download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
   upload: '<path d="M12 20V9M7 14l5-5 5 5M5 4h14"/>',
+  utensils: '<path d="M6 3v8a2 2 0 0 0 4 0V3M8 11v10M17 3c-2 0-3 2-3 5s1 4 3 4v9"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  alert: '<path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17.5v.5"/>',
+  star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9L12 3z"/>',
+  starFill: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9L12 3z" fill="currentColor"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  repeat: '<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  bluetooth: '<path d="m7 7 10 10-5 4V3l5 4L7 17"/>',
+  activity: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  check: '<path d="m5 12 5 5L20 7"/>',
+  chevronDown: '<path d="m6 9 6 6 6-6"/>',
   heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
   lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
@@ -35,6 +48,14 @@ const P = {
   cloudOff: '<path d="M3 3l18 18M8 8a5 5 0 0 0-2 9.7h11.5M19.4 16.5A4 4 0 0 0 17 9h-1.3A6 6 0 0 0 10 5.2"/>',
   google: '<path d="M21.6 12.2c0-.7-.1-1.3-.2-1.9H12v3.7h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" fill="#4285F4" stroke="none"/><path d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" fill="#34A853" stroke="none"/><path d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1A10 10 0 0 0 2 12c0 1.6.4 3.1 1.1 4.6z" fill="#FBBC05" stroke="none"/><path d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.3 3-4.1 5.6-4.1z" fill="#EA4335" stroke="none"/>',
 };
+
+/** Round avatar with the person's initials (from a name, or an email address). */
+export function avatar(nameOrEmail = '') {
+  const base = String(nameOrEmail).split('@')[0].replace(/[._-]+/g, ' ').trim();
+  const parts = base.split(/\s+/).filter(Boolean);
+  const initials = ((parts[0]?.[0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || '🙂';
+  return html`<span class="avatar" aria-hidden="true">${initials}</span>`;
+}
 
 /** Inline SVG icon. Without `size` it is 20px; CSS rules (e.g. .qa svg) may still resize it. */
 export function icon(name, size = 20) {

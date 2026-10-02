@@ -92,7 +92,8 @@ export function renderSignup(root, { legacyAnonymous = false } = {}) {
         <div class="field"><label for="su-name">Name <span class="faint">(optional)</span></label><input class="input" id="su-name" name="name" autocomplete="given-name" maxlength="80"></div>
         <div class="field"><label for="su-email">Email</label><input class="input" id="su-email" name="email" type="email" autocomplete="email" inputmode="email" required></div>
         ${passwordField('su-password', 'Password', 'new-password')}
-        <span class="hint" style="margin-top:-6px">At least 8 characters.</span>
+        <div class="field"><label for="su-confirm">Confirm password</label><input class="input" id="su-confirm" name="confirm" type="password" autocomplete="new-password" required></div>
+        <ul class="pw-rules" id="su-rules" aria-live="polite"><li data-rule="len">At least 8 characters</li><li data-rule="match">Both passwords match</li></ul>
         <button class="btn btn-primary btn-block btn-lg" type="submit">Create account</button>
       </form>
       ${legacyAnonymous ? '' : googleButton()}
@@ -102,12 +103,22 @@ export function renderSignup(root, { legacyAnonymous = false } = {}) {
   trackEmail(root);
   bindPasswordToggles(root);
   bindGoogle(root);
+  const rules = () => {
+    const { password = '', confirm = '' } = formData(form);
+    const ok = { len: password.length >= 8, match: password.length > 0 && password === confirm };
+    for (const li of form.querySelectorAll('[data-rule]')) li.classList.toggle('met', ok[li.dataset.rule]);
+    return ok;
+  };
+  form.addEventListener('input', rules);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const btn = form.querySelector('[type=submit]');
     withBusy(btn, 'Creating account…', async () => {
       formError(form, '');
-      const { name, email, password } = formData(form);
+      const { name, email, password, confirm } = formData(form);
+      const ok = rules();
+      if (!ok.len) { formError(form, 'Use at least 8 characters for your password.'); return; }
+      if (password !== confirm) { formError(form, "The passwords don't match."); return; }
       try {
         const res = await auth.signUp({ email, password, name });
         pendingEmail = email;

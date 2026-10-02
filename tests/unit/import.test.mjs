@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   detectFormat, scaleProfiles, scaleWeighIns, scaleProfilePatch,
-  nutrilogSummary, nutrilogProfilePatch, nutrilogGoals, nutrilogWeighIns, nutrilogItems, nutrilogActivities, nutrilogWater,
+  nutrilogSummary, nutrilogProfilePatch, nutrilogGoals, nutrilogWeighIns, nutrilogItems, nutrilogActivities, nutrilogWater, nutrilogFavorites,
 } from '../../js/lib/import-formats.js';
 import { isoDate, uuidFrom } from '../../js/lib/utils.js';
 
@@ -65,11 +65,12 @@ const EXPORT = {
     { id: 'i4', meal_date: '2026-09-01', meal_type: 'lunch', food_name: 'Bad', calories: -5 },
   ],
   activities: [{ id: 'a1', activity_date: '2026-09-01', name: 'Treadmill', duration_min: 30, met: 3.86, calories_burned: 131.43, source: 'preset' }],
-  water_logs: [{ log_date: '2026-09-01', glasses: 6 }, { log_date: '2026-09-02', glasses: 99 }],
+  water_logs: [{ log_date: '2026-09-01', glasses: 6 }, { log_date: '2026-09-02', glasses: 99 }, { log_date: '2026-09-03', ml: 1750, glasses: 7 }],
+  favorite_foods: [{ food_name: 'Poha', quantity: 1, unit: 'plate', grams: 200, calories: 360, protein: 7 }, { food_name: 'Poha', quantity: 2, unit: 'plate', calories: 720 }, { food_name: '', calories: 5 }],
 };
 
 test('NutriLog export: summary, profile, goals and weigh-ins are validated', () => {
-  assert.deepEqual(nutrilogSummary(EXPORT), { name: 'Friend', email: 'friend@example.com', exportedAt: '2026-09-30T10:00:00Z', weights: 3, items: 4, activities: 1, water: 2, hasProfile: true, hasGoals: true });
+  assert.deepEqual(nutrilogSummary(EXPORT), { name: 'Friend', email: 'friend@example.com', exportedAt: '2026-09-30T10:00:00Z', weights: 3, items: 4, activities: 1, water: 3, favorites: 3, hasProfile: true, hasGoals: true });
   const p = nutrilogProfilePatch(EXPORT);
   assert.equal(p.macro_style, 'balanced', 'unknown values fall back to defaults');
   assert.deepEqual(p.allergies, ['Peanuts']);
@@ -81,7 +82,10 @@ test('NutriLog export: summary, profile, goals and weigh-ins are validated', () 
   assert.equal(w[0].composition.body_fat_pct, 33.2);
   assert.equal(w[0].heartRate, 68);
   assert.equal(w[1].composition, null, 'older exports have no snapshot');
-  assert.deepEqual(nutrilogWater(EXPORT), [{ log_date: '2026-09-01', glasses: 6 }]);
+  assert.deepEqual(nutrilogWater(EXPORT), [{ log_date: '2026-09-01', ml: 1500 }, { log_date: '2026-09-03', ml: 1750 }], 'older exports in glasses become ml');
+  const favs = nutrilogFavorites(EXPORT);
+  assert.equal(favs.length, 1, 'one per name + unit, invalid ones skipped');
+  assert.equal(favs[0].calories, 720);
 });
 
 test('NutriLog export: rows get deterministic ids per importing user', async () => {

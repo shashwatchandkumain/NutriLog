@@ -92,6 +92,7 @@ export function nutrilogSummary(data) {
     items: (data.meal_items || []).length,
     activities: (data.activities || []).length,
     water: (data.water_logs || []).length,
+    favorites: (data.favorite_foods || []).length,
     hasProfile: !!data.profile,
     hasGoals: !!data.daily_goals?.calories,
   };
@@ -203,9 +204,26 @@ export async function nutrilogActivities(data, userId) {
   return out;
 }
 
-/** Water logs from a NutriLog export. */
+/** Water logs from a NutriLog export, in ml (older exports stored 250 ml glasses). */
 export function nutrilogWater(data) {
-  return (data.water_logs || [])
-    .filter((w) => isDate(w?.log_date) && num(w.glasses, 0, 40) != null)
-    .map((w) => ({ log_date: w.log_date, glasses: Math.round(Number(w.glasses)) }));
+  return (data.water_logs || []).map((w) => {
+    if (!isDate(w?.log_date)) return null;
+    const ml = num(w.ml, 0, 20000) ?? (num(w.glasses, 0, 40) != null ? Number(w.glasses) * 250 : null);
+    return ml == null ? null : { log_date: w.log_date, ml: Math.round(ml) };
+  }).filter(Boolean);
+}
+
+/** Favorite foods from a NutriLog export (name + portion + nutrition for that portion). */
+export function nutrilogFavorites(data) {
+  const out = new Map();
+  for (const f of data.favorite_foods || []) {
+    const name = text(f?.food_name, 200);
+    const calories = num(f?.calories, 0, 20000);
+    if (!name || calories == null) continue;
+    const unit = text(f.unit, 60) || 'g';
+    const macro = (k) => r2(num(f[k], 0, 2000) ?? 0);
+    out.set(`${name.toLowerCase()}|${unit}`, { food_name: name, quantity: r2(num(f.quantity, 0.01, 10000) ?? 1), unit, grams: r2(num(f.grams, 0, 20000)),
+      calories: r2(calories), protein: macro('protein'), carbs: macro('carbs'), fat: macro('fat'), fiber: macro('fiber') });
+  }
+  return [...out.values()];
 }

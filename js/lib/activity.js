@@ -5,16 +5,17 @@
 // The weight is the user's weight ON THE ACTIVITY'S DATE (see weightOn), exactly as the
 // database computes it, and nothing is rounded except for display.
 
+// `intensities` (light / moderate / vigorous) are Compendium values for the same activity at
+// different paces; "moderate" is always the preset's default MET.
 export const ACTIVITY_PRESETS = [
   { id: 'treadmill', name: 'Treadmill', emoji: '🏃‍♂️', treadmill: true },
-  { id: 'walking', name: 'Walking', emoji: '🚶', met: 3.5 },
-  { id: 'brisk-walk', name: 'Brisk walking', emoji: '🚶‍♀️', met: 4.3 },
-  { id: 'running', name: 'Running', emoji: '🏃', met: 9.8 },
-  { id: 'cycling', name: 'Cycling', emoji: '🚴', met: 7.5 },
-  { id: 'gym', name: 'Weight training', emoji: '🏋️', met: 5.0 },
+  { id: 'walking', name: 'Walking', emoji: '🚶', met: 3.5, intensities: { light: 2.8, moderate: 3.5, vigorous: 4.3 } }, // 2.0 / 3.0 / 3.5 mph
+  { id: 'running', name: 'Running', emoji: '🏃', met: 9.8, intensities: { light: 8.3, moderate: 9.8, vigorous: 11.0 } }, // 5 / 6 / 7 mph
+  { id: 'cycling', name: 'Cycling', emoji: '🚴', met: 7.5, intensities: { light: 4.0, moderate: 7.5, vigorous: 10.0 } }, // leisure / general / 14–16 mph
+  { id: 'gym', name: 'Weight training', emoji: '🏋️', met: 5.0, intensities: { light: 3.5, moderate: 5.0, vigorous: 6.0 } },
   { id: 'hiit', name: 'HIIT', emoji: '⚡', met: 8.0 },
-  { id: 'yoga', name: 'Yoga', emoji: '🧘', met: 2.5 },
-  { id: 'swimming', name: 'Swimming', emoji: '🏊', met: 7.0 },
+  { id: 'yoga', name: 'Yoga', emoji: '🧘', met: 2.5, intensities: { moderate: 2.5, vigorous: 4.0 } }, // hatha / power
+  { id: 'swimming', name: 'Swimming', emoji: '🏊', met: 7.0, intensities: { light: 5.8, moderate: 7.0, vigorous: 9.8 } },
   { id: 'badminton', name: 'Badminton', emoji: '🏸', met: 5.5 },
   { id: 'cricket', name: 'Cricket', emoji: '🏏', met: 4.8 },
   { id: 'football', name: 'Football', emoji: '⚽', met: 7.0 },
@@ -22,6 +23,13 @@ export const ACTIVITY_PRESETS = [
   { id: 'stairs', name: 'Stair climbing', emoji: '🪜', met: 8.0 },
   { id: 'housework', name: 'Housework', emoji: '🧹', met: 3.3 },
 ];
+
+export const INTENSITY_LABEL = { light: 'Light', moderate: 'Moderate', vigorous: 'Vigorous' };
+
+/** MET for a preset at an intensity (moderate = the preset's default). */
+export function presetMet(preset, intensity = 'moderate') {
+  return preset?.intensities?.[intensity] ?? preset?.met ?? null;
+}
 
 /** Net kcal burned above resting for `minutes` of an activity with `met`, for `weightKg`. */
 export function netActivityCalories(met, weightKg, minutes) {

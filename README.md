@@ -1,6 +1,6 @@
 # 🥗 NutriLog
 
-A personal nutrition and calorie tracker. Describe a meal or snap a photo and AI (Gemini or Claude, your choice) works out the nutrition; scan barcodes; measure your weight, heart rate and body composition with a Bluetooth smart scale; set a target weight and date and get calories planned to reach it. Track calories, macros, water, weight and workouts, and see your progress. It works on phones, tablets and desktops, installs as an app (PWA), and syncs across every device you log in to.
+A personal nutrition and calorie tracker. Describe a meal or snap a photo and AI (Gemini or Claude, your choice) works out the nutrition; re-log your own recent and favorite foods in one tap; scan barcodes; measure your weight, heart rate and body composition with a Bluetooth smart scale; set a target weight and date and get calories planned to reach it. Track calories, macros, water, weight and workouts, and see your progress. It works on phones, tablets and desktops, installs as an app (PWA), and syncs across every device you log in to.
 
 - **Frontend:** static HTML/CSS/JS (ES modules, no build step), hosted on GitHub Pages.
 - **Backend:** Supabase: Auth, Postgres with Row Level Security, Realtime, and Edge Functions.
@@ -13,6 +13,20 @@ Smart scale ──Bluetooth──► Browser (GitHub Pages)  ──  Supabase Au
                                    └──►  Supabase Edge Functions  ──►  Gemini / Claude APIs
                                          (API keys live here, as secrets)
 ```
+
+## Using NutriLog
+
+| Screen | What's there |
+|---|---|
+| **Dashboard** | Calories consumed / remaining / target, macros with % of target, quick actions (log food, AI food scan, barcode, measure weight, add water, log activity), today's meals, water, weight, activity, daily score, last 7 days |
+| **Food** | Every way to log food, the day's meals (edit, duplicate, delete, copy to today, repeat yesterday's meal), nutrition vs. targets, and **Quick add** from your own foods |
+| **Progress** | Goal progress, weight trend with a 7-day average, calories, protein, body composition, weekly averages, logging streak — 7D / 30D / 90D / 1Y / All |
+| **Measure** | Cult Smart Scale weigh-ins, manual entry, the latest result with its estimates explained, weigh-in history |
+| **More** | Activity & calories, the Nutri AI coach, calendar, "How your target is calculated", settings, Bluetooth help, log out |
+
+On phones these are the bottom tabs; on desktop they're in the sidebar. **Log food** is always one tap away (the + button on phones, the sidebar button on desktop).
+
+**Logging food:** AI is the main way — describe the meal or take a photo, then review every item (labelled as an AI estimate) before it's saved. **My foods** searches the foods *you* have logged or starred, so you can add them again in one tap with the same or a different amount. There is no generic food database. Barcodes (Open Food Facts) and manual entry are there for packaged foods and exact values.
 
 ---
 
@@ -65,6 +79,7 @@ The schema lives in `supabase/migrations/`:
 | `001_initial_schema.sql` | Creates `profiles`, `user_preferences`, `daily_goals`, `meals`, `meal_items`, `weight_history`, `activities`, `water_logs`, and server-only tables for recovery codes and AI rate limiting. Enables **Row Level Security on every table** with `auth.uid()` policies. Adds the RPCs the app uses and enables Realtime. Renames tables from the previous app version to `legacy_*` without deleting anything. |
 | `002_legacy_import.sql` | Functions that move data from the previous version into the new tables. |
 | `003_scale_goals_ai.sql` | Weights to 0.01 kg, plus each weigh-in's source, heart rate and body-composition snapshot; the profile's **target date**; activity **MET** values with calories computed in the database from your weight on that day (and recomputed whenever weigh-ins change); the **AI model** preference. |
+| `004_water_ml_favorites.sql` | Water in **millilitres** (and the water goal in ml), kept in sync with the old glasses columns by triggers so an older app version still works; the **favorite foods** table (private to each user by RLS); logged foods can be renamed. |
 
 Run them with either method.
 
@@ -84,7 +99,7 @@ npx supabase db push
 
 After any method, **Table Editor** should show a shield (RLS enabled) on every table.
 
-**Updating an existing deployment:** after pulling new code, run `npx supabase db push` (new migrations) and redeploy the Edge Functions (step 4). Both are safe to repeat.
+**Updating an existing deployment:** after pulling new code, run `npx supabase db push` (new migrations) and redeploy the Edge Functions (step 4) *before* the new website goes live — the website expects the latest schema. Both are safe to repeat.
 
 ## 3. Supabase Auth setup
 
@@ -144,7 +159,7 @@ Optional secrets, with defaults shown in `.env.example`:
 | `GEMINI_MODEL` / `GEMINI_FALLBACK_MODEL` | `gemini-3.5-flash` / `gemini-3.5-flash-lite` | Gemini models; the lighter one answers when the main one is busy |
 | `CLAUDE_MODEL` | `claude-opus-5-5` | Claude model |
 | `AI_HOURLY_LIMIT` / `AI_DAILY_LIMIT` | `30` / `150` | AI requests per user |
-| `ALLOWED_ORIGINS` | any | Set to `https://YOUR_USERNAME.github.io` to restrict CORS |
+| `ALLOWED_ORIGINS` | `https://shashwatchandkumain.github.io` | Sites allowed to call the functions from a browser (comma-separated). Set it to your own GitHub Pages origin if you fork NutriLog; add `http://localhost:8080` for local development. Never `*`. |
 
 You only need one of the two AI keys. With just one, every feature uses it. If the chosen model fails, the other one answers. With neither, AI buttons show "AI features are not available yet" and everything else works.
 
@@ -155,12 +170,16 @@ All paths are relative and routing uses the URL hash (`#/dashboard`), so the sit
 **Option A: GitHub Actions (recommended — tests run first)**
 1. **Settings → Pages → Source: GitHub Actions.**
 2. Either commit `js/config.js` with your public URL and anon key, or add them as repository **Variables** (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, optional `ENABLE_GOOGLE_AUTH=true`) under **Settings → Secrets and variables → Actions**. These are public values, so *Variables* is fine.
-3. Push to `main`. `.github/workflows/deploy.yml` runs lint and tests, writes `js/config.js` from the variables if they are set, stamps the service-worker version with the commit, and deploys.
+3. Push to `main`. `.github/workflows/deploy.yml` runs lint, the tests and the build check, writes `js/config.js` from the variables if they are set, builds `_site/` with the service-worker version set to the commit, and deploys it.
 
 **Option B: deploy from the branch**
 1. Put your public URL and anon key in `js/config.js` and commit.
 2. **Settings → Pages → Source: Deploy from a branch** → `main` / root.
-3. When you change the app, bump `VERSION` in `sw.js` so installed copies update.
+3. When you change the app, bump `VERSION` in `sw.js` so installed copies update, and run `npm run build -- --check` before pushing.
+
+**Updates:** when a new version is deployed, open copies of the app show "A new version of NutriLog is available" with an **Update** button, which reloads into the new version. Nothing waiting to sync is lost: changes are saved on the device until the server confirms them.
+
+**Build check:** `npm run build` assembles `_site/` and fails if a file in the service worker's app shell is missing (or a JS file isn't in it), an import or asset path is broken or root-absolute (which breaks under `/NutriLog/`), a module is loaded from a host the Content-Security-Policy doesn't allow, or anything that looks like a secret key would be published.
 
 ## 7. Local development
 
@@ -173,8 +192,9 @@ Add `http://localhost:8080/` to Supabase's redirect URLs to test email links loc
 
 | Command | What it does |
 |---|---|
-| `npm test` | Unit tests (nutrition and goal-date math, smart-scale protocol, body composition, activity calories, import formats, stats, PWA, secrets scan) and database tests: runs the real migrations on an in-process Postgres (PGlite) and checks RLS isolation and the activity-calorie triggers |
-| `npm run test:e2e` | Browser tests with Playwright against a mocked Supabase and a simulated Bluetooth scale: signup → onboarding with a target date → AI logging → smart-scale weigh-in → targets update → treadmill → import → offline sync → second device → recovery → account deletion. First run `npx playwright install chromium` |
+| `npm test` | Unit tests (nutrition and goal-date math, smart-scale protocol, body composition, activity calories, your-foods search, import formats, stats, PWA, build check, secrets scan) and database tests: runs the real migrations on an in-process Postgres (PGlite) and checks RLS isolation, the activity-calorie triggers and the water ml/glasses sync |
+| `npm run test:e2e` | Browser tests with Playwright against a mocked Supabase and a simulated Bluetooth scale: signup → onboarding with a target date → AI logging → edit → water → smart-scale weigh-in (and a failed connection) → targets update → progress → activity → favorites and one-tap re-log → duplicate / undo / repeat yesterday → offline sync → a rejected change kept and retried → second device → no horizontal scrolling at 10 widths from 320 to 1440 px → export → delete my data → recovery → account deletion. First run `npx playwright install chromium`; set `E2E_SCREENSHOTS=<folder>` to save screenshots |
+| `npm run build` | Checks the site and assembles `_site/` for GitHub Pages (`-- --check` to only check) |
 | `npm run test:functions` / `npm run check:functions` | Deno tests and type-check for the Edge Functions |
 | `npm run lint` | ESLint |
 | `npm run setup:supabase` | Applies migrations, uploads secrets and deploys Edge Functions to your project |
@@ -187,7 +207,7 @@ Add `http://localhost:8080/` to Supabase's redirect URLs to test email links loc
 NutriLog reads the **Cult Smart Scale** (CS-BF01) over Bluetooth directly from the browser.
 
 - **Where it works:** Chrome or Edge on Android, Windows, macOS, ChromeOS and Linux (with Bluetooth on), over HTTPS. Safari on iPhone/iPad doesn't support Web Bluetooth — use the free **Bluefy** browser there, or enter your weight manually.
-- **How:** tap **Measure** (top bar, dashboard or Progress), step on the scale to wake it, pick **Cult Smart Scale** in the list and stand still. The weight locks after three identical readings, then the scale reads your heart rate. Tap **Log this** to save — one weigh-in per day; logging again the same day replaces it.
+- **How:** open **Measure** (bottom tab or sidebar) or tap **Measure weight** on the dashboard, step on the scale to wake it, tap **Connect**, pick **Cult Smart Scale** in the list and stand still. The app shows each step (searching, scale found, connecting, step on the scale, hold still, reading measurement, complete). The weight locks after three identical readings, then the scale reads your heart rate. Tap **Log this** to save — one weigh-in per day; logging again the same day replaces it. If it can't connect, you get a plain-English reason with **Try again**, **Bluetooth help** and **Enter manually**.
 - **What you get:** weight to 0.01 kg and heart rate from the scale; BMI, body fat %, fat mass, lean mass, body water and BMR estimated from your weight, height, age and sex (Deurenberg, Watson and Mifflin–St Jeor equations). This scale doesn't expose a usable impedance over Bluetooth, so body composition is a trend estimate, not a lab measurement.
 - **What happens next:** automatic (non-custom) calorie and macro targets update to the new weight, and exercise calories for that day are recalculated for it.
 
@@ -225,17 +245,25 @@ Imports are idempotent, so running them twice never duplicates rows. The old app
 - **XSS:** all dynamic HTML goes through an escaping `html` template tag; there are no inline event handlers, and a Content-Security-Policy restricts scripts to this site and jsDelivr. The barcode library is loaded with Subresource Integrity.
 - **Abuse limits:** per-user AI quotas (atomic, in Postgres), input size limits, and an image size cap.
 - **Bluetooth:** the browser asks before connecting to any device; readings go only from the scale to your account.
+- **CORS:** the Edge Functions only answer browsers on NutriLog's own site (`ALLOWED_ORIGINS`), never `*`.
 - **Service worker:** caches only the app shell and public libraries. It never caches Supabase, Edge Function or Open Food Facts responses.
 - If you use a **custom Supabase domain**, add it to `connect-src` in the CSP `<meta>` tag in `index.html`.
 
 ## Nutrition data and calculations
 
-- **Food logging is AI-first.** Describe the meal ("2 roti, 1 katori dal tadka, chai with sugar") or snap a photo; the review screen lets you correct every portion before saving. Packaged foods can be scanned (Open Food Facts), and anything can be entered manually. Nutrition for any amount is `per-100 g value × grams ÷ 100`, stored unrounded and rounded only for display.
+- **Food logging is AI-first.** Describe the meal ("2 roti, 1 katori dal tadka, chai with sugar") or snap a photo; the review screen lets you correct every name, portion and value before saving. Foods you've logged or starred can be searched and re-logged in one tap (nutrition scales linearly with the amount). Packaged foods can be scanned (Open Food Facts), and anything can be entered manually. Nutrition for any amount is `per-100 g value × grams ÷ 100`, stored unrounded and rounded only for display.
+- **Water** is logged in millilitres (+250 / +500 / +750 ml / +1 L or any amount) against a daily goal in ml (Settings → Nutrition & goals).
 - **Targets:** BMR uses Mifflin–St Jeor. TDEE is BMR × an activity multiplier (1.2–1.9). With a **target weight and date**, the daily deficit or surplus is `(target − current) kg × 7,700 kcal ÷ days left`, so you reach the target on that day — capped at a safe pace (losing: 1% of body weight a week, max 1 kg; gaining: 0.5 kg; muscle: 0.25 kg) and never below 1,200 (women) / 1,500 (men) kcal. Without a date, losing uses −500 kcal (never more than 20% of TDEE), gaining +10%, muscle +5%. Protein is 1.4–2.0 g/kg by goal, using an adjusted weight above BMI 25; fat is a share of calories, carbs fill the rest, and fiber is 14 g per 1,000 kcal. Targets are exact (whole kcal, 0.1 g) — never rounded to "nice" numbers — and the app shows every step.
 - **Automatic vs. custom:** automatic targets follow your latest weigh-in, profile and goal date. Custom targets are never overwritten.
 - **Exercise** uses net MET calories, `(MET − 1) × your weight on that day × hours`, to 0.01 kcal. Treadmill sessions use the ACSM walking/running equations for your speed and incline. Calories are computed in the database from your weigh-ins, so a new weigh-in updates them on every device. Exercise is either already covered by your activity level (default) or added to your daily budget — never counted twice.
 
 Nutrition values are estimates for guidance, not medical advice.
+
+## Your data
+
+**Settings → Your data**: export everything as JSON (or the food log as CSV), import a profile, or **Delete my data** — erases all meals, weigh-ins, activities, water and favorites on every device while keeping the account, profile and targets. **Delete my account** (Settings → Account) removes everything.
+
+If the server ever rejects a change (for example invalid data), it isn't dropped: the sync status shows "1 not saved", and tapping it lets you try again or discard it.
 
 ## Project structure
 
@@ -250,11 +278,12 @@ js/lib/                 Pure logic: nutrition + goal plans, body composition, sc
                         activity, import formats, stats, utils
 js/services/            Supabase client, auth, data (offline queue), Bluetooth scale, barcode, AI, reminders
 js/ui/                  DOM helpers, charts (SVG), icons, theme
-js/views/               Auth, onboarding, dashboard, food logger, weigh-in (scale), calories,
-                        progress, settings, import, chat
+js/views/               Auth, onboarding, dashboard, food (page, logger, meals), measure + weigh-in
+                        (scale), progress, activity, more, settings, targets explainer, import, chat;
+                        lazy.js loads the less-used screens on demand
 sw.js, manifest.json    PWA
 supabase/migrations/    Database schema + RLS
 supabase/functions/     Edge Functions (Deno) + shared helpers and the AI reference table
-scripts/                Backend setup and icon build scripts
+scripts/                Build check (build.mjs), backend setup and icon build scripts
 tests/                  unit/, db/ (PGlite), e2e/ (Playwright + mock Supabase + simulated scale)
 ```

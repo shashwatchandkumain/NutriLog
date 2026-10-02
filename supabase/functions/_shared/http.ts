@@ -1,13 +1,16 @@
 // HTTP helpers shared by all NutriLog Edge Functions: CORS, JSON responses, auth.
 import { createClient, type SupabaseClient, type User } from 'npm:@supabase/supabase-js@2.117.2';
 
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
-  .split(',').map((s) => s.trim()).filter(Boolean);
+// Browsers may call these functions only from NutriLog's own site. Set ALLOWED_ORIGINS
+// (comma-separated) to change it, e.g. to add http://localhost:8080 while developing. Never "*".
+const DEFAULT_ORIGINS = ['https://shashwatchandkumain.github.io'];
+const configured = (Deno.env.get('ALLOWED_ORIGINS') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+export const ALLOWED_ORIGINS = configured.length ? configured : DEFAULT_ORIGINS;
 
-/** CORS headers. Set ALLOWED_ORIGINS (comma-separated) to lock this down to your site. */
+/** CORS headers: the caller's origin if it is allowed, otherwise the site's own (so the browser blocks it). */
 export function corsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get('Origin') ?? '';
-  const allow = ALLOWED_ORIGINS.length === 0 ? '*' : ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allow = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',

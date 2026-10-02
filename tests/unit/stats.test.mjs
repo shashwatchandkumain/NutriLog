@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeStreak, totalsByDate, averageOfLoggedDays, weightChange, goalProgress, dailyScore } from '../../js/lib/stats.js';
+import { computeStreak, totalsByDate, averageOfLoggedDays, weightChange, goalProgress, dailyScore, movingAverage, weightTrend } from '../../js/lib/stats.js';
 import { sumNutrition } from '../../js/lib/nutrition.js';
-import { netActivityCalories, treadmillMet, weightOn } from '../../js/lib/activity.js';
+import { netActivityCalories, treadmillMet, weightOn, presetMet, ACTIVITY_PRESETS } from '../../js/lib/activity.js';
 
 test('streak counts consecutive days and survives an unlogged today', () => {
   assert.deepEqual(computeStreak(['2026-09-27', '2026-09-28', '2026-09-29'], '2026-09-29'), { current: 3, best: 3, daysLogged: 3 });
@@ -73,4 +73,24 @@ test('weight on a date follows the database rule', () => {
   assert.equal(weightOn('2026-09-10', w), 72.5, 'before the first weigh-in → the earliest one');
   assert.equal(weightOn('2026-09-10', [], 80), 80);
   assert.equal(weightOn('2026-09-10', [], null), null);
+});
+
+test('weight trend needs 3+ weigh-ins over a week; moving average smooths daily noise', () => {
+  const w = [
+    { recorded_on: '2026-09-01', weight_kg: 80 }, { recorded_on: '2026-09-08', weight_kg: 79.5 },
+    { recorded_on: '2026-09-15', weight_kg: 79 }, { recorded_on: '2026-09-22', weight_kg: 78.5 },
+  ];
+  assert.ok(Math.abs(weightTrend(w, '2026-09-01', '2026-09-30') - -0.5) < 1e-9, '−0.5 kg a week');
+  assert.equal(weightTrend(w.slice(0, 2), '2026-09-01', '2026-09-30'), null, 'two points are not a trend');
+  assert.equal(weightTrend([{ recorded_on: '2026-09-01', weight_kg: 80 }, { recorded_on: '2026-09-02', weight_kg: 81 }, { recorded_on: '2026-09-03', weight_kg: 79 }], '2026-09-01', '2026-09-30'), null, 'under a week');
+  const daily = [{ recorded_on: '2026-09-01', weight_kg: 80 }, { recorded_on: '2026-09-02', weight_kg: 81 }, { recorded_on: '2026-09-09', weight_kg: 79 }];
+  assert.deepEqual(movingAverage(daily).map((x) => x.value), [80, 80.5, 79]);
+});
+
+test('activity intensities use Compendium METs; moderate is the preset default', () => {
+  const walk = ACTIVITY_PRESETS.find((a) => a.id === 'walking');
+  assert.deepEqual([presetMet(walk, 'light'), presetMet(walk), presetMet(walk, 'vigorous')], [2.8, 3.5, 4.3]);
+  const hiit = ACTIVITY_PRESETS.find((a) => a.id === 'hiit');
+  assert.equal(presetMet(hiit, 'vigorous'), 8, 'presets without intensities keep their MET');
+  for (const p of ACTIVITY_PRESETS) if (p.intensities?.moderate) assert.equal(p.intensities.moderate, p.met, p.id);
 });

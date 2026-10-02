@@ -1,20 +1,21 @@
-// "Add food": describe it to AI (default), snap or pick a photo, scan a barcode, or enter it
-// manually. Every path ends in a screen where the user can check and adjust amounts before
-// anything is saved.
-import { html, setHTML, fmtInt, fmt1, mealTypeForTime, MEAL_TYPES, today, relativeDayLabel, UserError } from '../lib/utils.js';
+// "Log food": analyze it with AI (describe, photo or camera — the default), re-log one of the
+// user's own foods (search, favorites, recent), scan a barcode, or enter it manually. AI and
+// barcode results always end in a review screen where every value can be checked first.
+import { html, setHTML, fmtInt, fmt1, mealTypeForTime, MEAL_TYPES, today, relativeDayLabel, debounce, UserError } from '../lib/utils.js';
 import { checkConsistency, scaleNutrition, sumNutrition, isValidNutrition } from '../lib/nutrition.js';
-import { state, aiProvider } from '../store.js';
+import { searchFoods, scaleFood, withFavorites } from '../lib/food-library.js';
+import { state, on, aiProvider } from '../store.js';
 import { openSheet, toast, showError, withBusy, $, $$ } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { unitsFor, defaultQuantity, itemFromFood, lookupBarcode, prepareImage } from '../services/foods.js';
 import { analyzeFoodText, analyzeFoodImage, PROVIDER_LABEL } from '../services/ai.js';
-import { logItems, deleteItem } from '../services/data.js';
+import { logItems, deleteItem, fetchRecentFoods, cachedRecentFoods, addFavorite, removeFavorite, isFavorite } from '../services/data.js';
 
-function defaultMealType() {
+export function defaultMealType() {
   return state.date === today() ? mealTypeForTime() : 'lunch';
 }
 
-const mealChips = (selected) => html`
+export const mealChips = (selected) => html`
   <div class="chips" role="group" aria-label="Meal">
     ${MEAL_TYPES.map((m) => html`<button type="button" class="chip" data-meal="${m.id}" aria-pressed="${m.id === selected}">${m.icon} ${m.label}</button>`)}
   </div>`;
@@ -38,7 +39,7 @@ const nutritionGrid = (n) => html`
   </div>`;
 
 /** Saves items and offers Undo. */
-function commit(items, mealType) {
+export function commit(items, mealType) {
   const date = state.date;
   const saved = logItems(date, mealType, items);
   const label = MEAL_TYPES.find((m) => m.id === mealType)?.label || 'your log';
@@ -52,12 +53,15 @@ function commit(items, mealType) {
 // ── Main sheet ────────────────────────────────────────────────────────────
 export function openFoodLogger({ tab = 'ai', mealType, query = '' } = {}) {
   let meal = mealType || defaultMealType();
-  const sheet = openSheet({ title: 'Add food', wide: true });
+  let disposeFoods = null;
+  const sheet = openSheet({ title: 'Log food', wide: true, onClose: () => disposeFoods?.() });
 
   const renderTabs = (active) => {
+    disposeFoods?.(); disposeFoods = null;
     setHTML(sheet.body, html`
       <div class="tabs" role="tablist">
         <button role="tab" type="button" data-tab="ai" aria-selected="${active === 'ai'}">${icon('sparkles', 16)} Analyze with AI</button>
+        <button role="tab" type="button" data-tab="mine" aria-selected="${active === 'mine'}">${icon('star', 16)} My foods</button>
         <button role="tab" type="button" data-tab="manual" aria-selected="${active === 'manual'}">Manual</button>
       </div>
       <div class="stack" id="fl-panel"></div>`);
@@ -66,7 +70,9 @@ export function openFoodLogger({ tab = 'ai', mealType, query = '' } = {}) {
       if (t) renderTabs(t.dataset.tab);
     });
     const panel = $('#fl-panel', sheet.body);
-    if (active === 'manual') manualPanel(panel); else aiPanel(panel);
+    if (active === 'manual') manualPanel(panel);
+    else if (active === 'mine') disposeFoods = myFoodsPanel(sheet, panel, { query, getMeal: () => meal, setMeal: (m) => { meal = m; }, onBack: () => renderTabs('mine') });
+    else aiPanel(panel);
   };
 
   // AI: describe, photo, camera or barcode
@@ -75,7 +81,7 @@ export function openFoodLogger({ tab = 'ai', mealType, query = '' } = {}) {
       <div class="field">
         <label for="fl-ai">What did you eat?</label>
         <textarea class="textarea" id="fl-ai" maxlength="1000" placeholder="e.g. 2 rotis, 1 katori dal tadka, a bowl of curd and a cup of chai with sugar">${query}</textarea>
-        <span class="hint">Include amounts if you know them (2 roti, 1 katori, 200 g). You can adjust every item before saving.</span>
+        <span class="hint">Include amounts if you know them (2 roti, 1 katori, 200 g). You'll review every item before it's saved.</span>
       </div>
       <div class="row between wrap">
         <div class="row wrap">
@@ -88,7 +94,7 @@ export function openFoodLogger({ tab = 'ai', mealType, query = '' } = {}) {
       <p class="tiny faint">Estimated by ${PROVIDER_LABEL[aiProvider()]} · <a href="#/settings" data-close-sheet>change AI model</a></p>`);
     const ta = $('#fl-ai', panel);
     const btn = $('#fl-analyze', panel);
-    const go = () => withBusy(btn, 'Analyzing…', async () => {
+    const go = () => withBusy(btn, 'Analyzing your meal…', async () => {
       const text = ta.value.trim();
       query = text;
       if (!text) { toast('Describe what you ate first.', 'error'); ta.focus(); return; }
@@ -159,8 +165,125 @@ export function openFoodLogger({ tab = 'ai', mealType, query = '' } = {}) {
     });
   };
 
-  renderTabs(tab === 'manual' ? 'manual' : 'ai');
+  renderTabs(['manual', 'mine'].includes(tab) ? tab : 'ai');
   return sheet;
+}
+
+// ── My foods: favorites + recently logged, searchable, one-tap re-log ─────
+export const portionText = (f) => `${fmt1(f.quantity)} ${f.unit}${f.grams && f.unit !== 'g' && f.unit !== 'ml' ? ` · ${fmtInt(f.grams)} g` : ''}`;
+
+function myFoodsPanel(sheet, panel, { query, getMeal, setMeal, onBack }) {
+  let onlyFavorites = false;
+  let foods = withFavorites(cachedRecentFoods(), state.favorites);
+  setHTML(panel, html`
+    <div class="search-field">${icon('search', 18)}
+      <input class="input" id="mf-q" type="search" placeholder="Search your foods" autocomplete="off" enterkeyhint="search" aria-label="Search your foods" value="${query}">
+    </div>
+    <div class="row between wrap">
+      <div class="segmented" role="group" aria-label="Show">
+        <button type="button" data-show="all" aria-pressed="true">Recent & favorites</button>
+        <button type="button" data-show="fav" aria-pressed="false">${icon('starFill', 14)} Favorites</button>
+      </div>
+      ${mealChips(getMeal())}
+    </div>
+    <div class="food-list" id="mf-list" aria-live="polite"></div>`);
+  const input = $('#mf-q', panel);
+  const list = $('#mf-list', panel);
+  const draw = () => {
+    const pool = onlyFavorites ? foods.filter((f) => f.favorite) : foods;
+    const found = searchFoods(pool, input.value, 40);
+    if (!found.length) {
+      setHTML(list, html`<div class="empty"><div class="empty-icon">${icon(onlyFavorites ? 'star' : 'utensils', 24)}</div>
+        <div class="empty-title">${input.value.trim() ? `No saved food matches “${input.value.trim()}”` : onlyFavorites ? 'No favorites yet' : 'Nothing logged yet'}</div>
+        <div class="empty-sub">${onlyFavorites ? 'Tap the ☆ next to any food to save it here.' : 'Foods you log appear here so you can add them again in one tap.'}</div>
+        <button type="button" class="btn btn-primary btn-sm" data-ai>${icon('sparkles', 16)} Analyze with AI instead</button></div>`);
+      return;
+    }
+    setHTML(list, html`${found.map((f, i) => html`
+      <div class="food-row">
+        <button type="button" class="food-open" data-open="${i}">
+          <span class="item-main"><span class="item-name">${f.food_name}</span>
+            <span class="item-meta"><span>${portionText(f)}</span><span>P ${fmt1(f.protein)} · C ${fmt1(f.carbs)} · F ${fmt1(f.fat)}</span></span></span>
+          <span class="item-kcal">${fmtInt(f.calories)} <small>kcal</small></span>
+        </button>
+        <button type="button" class="icon-btn star ${f.favorite ? 'on' : ''}" data-star="${i}" aria-pressed="${!!f.favorite}" aria-label="${f.favorite ? 'Remove from favorites' : 'Save to favorites'}: ${f.food_name}">${icon(f.favorite ? 'starFill' : 'star', 18)}</button>
+        <button type="button" class="icon-btn add" data-add="${i}" aria-label="Add ${f.food_name} (${portionText(f)})">${icon('plus', 18)}</button>
+      </div>`)}`);
+    list.found = found;
+  };
+  const rebuild = () => { foods = withFavorites(cachedRecentFoods(), state.favorites); draw(); };
+  input.addEventListener('input', debounce(draw, 120));
+  panel.addEventListener('click', (e) => {
+    const show = e.target.closest('[data-show]');
+    if (show) {
+      onlyFavorites = show.dataset.show === 'fav';
+      panel.querySelectorAll('[data-show]').forEach((b) => b.setAttribute('aria-pressed', String(b === show)));
+      draw();
+      return;
+    }
+    const m = e.target.closest('[data-meal]');
+    if (m) { setMeal(m.dataset.meal); panel.querySelectorAll('[data-meal]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.meal === getMeal()))); return; }
+    if (e.target.closest('[data-ai]')) { sheet.body.querySelector('[data-tab="ai"]')?.click(); return; }
+    const at = (attr) => list.found?.[Number(e.target.closest(`[${attr}]`)?.getAttribute(attr))];
+    if (e.target.closest('[data-add]')) {
+      const f = at('data-add');
+      if (!f) return;
+      commit([{ ...scaleFood(f, f.quantity), source: 'manual' }], getMeal());
+      const b = e.target.closest('[data-add]');
+      b.classList.add('done');
+      setHTML(b, icon('check', 18));
+      return;
+    }
+    if (e.target.closest('[data-star]')) {
+      const f = at('data-star');
+      if (!f) return;
+      if (f.favorite || isFavorite(f)) { removeFavorite(f); toast(`Removed ${f.food_name} from favorites.`); }
+      else { addFavorite(f); toast(`${f.food_name} saved to favorites ✓`, 'success'); }
+      return;
+    }
+    if (e.target.closest('[data-open]')) {
+      const f = at('data-open');
+      if (f) portionView(sheet, f, { meal: getMeal(), onMeal: setMeal, onBack });
+    }
+  });
+  draw();
+  requestAnimationFrame(() => input.focus({ preventScroll: true }));
+  // Show cached foods instantly, then refresh from the server.
+  fetchRecentFoods().then(rebuild).catch((e) => console.warn('[NutriLog] recent foods', e.message));
+  return on('favorites', rebuild);
+}
+
+/** Re-log one of the user's foods with a different amount (nutrition scales linearly). */
+function portionView(sheet, food, { meal, onMeal, onBack }) {
+  const root = document.createElement('div');
+  sheet.body.replaceChildren(root);
+  sheet.setTitle(food.food_name);
+  setHTML(root, html`
+    <div class="stack">
+      <button type="button" class="link-btn" data-back style="align-self:flex-start">${icon('chevronLeft', 16)} Back</button>
+      <p class="small muted">Last logged: ${portionText(food)} · ${fmtInt(food.calories)} kcal</p>
+      <div class="qty-row">
+        <div class="field"><label for="pv-qty">Amount</label><input class="input" id="pv-qty" type="number" inputmode="decimal" min="0.1" step="any" value="${fmt1(food.quantity)}"></div>
+        <div class="field"><label for="pv-unit">Unit</label><input class="input" id="pv-unit" value="${food.unit}" disabled></div>
+      </div>
+      <div id="pv-preview" aria-live="polite"></div>
+      ${mealChips(meal)}
+      <button type="button" class="btn btn-primary btn-block btn-lg" id="pv-add">Add to log</button>
+    </div>`);
+  const qty = $('#pv-qty', root);
+  const update = () => setHTML($('#pv-preview', root), nutritionGrid(scaleFood(food, Number(qty.value))));
+  qty.addEventListener('input', update);
+  bindMealChips(root, () => meal, (m) => { meal = m; onMeal?.(m); });
+  root.querySelector('[data-back]').addEventListener('click', () => { sheet.setTitle('Log food'); onBack(); });
+  $('#pv-add', root).addEventListener('click', () => {
+    const q = Number(qty.value);
+    if (!(q > 0)) { toast('Enter an amount greater than zero.', 'error'); qty.focus(); return; }
+    commit([{ ...scaleFood(food, q), source: 'manual' }], meal);
+    sheet.close();
+  });
+  update();
+  qty.focus();
+  qty.select?.();
 }
 
 // ── Quantity view (barcode product) ───────────────────────────────────────
@@ -219,15 +342,20 @@ function quantityView(sheet, food, { meal, onMeal, onBack }) {
 }
 
 // ── Review view (AI results) ──────────────────────────────────────────────
+/**
+ * AI results are never saved without this screen. Every item's name, grams and nutrition can
+ * be corrected; nutrition is kept per 100 g so changing grams rescales it.
+ */
 function reviewView(sheet, aiItems, { meal, source, onMeal, onBack, photoUrl, provider }) {
-  const rows = aiItems.map((it) => ({ ...it, keep: true }));
+  const rows = aiItems.map((it) => ({ ...it, per_100g: { ...it.per_100g }, keep: true, editing: false }));
   const itemOf = (r) => {
-    const per = r.per_100g;
-    const n = scaleNutrition({ servingSize: 100, ...per }, r.grams);
+    const n = scaleNutrition({ servingSize: 100, ...r.per_100g }, r.grams);
     return { food_name: r.food_name, source, quantity: Math.round(r.grams * 10) / 10, unit: 'g', grams: r.grams, ...n };
   };
   const root = document.createElement('div');
   sheet.body.replaceChildren(root);
+  const field = (i, k, label, v) => html`<div class="field"><label for="rv-${k}-${i}">${label}</label>
+    <input class="input" id="rv-${k}-${i}" type="number" inputmode="decimal" min="0" step="any" data-nutrient="${k}" data-i="${i}" value="${Math.round(v * 10) / 10}"></div>`;
   const render = () => {
     const kept = rows.filter((r) => r.keep && r.grams > 0);
     const total = sumNutrition(kept.map(itemOf));
@@ -235,22 +363,23 @@ function reviewView(sheet, aiItems, { meal, source, onMeal, onBack, photoUrl, pr
       <div class="stack">
         ${onBack ? html`<button type="button" class="link-btn" data-back style="align-self:flex-start">${icon('chevronLeft', 16)} Back</button>` : ''}
         ${photoUrl ? html`<img class="photo-preview" src="${photoUrl}" alt="Your food photo">` : ''}
-        <div class="form-note">${provider ? html`<b>Estimated by ${PROVIDER_LABEL[provider] || provider}${provider !== aiProvider() ? ` (${PROVIDER_LABEL[aiProvider()]} was unavailable)` : ''}.</b> ` : ''}AI estimates can be off. Check each amount — nutrition updates as you change grams.</div>
+        <div class="form-note">${icon('sparkles', 16)} <span><b>AI-generated estimate — verify portions and ingredients.</b>
+          ${provider ? ` Estimated by ${PROVIDER_LABEL[provider] || provider}${provider !== aiProvider() ? ` (${PROVIDER_LABEL[aiProvider()]} was unavailable)` : ''}.` : ''} Nutrition updates as you change grams, and you can correct any value.</span></div>
         ${rows.map((r, i) => {
           const n = itemOf(r);
           return html`
           <div class="review-item ${r.keep ? '' : 'removed'}">
-            <div class="row between">
-              <div class="grow"><b>${r.food_name}</b>
-                <div class="tiny muted">${r.portion_description} · ${fmtInt(r.per_100g.calories)} kcal/100 g
-                  ${r.confidence === 'low' ? html` · <span class="tag warn">low confidence</span>` : ''}</div>
-              </div>
+            <div class="row">
+              <input class="input review-name" data-name="${i}" maxlength="120" value="${r.food_name}" aria-label="Food name" ${r.keep ? '' : 'disabled'}>
               <button type="button" class="btn btn-ghost btn-sm" data-toggle="${i}">${r.keep ? 'Remove' : 'Keep'}</button>
             </div>
-            <div class="row">
+            <div class="tiny muted"><span class="tag">AI estimate</span> ${r.portion_description} · ${fmtInt(r.per_100g.calories)} kcal/100 g${r.confidence === 'low' ? html` · <span class="tag warn">low confidence</span>` : ''}</div>
+            <div class="row wrap">
               <div class="input-group" style="width:150px"><input class="input" type="number" inputmode="decimal" min="1" step="any" data-grams="${i}" value="${Math.round(r.grams * 10) / 10}" aria-label="Grams of ${r.food_name}" ${r.keep ? '' : 'disabled'}><span class="input-suffix">g</span></div>
-              <div class="grow small right"><b>${fmtInt(n.calories)} kcal</b> · P ${fmt1(n.protein)} · C ${fmt1(n.carbs)} · F ${fmt1(n.fat)} · Fib ${fmt1(n.fiber)}</div>
+              <div class="grow small right"><b class="nw">${fmtInt(n.calories)} kcal</b> · <span class="nw">P ${fmt1(n.protein)}</span> · <span class="nw">C ${fmt1(n.carbs)}</span> · <span class="nw">F ${fmt1(n.fat)}</span> · <span class="nw">Fib ${fmt1(n.fiber)}</span></div>
             </div>
+            ${r.keep ? html`<button type="button" class="link-btn" data-edit="${i}" aria-expanded="${r.editing}">${icon(r.editing ? 'chevronDown' : 'edit', 14)} ${r.editing ? 'Done editing nutrition' : 'Edit nutrition'}</button>` : ''}
+            ${r.keep && r.editing ? html`<div class="grid-3">${field(i, 'calories', 'Calories', n.calories)}${field(i, 'protein', 'Protein g', n.protein)}${field(i, 'carbs', 'Carbs g', n.carbs)}${field(i, 'fat', 'Fat g', n.fat)}${field(i, 'fiber', 'Fiber g', n.fiber)}</div>` : ''}
           </div>`;
         })}
         <div class="card" style="padding:12px;box-shadow:none">
@@ -260,13 +389,15 @@ function reviewView(sheet, aiItems, { meal, source, onMeal, onBack, photoUrl, pr
         ${mealChips(meal)}
         <button type="button" class="btn btn-primary btn-block btn-lg" id="rv-add" ${kept.length ? '' : 'disabled'}>Add ${kept.length} item${kept.length === 1 ? '' : 's'}</button>
       </div>`);
-    root.querySelector('[data-back]')?.addEventListener('click', () => { sheet.setTitle('Add food'); onBack(); });
+    root.querySelector('[data-back]')?.addEventListener('click', () => { sheet.setTitle('Log food'); onBack(); });
   };
   sheet.setTitle('Review & add');
   render();
   root.addEventListener('click', (e) => {
     const t = e.target.closest('[data-toggle]');
     if (t) { const r = rows[Number(t.dataset.toggle)]; r.keep = !r.keep; render(); return; }
+    const ed = e.target.closest('[data-edit]');
+    if (ed) { const r = rows[Number(ed.dataset.edit)]; r.editing = !r.editing; render(); return; }
     const m = e.target.closest('[data-meal]');
     if (m) { meal = m.dataset.meal; onMeal?.(meal); $$('[data-meal]', root).forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.meal === meal))); return; }
     if (e.target.closest('#rv-add')) {
@@ -277,11 +408,23 @@ function reviewView(sheet, aiItems, { meal, source, onMeal, onBack, photoUrl, pr
     }
   });
   root.addEventListener('change', (e) => {
+    const name = e.target.closest('[data-name]');
+    if (name) { rows[Number(name.dataset.name)].food_name = name.value.trim() || rows[Number(name.dataset.name)].food_name; return; }
     const g = e.target.closest('[data-grams]');
-    if (!g) return;
-    const v = Number(g.value);
-    if (v > 0 && v <= 5000) rows[Number(g.dataset.grams)].grams = v;
-    render();
+    if (g) {
+      const v = Number(g.value);
+      if (v > 0 && v <= 5000) rows[Number(g.dataset.grams)].grams = v;
+      render();
+      return;
+    }
+    const nf = e.target.closest('[data-nutrient]');
+    if (nf) {
+      const r = rows[Number(nf.dataset.i)];
+      const v = Number(nf.value);
+      // A corrected value for this portion becomes the new per-100 g value.
+      if (Number.isFinite(v) && v >= 0 && r.grams > 0) r.per_100g[nf.dataset.nutrient] = (v * 100) / r.grams;
+      render();
+    }
   });
 }
 

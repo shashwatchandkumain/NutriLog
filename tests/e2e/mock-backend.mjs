@@ -5,8 +5,10 @@ import { randomUUID } from 'node:crypto';
 export const MOCK_URL = 'https://mock.supabase.co';
 
 const b64u = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-const OWNER = { profiles: 'id', user_preferences: 'user_id', daily_goals: 'user_id', meals: 'user_id', meal_items: 'user_id', weight_history: 'user_id', activities: 'user_id', water_logs: 'user_id' };
-const PK = { profiles: ['id'], user_preferences: ['user_id'], daily_goals: ['user_id'], meals: ['id'], meal_items: ['id'], weight_history: ['id'], activities: ['id'], water_logs: ['user_id', 'log_date'] };
+const OWNER = { profiles: 'id', user_preferences: 'user_id', daily_goals: 'user_id', meals: 'user_id', meal_items: 'user_id', weight_history: 'user_id', activities: 'user_id', water_logs: 'user_id', favorite_foods: 'user_id' };
+const PK = { profiles: ['id'], user_preferences: ['user_id'], daily_goals: ['user_id'], meals: ['id'], meal_items: ['id'], weight_history: ['id'], activities: ['id'], water_logs: ['user_id', 'log_date'], favorite_foods: ['id'] };
+// Unique constraints besides the primary key (like the real schema).
+const UNIQUE = { favorite_foods: ['user_id', 'food_name', 'unit'], weight_history: ['user_id', 'recorded_on'] };
 
 export class MockSupabase {
   constructor() {
@@ -38,7 +40,7 @@ export class MockSupabase {
   createDefaults(uid) {
     const now = new Date().toISOString();
     this.db.profiles.push({ id: uid, display_name: null, age: null, sex: null, height_cm: null, weight_kg: null, start_weight_kg: null, target_weight_kg: null, target_date: null, goal: 'maintain', activity_level: 'sedentary', daily_steps: null, workouts_per_week: null, diet_type: null, macro_style: 'balanced', allergies: [], onboarding_completed: false, created_at: now, updated_at: now });
-    this.db.user_preferences.push({ user_id: uid, weight_unit: 'kg', height_unit: 'cm', theme: 'system', water_goal: 8, exercise_mode: 'included', reminders_enabled: false, reminder_time: '20:00:00', ai_provider: 'gemini', updated_at: now });
+    this.db.user_preferences.push({ user_id: uid, weight_unit: 'kg', height_unit: 'cm', theme: 'system', water_goal: 8, water_goal_ml: 2000, exercise_mode: 'included', reminders_enabled: false, reminder_time: '20:00:00', ai_provider: 'gemini', updated_at: now });
     this.db.daily_goals.push({ user_id: uid, calories: null, protein_g: null, carbs_g: null, fat_g: null, fiber_g: null, is_custom: false, updated_at: now });
   }
   rows(table, uid) { return this.db[table].filter((r) => r[OWNER[table]] === uid); }
@@ -53,6 +55,20 @@ export class MockSupabase {
     const w = this.rows('weight_history', uid).sort((a, b) => a.recorded_on.localeCompare(b.recorded_on));
     const on = [...w].reverse().find((x) => x.recorded_on <= date) || w[0];
     return on ? Number(on.weight_kg) : Number(this.db.profiles.find((x) => x.id === uid)?.weight_kg) || null;
+  }
+  /** BEFORE INSERT/UPDATE triggers from migration 004: water ml ↔ glasses stay in sync. */
+  beforeWrite(table, row, old) {
+    if (table === 'water_logs') {
+      row.ml = Number(row.ml ?? 0); row.glasses = Number(row.glasses ?? 0);
+      if (!old) { if (row.ml === 0 && row.glasses > 0) row.ml = row.glasses * 250; }
+      else if (row.ml === Number(old.ml) && row.glasses !== Number(old.glasses)) row.ml = row.glasses * 250;
+      row.glasses = Math.min(40, Math.round(row.ml / 250));
+    }
+    if (table === 'user_preferences') {
+      if (old && row.water_goal !== old.water_goal && row.water_goal_ml === old.water_goal_ml) row.water_goal_ml = Math.min(10000, row.water_goal * 250);
+      row.water_goal = Math.max(1, Math.min(30, Math.round(row.water_goal_ml / 250)));
+    }
+    return row;
   }
   /** The activities_net_calories trigger. */
   computeActivity(a) {
@@ -176,14 +192,19 @@ export class MockSupabase {
         if (row[owner] !== u.id) return reply(403, { code: '42501', message: 'new row violates row-level security policy' });
         if (PK[table].includes('id')) row.id ??= randomUUID();
         row.created_at ??= new Date().toISOString();
-        const existing = this.db[table].find((r) => conflict.every((c) => String(r[c]) === String(row[c])));
+        const existing = this.db[table].find((r) => r[owner] === u.id && conflict.every((c) => String(r[c]) === String(row[c])));
         if (existing) {
           if (ignore) continue;
           if (!merge) return reply(409, { code: '23505', message: 'duplicate key value violates unique constraint' });
-          Object.assign(existing, row, { updated_at: new Date().toISOString() });
+          Object.assign(existing, this.beforeWrite(table, { ...existing, ...row, updated_at: new Date().toISOString() }, existing));
           result.push(existing);
         } else {
-          this.db[table].push(row);
+          const uniq = UNIQUE[table];
+          if (uniq && this.db[table].some((r) => uniq.every((c) => String(r[c]) === String(row[c])))) {
+            if (ignore) continue;
+            return reply(409, { code: '23505', message: 'duplicate key value violates unique constraint' });
+          }
+          this.db[table].push(this.beforeWrite(table, row, null));
           result.push(row);
         }
       }
@@ -193,7 +214,7 @@ export class MockSupabase {
     }
     if (method === 'PATCH') {
       const rows = this.db[table].filter(match);
-      for (const r of rows) Object.assign(r, body, { updated_at: new Date().toISOString() });
+      for (const r of rows) Object.assign(r, this.beforeWrite(table, { ...r, ...body, updated_at: new Date().toISOString() }, { ...r }));
       if (table === 'activities') rows.forEach((a) => this.computeActivity(a));
       if (table === 'weight_history') this.syncProfileWeight(u.id);
       return out(rows);
@@ -210,6 +231,10 @@ export class MockSupabase {
   rpc(fn, headers, body, reply) {
     const u = this.userFrom(headers);
     if (!u) return reply(401, { code: '42501', message: 'permission denied' });
+    if (this.rejectRpc === fn) { // a test asks for one permanent rejection (e.g. invalid data)
+      this.rejectRpc = null;
+      return reply(400, { code: '23514', message: 'new row for relation "meal_items" violates check constraint', details: null, hint: null });
+    }
     if (fn === 'log_meal_items') {
       let meal = this.db.meals.find((m) => m.user_id === u.id && m.meal_date === body.p_meal_date && m.meal_type === body.p_meal_type);
       if (!meal) { meal = { id: randomUUID(), user_id: u.id, meal_date: body.p_meal_date, meal_type: body.p_meal_type, created_at: new Date().toISOString() }; this.db.meals.push(meal); }
@@ -225,7 +250,10 @@ export class MockSupabase {
     if (fn === 'update_meal_item') {
       const it = this.db.meal_items.find((i) => i.id === body.p_id && i.user_id === u.id);
       if (!it) return reply(404, { code: 'P0002', message: 'item not found' });
-      Object.assign(it, body.p_patch);
+      const { food_name: name, ...patch } = body.p_patch || {};
+      for (const k of ['calories', 'protein', 'carbs', 'fat', 'fiber']) if (patch[k] != null) patch[k] = Math.round(Number(patch[k]) * 100) / 100;
+      Object.assign(it, patch);
+      if (typeof name === 'string' && name.trim()) it.food_name = name.trim().slice(0, 200); // blank names are ignored
       if (body.p_meal_type) it.meal_type = body.p_meal_type;
       return reply(200, it);
     }

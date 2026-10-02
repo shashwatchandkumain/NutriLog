@@ -92,7 +92,8 @@ export function barChart(el, data, opts = {}) {
     });
     if (goal > 0) {
       s += `<line class="goal-line" x1="${pad.l}" x2="${W - pad.r}" y1="${y(goal)}" y2="${y(goal)}"/>`;
-      s += `<text class="goal-text" x="${W - pad.r}" y="${y(goal) - 4}" text-anchor="end">${escText(goalLabel)} ${fmtInt(goal)}</text>`;
+      // Left end: the newest bars (right) are the ones people look at.
+      s += `<text class="goal-text" x="${pad.l + 4}" y="${y(goal) - 4}">${escText(goalLabel)} ${fmtInt(goal)}</text>`;
     }
     setHTML(el, html`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${opts.ariaLabel || 'Bar chart'}">${trusted(s)}</svg>`);
     const svg = el.querySelector('svg');
@@ -114,11 +115,13 @@ export function barChart(el, data, opts = {}) {
 
 /**
  * Line chart over dates. points: [{ date: 'YYYY-MM-DD', value, label }] ascending.
- * opts: { target, targetLabel, height, format(v), unit, emptyText }
+ * opts: { target, targetLabel, height, format(v), unit, emptyText,
+ *         average: [{ date, value }] — a smoothed series drawn bold, with the daily points faint }
  */
 export function lineChart(el, points, opts = {}) {
   el.classList.add('chart');
-  const { target = null, height = 200, format = (v) => v.toFixed(1), unit = '', targetLabel = 'Target' } = opts;
+  const { target = null, height = 200, format = (v) => v.toFixed(1), unit = '', targetLabel = 'Target', average = null } = opts;
+  const avgByDate = new Map((average || []).map((a) => [a.date, a.value]));
   if (points.length < 2) {
     setHTML(el, html`<div class="chart-empty">${opts.emptyText || 'Add at least two entries to see a trend.'}</div>`);
     return () => {};
@@ -128,7 +131,7 @@ export function lineChart(el, points, opts = {}) {
     const pad = { t: 16, r: 44, b: 26, l: 40 };
     const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
     const t0 = Date.parse(points[0].date), t1 = Date.parse(points[points.length - 1].date);
-    const vals = points.map((p) => p.value).concat(target != null ? [target] : []);
+    const vals = points.map((p) => p.value).concat(target != null ? [target] : [], average ? average.map((a) => a.value) : []);
     let lo = Math.min(...vals), hi = Math.max(...vals);
     const padV = Math.max(0.5, (hi - lo) * 0.12);
     lo -= padV; hi += padV;
@@ -151,13 +154,22 @@ export function lineChart(el, points, opts = {}) {
     }
     const line = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.date).toFixed(1)},${y(p.value).toFixed(1)}`).join('');
     const area = `${line}L${x(points[points.length - 1].date).toFixed(1)},${pad.t + ih}L${x(points[0].date).toFixed(1)},${pad.t + ih}Z`;
-    s += `<path class="area" d="${area}"/><path class="line" d="${line}"/>`;
-    if (points.length <= 40) for (const p of points) s += `<circle class="pt" cx="${x(p.date)}" cy="${y(p.value)}" r="3"/>`;
+    if (average?.length > 1) {
+      // Daily values faint, the smoothed trend bold — single-day swings don't read as trends.
+      const avgLine = average.map((p, i) => `${i ? 'L' : 'M'}${x(p.date).toFixed(1)},${y(p.value).toFixed(1)}`).join('');
+      s += `<path class="line faint" d="${line}"/><path class="line avg" d="${avgLine}"/>`;
+      if (points.length <= 60) for (const p of points) s += `<circle class="pt faint" cx="${x(p.date)}" cy="${y(p.value)}" r="3"/>`;
+    } else {
+      s += `<path class="area" d="${area}"/><path class="line" d="${line}"/>`;
+      if (points.length <= 40) for (const p of points) s += `<circle class="pt" cx="${x(p.date)}" cy="${y(p.value)}" r="3"/>`;
+    }
     const last = points[points.length - 1];
-    s += `<circle class="pt" cx="${x(last.date)}" cy="${y(last.value)}" r="5"/>`;
-    s += `<text class="axis-text strong" x="${x(last.date) + 8}" y="${y(last.value) + 4}">${escText(format(last.value))}</text>`;
+    const lastShown = avgByDate.has(last.date) && average?.length > 1 ? avgByDate.get(last.date) : last.value;
+    s += `<circle class="pt" cx="${x(last.date)}" cy="${y(lastShown)}" r="5"/>`;
+    s += `<text class="axis-text strong" x="${x(last.date) + 8}" y="${y(lastShown) + 4}">${escText(format(lastShown))}</text>`;
     s += `<line class="crosshair" x1="0" x2="0" y1="${pad.t}" y2="${pad.t + ih}" visibility="hidden"/>`;
-    setHTML(el, html`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${opts.ariaLabel || 'Line chart'}">${trusted(s)}</svg>`);
+    setHTML(el, html`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${opts.ariaLabel || 'Line chart'}">${trusted(s)}</svg>
+      ${average?.length > 1 ? html`<div class="legend"><span><i class="dot-key"></i>Daily</span><span><i class="line-key"></i>7-day average</span></div>` : ''}`);
     const svg = el.querySelector('svg');
     const cross = svg.querySelector('.crosshair');
     const move = (clientX) => {
@@ -166,7 +178,9 @@ export function lineChart(el, points, opts = {}) {
       let best = points[0], bd = Infinity;
       for (const p of points) { const d = Math.abs(x(p.date) - mx); if (d < bd) { bd = d; best = p; } }
       cross.setAttribute('x1', x(best.date)); cross.setAttribute('x2', x(best.date)); cross.setAttribute('visibility', 'visible');
-      showTip(el, (x(best.date) / W) * r.width, (y(best.value) / H) * r.height - 6, `${format(best.value)}${unit ? ` ${unit}` : ''}`, best.title || best.label);
+      const avg = avgByDate.get(best.date);
+      showTip(el, (x(best.date) / W) * r.width, (y(best.value) / H) * r.height - 6, `${format(best.value)}${unit ? ` ${unit}` : ''}`,
+        `${best.title || best.label}${avg != null && average?.length > 1 ? ` · 7-day avg ${format(avg)}` : ''}`);
     };
     svg.addEventListener('mousemove', (e) => move(e.clientX));
     svg.addEventListener('touchmove', (e) => move(e.touches[0].clientX), { passive: true });

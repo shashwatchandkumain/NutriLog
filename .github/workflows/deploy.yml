@@ -34,6 +34,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - run: npm run build -- --check
 
   deploy:
     needs: test
@@ -43,6 +44,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
       - name: Write public config from repository variables (if set)
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
@@ -55,12 +58,10 @@ jobs:
               "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "${ENABLE_GOOGLE_AUTH:-false}" > js/config.js
             echo "js/config.js written from repository variables"
           fi
-      - name: Stamp the service-worker cache version
-        run: sed -i "s/^const VERSION = '.*';/const VERSION = '${GITHUB_SHA::12}';/" sw.js
-      - name: Assemble site
-        run: |
-          mkdir _site
-          cp -r index.html manifest.json sw.js .nojekyll css js icons _site/
+      # Checks every path, the CSP and the files for secrets, then assembles _site/ with the
+      # service-worker cache version set to this commit (so every deploy refreshes the app shell).
+      - name: Build site
+        run: node scripts/build.mjs --stamp "${GITHUB_SHA::12}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: _site }
