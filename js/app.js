@@ -472,11 +472,13 @@ on('account', updateShellStatus);
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
   let reloading = false;
-  // A new version takes over only when the user agrees; then reload once into it. (On a first
-  // visit the worker also takes control, but there is nothing to update, so don't reload.)
-  const hadController = !!navigator.serviceWorker.controller;
+  // A new version takes over only when the user agrees; then reload once into it. On a first
+  // visit the worker also takes control, but there is nothing to update, so that one change
+  // doesn't reload — every later one (an update, also from another tab) does.
+  let controlled = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadController || reloading) return;
+    if (!controlled) { controlled = true; return; }
+    if (reloading) return;
     reloading = true;
     location.reload();
   });

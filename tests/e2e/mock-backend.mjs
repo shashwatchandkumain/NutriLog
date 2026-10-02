@@ -21,13 +21,14 @@ export class MockSupabase {
   }
 
   // ── helpers ──────────────────────────────────────────────────────────
-  session(user) {
+  /** A session for `user`; `ttl` (seconds) is longer for tests that move the browser's clock. */
+  session(user, ttl = 3600) {
     const now = Math.floor(Date.now() / 1000);
-    const access = `${b64u({ alg: 'HS256', typ: 'JWT' })}.${b64u({ sub: user.id, role: 'authenticated', email: user.email, exp: now + 3600, iat: now, aud: 'authenticated', is_anonymous: false })}.sig`;
+    const access = `${b64u({ alg: 'HS256', typ: 'JWT' })}.${b64u({ sub: user.id, role: 'authenticated', email: user.email, exp: now + ttl, iat: now, aud: 'authenticated', is_anonymous: false })}.sig`;
     const refresh = randomUUID();
     this.tokens.set(access, user.id);
     this.tokens.set(refresh, user.id);
-    return { access_token: access, token_type: 'bearer', expires_in: 3600, expires_at: now + 3600, refresh_token: refresh, user: this.publicUser(user) };
+    return { access_token: access, token_type: 'bearer', expires_in: ttl, expires_at: now + ttl, refresh_token: refresh, user: this.publicUser(user) };
   }
   publicUser(u) {
     return { id: u.id, aud: 'authenticated', role: 'authenticated', email: u.email, email_confirmed_at: new Date().toISOString(), phone: '', app_metadata: { provider: 'email', providers: ['email'] }, user_metadata: u.user_metadata || {}, identities: [{ id: u.id, provider: 'email' }], created_at: u.created_at, updated_at: new Date().toISOString(), is_anonymous: false };

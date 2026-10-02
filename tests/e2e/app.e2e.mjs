@@ -17,6 +17,7 @@ const TEST_CONFIG = `export const CONFIG = { SUPABASE_URL: '${MOCK_URL}', SUPABA
 const SHOTS = process.env.E2E_SCREENSHOTS;
 
 let server, base, browser, backend;
+let swVersion = null; // when set, sw.js is served with this cache version (simulates a new deploy)
 const consoleErrors = [];
 
 before(async () => {
@@ -26,6 +27,11 @@ before(async () => {
     let rel = decodeURIComponent(url.pathname.slice('/NutriLog/'.length)) || 'index.html';
     if (rel.endsWith('/')) rel += 'index.html';
     if (rel === 'js/config.js') { res.writeHead(200, { 'content-type': 'text/javascript' }); return res.end(TEST_CONFIG); }
+    if (rel === 'sw.js' && swVersion) {
+      const src = await readFile(join(ROOT, 'sw.js'), 'utf8');
+      res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store' });
+      return res.end(src.replace(/^const VERSION = '.*';/m, `const VERSION = '${swVersion}';`));
+    }
     const file = normalize(join(ROOT, rel));
     if (!file.startsWith(ROOT) || rel.startsWith('node_modules') || rel.startsWith('.git')) { res.writeHead(403); return res.end(); }
     try {
@@ -74,8 +80,8 @@ const FAKE_SCALE = () => {
   Object.defineProperty(navigator, 'bluetooth', { configurable: true, value: { requestDevice: async () => device } });
 };
 
-async function newDevice({ viewport = { width: 390, height: 844 }, colorScheme = 'light', scale = false } = {}) {
-  const ctx = await browser.newContext({ viewport, colorScheme, acceptDownloads: true, serviceWorkers: 'block' });
+async function newDevice({ viewport = { width: 390, height: 844 }, colorScheme = 'light', scale = false, serviceWorkers = 'block' } = {}) {
+  const ctx = await browser.newContext({ viewport, colorScheme, acceptDownloads: true, serviceWorkers });
   if (scale) await ctx.addInitScript(FAKE_SCALE);
   await ctx.route(`${MOCK_URL}/**`, (r) => backend.handle(r));
   await ctx.routeWebSocket(/mock\.supabase\.co/, (ws) => backend.realtime(ws));
@@ -764,6 +770,59 @@ test('an expired email link shows a friendly message', async () => {
   await page.goto(`${base}#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired`);
   await page.locator('.toast.error', { hasText: 'That link has expired' }).waitFor();
   await page.getByRole('link', { name: 'Create account' }).waitFor();
+  await ctx.close();
+});
+
+test('a new version installs in the background, and "Update" reloads into it', async () => {
+  swVersion = 'e2e-1';
+  const { page, ctx } = await newDevice({ serviceWorkers: 'allow' });
+  await page.goto(base);
+  await page.getByRole('link', { name: 'Create account' }).waitFor();
+  await page.evaluate(() => { window.sameDocument = true; });
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+  await page.waitForTimeout(500);
+  assert.equal(await page.evaluate(() => window.sameDocument), true, 'the first install takes over without a reload');
+  assert.equal(await page.locator('.toast', { hasText: 'new version' }).count(), 0, 'and offers no update');
+
+  swVersion = 'e2e-2'; // deploy a new version while the page stays open
+  await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
+  const offer = page.locator('.toast', { hasText: 'A new version of NutriLog is available.' });
+  await offer.waitFor();
+  const reloaded = page.waitForEvent('load');
+  await offer.getByRole('button', { name: 'Update' }).click();
+  await reloaded;
+  await page.getByRole('link', { name: 'Create account' }).waitFor();
+  assert.equal(await page.evaluate(() => window.sameDocument), undefined, 'the page reloaded into the new version');
+  const shells = await page.evaluate(async () => (await caches.keys()).filter((k) => k.startsWith('nutrilog-shell-')));
+  assert.deepEqual(shells, ['nutrilog-shell-e2e-2'], 'only the new version is cached');
+  swVersion = null;
+  await ctx.close();
+});
+
+test('"Today" moves to the new day at midnight while the app is open', async () => {
+  const { randomUUID } = await import('node:crypto');
+  const user = { id: randomUUID(), email: 'night@example.com', password: 'night-owl-123', user_metadata: {}, created_at: new Date().toISOString() };
+  backend.users.set(user.id, user);
+  backend.createDefaults(user.id);
+  Object.assign(backend.db.profiles.find((p) => p.id === user.id), { display_name: 'Nisha', age: 28, sex: 'female', height_cm: 160, weight_kg: 58, onboarding_completed: true });
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0);
+  const lateEvening = new Date(midnight.getTime() - 90_000);
+  backend.db.meal_items.push({ id: randomUUID(), user_id: user.id, meal_id: randomUUID(), meal_date: isoDate(lateEvening), meal_type: 'dinner', food_name: 'Late dinner',
+    source: 'manual', quantity: 1, unit: 'plate', grams: null, calories: 650, protein: 30, carbs: 70, fat: 25, fiber: 6, created_at: new Date().toISOString() });
+  const s = backend.session(user, 3 * 86400); // the browser's clock runs up to a day ahead of this machine's
+  const { page, ctx } = await newDevice();
+  await page.clock.install({ time: lateEvening });
+  await page.goto(`${base}#access_token=${s.access_token}&expires_at=${s.expires_at}&expires_in=${s.expires_in}&refresh_token=${s.refresh_token}&token_type=bearer&type=magiclink`);
+  await page.locator('#d-meals .item', { hasText: 'Late dinner' }).waitFor();
+  const label = () => page.locator('#d-date').innerText();
+  assert.match(await label(), /^Today/);
+
+  await page.clock.fastForward('02:30'); // 23:58:30 → 00:01:00
+  await page.getByText('No meals logged today').waitFor();
+  const expected = await page.evaluate(() => `Today · ${new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`);
+  assert.equal(await label(), expected, 'the dashboard follows the new day');
+  assert.equal(await page.locator('#d-meals .item').count(), 0);
   await ctx.close();
 });
 
