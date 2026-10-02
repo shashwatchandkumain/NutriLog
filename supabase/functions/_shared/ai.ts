@@ -4,6 +4,7 @@
 // The browser never sees either key; it only receives the parsed result.
 import Anthropic from 'npm:@anthropic-ai/sdk@0.128.0';
 import { env, HttpError } from './http.ts';
+import { hedged } from './hedge.ts';
 
 export type Provider = 'gemini' | 'claude';
 export type ChatTurn = { role: 'user' | 'assistant'; content: string };
@@ -111,25 +112,25 @@ async function claudeJson(req: JsonRequest): Promise<unknown> {
 
 // ── Gemini ────────────────────────────────────────────────────────────────
 /**
- * Gemini with its own fallback: the main model (retried once on 429/5xx), then the lighter
- * fallback model. Time limits keep the whole chain — including a final Claude fallback —
- * inside the Edge Function's wall-clock limit.
+ * Gemini with its own fallback. The main model normally answers in a few seconds; when it is
+ * overloaded it can take 20+ seconds just to return "high demand", so if it hasn't answered
+ * after 12 s (20 s for photos) — or fails — the lighter model is asked too and the first answer
+ * wins. Time limits keep the whole chain, including a final Claude fallback, inside the Edge
+ * Function's wall-clock limit.
  */
-async function geminiJson(req: JsonRequest): Promise<unknown> {
+function geminiJson(req: JsonRequest): Promise<unknown> {
   const models = [GEMINI_MODEL, GEMINI_FALLBACK_MODEL].filter((m, i, all) => m && all.indexOf(m) === i);
-  let lastError: unknown;
-  for (const [i, model] of models.entries()) {
+  return hedged(models.map((model, i) => async (signal: AbortSignal) => {
     try {
-      return await geminiCall(req, model, i === 0 ? 40_000 : 30_000);
+      return await geminiCall(req, model, i === 0 ? 40_000 : 30_000, signal);
     } catch (e) {
-      console.error(`[ai] gemini ${model} failed:`, e instanceof Error ? e.message : e);
-      lastError = e;
+      if (!signal.aborted) console.error(`[ai] gemini ${model} failed:`, e instanceof Error ? e.message : e);
+      throw e;
     }
-  }
-  throw lastError;
+  }), req.image ? 20_000 : 12_000);
 }
 
-async function geminiCall(req: JsonRequest, model: string, timeoutMs: number): Promise<unknown> {
+async function geminiCall(req: JsonRequest, model: string, timeoutMs: number, signal?: AbortSignal): Promise<unknown> {
   const parts: Record<string, unknown>[] = [];
   if (req.image) parts.push({ inline_data: { mime_type: req.image.mediaType, data: req.image.base64 } });
   parts.push({ text: req.text });
@@ -148,25 +149,21 @@ async function geminiCall(req: JsonRequest, model: string, timeoutMs: number): P
       ...(model.startsWith('gemini-3') ? { thinkingConfig: { thinkingLevel: req.effort === 'high' ? 'high' : 'low' } } : {}),
     },
   };
-  for (let attempt = 0; ; attempt++) {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    if ((res.status === 429 || res.status >= 500) && attempt === 0) {
-      await res.body?.cancel();
-      await new Promise((r) => setTimeout(r, 1000));
-      continue;
-    }
-    if (!res.ok) throw new Error(`Gemini ${model} HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
-    const data = await res.json();
-    const cand = data?.candidates?.[0];
-    const textParts = (cand?.content?.parts ?? []).filter((p: { text?: string; thought?: boolean }) => typeof p.text === 'string' && !p.thought);
-    if (!textParts.length) throw new Error(`Gemini ${model} returned no content (finishReason=${cand?.finishReason})`);
-    return parseJsonLoose(textParts.map((p: { text: string }) => p.text).join(''));
-  }
+  // No retry of the same model: when it's overloaded, a retry only doubles the wait — the
+  // hedge in geminiJson moves on to the lighter model instead.
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+    body: JSON.stringify(body),
+    signal: signal ? AbortSignal.any([timeout, signal]) : timeout,
+  });
+  if (!res.ok) throw new Error(`Gemini ${model} HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const data = await res.json();
+  const cand = data?.candidates?.[0];
+  const textParts = (cand?.content?.parts ?? []).filter((p: { text?: string; thought?: boolean }) => typeof p.text === 'string' && !p.thought);
+  if (!textParts.length) throw new Error(`Gemini ${model} returned no content (finishReason=${cand?.finishReason})`);
+  return parseJsonLoose(textParts.map((p: { text: string }) => p.text).join(''));
 }
 
 /** Parses JSON, tolerating code fences or surrounding prose. */

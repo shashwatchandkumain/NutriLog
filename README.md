@@ -163,6 +163,8 @@ Optional secrets, with defaults shown in `.env.example`:
 
 You only need one of the two AI keys. With just one, every feature uses it. If the chosen model fails, the other one answers. With neither, AI buttons show "AI features are not available yet" and everything else works.
 
+**Gemini free tier:** Google's free tier allows only about 20 requests a day for `gemini-3.5-flash` (per project; check yours at [ai.dev/rate-limit](https://ai.dev/rate-limit)). When it runs out — or the model is overloaded — NutriLog switches to `gemini-3.5-flash-lite` within seconds, so logging keeps working. For heavier use, enable billing on the Google AI Studio project, or set `GEMINI_MODEL=gemini-3.5-flash-lite`.
+
 ## 6. GitHub Pages deployment
 
 All paths are relative and routing uses the URL hash (`#/dashboard`), so the site works at `https://YOUR_USERNAME.github.io/NutriLog/` and direct links never 404.
