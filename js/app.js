@@ -21,6 +21,7 @@ import { renderOnboarding } from './views/onboarding.js';
 import { mountDashboard } from './views/dashboard.js';
 import { openFoodLogger } from './views/food-logger.js';
 import { openCoach } from './views/lazy.js';
+import { isAdmin, clearFoodCache } from './services/food-db.js';
 
 const appEl = document.getElementById('app');
 const AUTH_ROUTES = new Set(['welcome', 'signup', 'login', 'forgot', 'recover', 'check-email']);
@@ -34,6 +35,7 @@ const ROUTES = {
   activity: { title: 'Activity', tab: 'more', load: () => import('./views/activity.js').then((m) => ({ mount: m.mountActivity })) },
   settings: { title: 'Settings', tab: 'more', load: () => import('./views/settings.js').then((m) => ({ mount: m.mountSettings })) },
   more: { title: 'More', tab: 'more', load: () => import('./views/more.js').then((m) => ({ mount: m.mountMore })) },
+  admin: { title: 'Food database', tab: 'more', load: () => import('./views/admin.js').then((m) => ({ mount: m.mountAdmin })) },
 };
 const ALIASES = { calories: 'activity' };
 const initialHash = window.__nutrilogInitialHash || '';
@@ -158,6 +160,7 @@ async function bootstrapUser(user) {
   }
   data.fetchWeights().catch((e) => console.warn('[NutriLog] weights', e.message));
   data.fetchFavorites().catch((e) => console.warn('[NutriLog] favorites', e.message));
+  isAdmin().then((yes) => { if (bootstrappedFor === user.id) state.isAdmin = yes; });
   data.fetchLoggedDates().then(() => updateShellStatus()).catch((e) => console.warn('[NutriLog] streak', e.message));
   data.importLegacyData().then((r) => {
     if (r && (r.meal_items || r.weights || r.activities)) {
@@ -176,7 +179,8 @@ function teardownUser() {
   stopReminders();
   data.endDataSession();
   bootstrappedFor = null;
-  Object.assign(state, { profile: null, prefs: null, goals: null, day: null, weights: [], loggedDates: [], favorites: [], date: today(), passwordRecovery: false });
+  Object.assign(state, { profile: null, prefs: null, goals: null, day: null, weights: [], loggedDates: [], favorites: [], date: today(), passwordRecovery: false, isAdmin: false });
+  clearFoodCache();
   lastWeighIn = null;
   announceTargets = false;
   unmountApp();

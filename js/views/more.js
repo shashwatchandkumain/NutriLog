@@ -34,6 +34,7 @@ export function mountMore(root, { onSignedOut }) {
       </section>
       <section class="card menu" aria-label="Help">
         ${item({ action: 'bt-help', icon: 'info', title: 'Bluetooth help', sub: 'Trouble connecting to the scale' })}
+        ${state.isAdmin ? item({ href: '#/admin', icon: 'database', title: 'Food database (admin)', sub: 'Review new foods, reports and AI usage' }) : ''}
       </section>
       <button type="button" class="btn btn-secondary btn-block" data-action="logout">${icon('logout', 18)} Log out</button>
       <p class="center tiny faint">NutriLog ${APP_VERSION} · Nutrition values are estimates for guidance, not medical advice.</p>

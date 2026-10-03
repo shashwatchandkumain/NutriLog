@@ -146,7 +146,7 @@ function trapFocus(container, e) {
  * Confirmation dialog. Resolves true/false. With `requireText`, the user must type it
  * (used for permanent actions like deleting the account).
  */
-export function confirmDialog({ title, message, confirmLabel = 'Confirm', danger = false, requireText = null }) {
+export function confirmDialog({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false, requireText = null }) {
   return new Promise((resolve) => {
     let result = false;
     const s = openSheet({ title, footer: true, onClose: () => resolve(result) });
@@ -157,7 +157,7 @@ export function confirmDialog({ title, message, confirmLabel = 'Confirm', danger
         <input class="input" id="confirm-text" autocomplete="off" autocapitalize="characters" spellcheck="false">
       </div>` : ''}`);
     setHTML(s.foot, html`
-      <button class="btn btn-secondary" type="button" data-cancel>Cancel</button>
+      <button class="btn btn-secondary" type="button" data-cancel>${cancelLabel}</button>
       <button class="btn ${danger ? 'btn-danger-solid' : 'btn-primary'}" type="button" data-ok ${requireText ? 'disabled' : ''}>${confirmLabel}</button>`);
     const ok = s.foot.querySelector('[data-ok]');
     if (requireText) {

@@ -1,12 +1,13 @@
 // In-memory stand-in for a Supabase project (Auth, PostgREST, RPC, Realtime, Edge Functions)
 // used by the browser tests. It enforces per-user ownership like the real RLS policies.
 import { randomUUID } from 'node:crypto';
+import { MockFoods } from './mock-foods.mjs';
 
 export const MOCK_URL = 'https://mock.supabase.co';
 
 const b64u = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-const OWNER = { profiles: 'id', user_preferences: 'user_id', daily_goals: 'user_id', meals: 'user_id', meal_items: 'user_id', weight_history: 'user_id', activities: 'user_id', water_logs: 'user_id', favorite_foods: 'user_id' };
-const PK = { profiles: ['id'], user_preferences: ['user_id'], daily_goals: ['user_id'], meals: ['id'], meal_items: ['id'], weight_history: ['id'], activities: ['id'], water_logs: ['user_id', 'log_date'], favorite_foods: ['id'] };
+const OWNER = { profiles: 'id', user_preferences: 'user_id', daily_goals: 'user_id', meals: 'user_id', meal_items: 'user_id', weight_history: 'user_id', activities: 'user_id', water_logs: 'user_id', favorite_foods: 'user_id', food_corrections: 'user_id' };
+const PK = { profiles: ['id'], user_preferences: ['user_id'], daily_goals: ['user_id'], meals: ['id'], meal_items: ['id'], weight_history: ['id'], activities: ['id'], water_logs: ['user_id', 'log_date'], favorite_foods: ['id'], food_corrections: ['id'] };
 // Unique constraints besides the primary key (like the real schema).
 const UNIQUE = { favorite_foods: ['user_id', 'food_name', 'unit'], weight_history: ['user_id', 'recorded_on'] };
 
@@ -18,6 +19,9 @@ export class MockSupabase {
     this.recovery = new Map();   // user id → code
     this.calls = [];             // log of requests (for assertions)
     this.aiFailures = 0;
+    this.foodDb = new MockFoods();
+    this.db.food_corrections = this.foodDb.corrections; // the same list, so admin tools see reports
+    this.ai = [];               // every AI request: { mode, body } — to check what reached AI
   }
 
   // ── helpers ──────────────────────────────────────────────────────────
@@ -143,6 +147,14 @@ export class MockSupabase {
   // PostgREST subset: eq/gte/lte filters, order, offset/limit, upsert, patch, delete.
   rest(url, method, headers, body, reply) {
     const table = url.pathname.slice(9);
+    if (table === 'foods' && method === 'GET') {
+      const user = this.userFrom(headers);
+      if (!user) return reply(401, { code: '42501', message: 'permission denied' });
+      const id = (url.searchParams.get('id') || '').replace(/^eq\./, '');
+      const f = this.foodDb.foods.get(id);
+      const rows = f && this.foodDb.visible(f, user.id) ? [this.foodDb.json(f)] : [];
+      return reply(200, (headers.accept || '').includes('vnd.pgrst.object') ? rows[0] ?? null : rows);
+    }
     if (!OWNER[table]) return reply(404, { code: '42P01', message: `relation "${table}" does not exist` });
     const u = this.userFrom(headers);
     if (!u) return reply(401, { code: '42501', message: 'permission denied' });
@@ -192,6 +204,7 @@ export class MockSupabase {
         row[owner] ??= u.id;
         if (row[owner] !== u.id) return reply(403, { code: '42501', message: 'new row violates row-level security policy' });
         if (PK[table].includes('id')) row.id ??= randomUUID();
+        if (table === 'food_corrections') row.status ??= 'open';
         row.created_at ??= new Date().toISOString();
         const existing = this.db[table].find((r) => r[owner] === u.id && conflict.every((c) => String(r[c]) === String(row[c])));
         if (existing) {
@@ -242,7 +255,10 @@ export class MockSupabase {
       const inserted = [];
       for (const x of body.p_items) {
         if (this.db.meal_items.some((i) => i.id === x.id)) continue; // ON CONFLICT DO NOTHING
-        const row = { ...x, id: x.id || randomUUID(), meal_id: meal.id, user_id: u.id, meal_date: meal.meal_date, meal_type: meal.meal_type, created_at: new Date().toISOString() };
+        const ref = this.foodDb.foods.get(x.food_ref);
+        const row = { ...x, id: x.id || randomUUID(), meal_id: meal.id, user_id: u.id, meal_date: meal.meal_date, meal_type: meal.meal_type, created_at: new Date().toISOString(),
+          food_ref: ref && this.foodDb.visible(ref, u.id) ? ref.id : null, food_version: ref && this.foodDb.visible(ref, u.id) ? ref.version : null,
+          micros: x.micros && typeof x.micros === 'object' ? x.micros : null };
         for (const k of ['calories', 'protein', 'carbs', 'fat', 'fiber']) row[k] = Math.round(Number(row[k] || 0) * 100) / 100;
         this.db.meal_items.push(row); inserted.push(row);
       }
@@ -262,6 +278,12 @@ export class MockSupabase {
       const dates = [...new Set(this.rows('meal_items', u.id).map((i) => i.meal_date))].sort();
       return reply(200, dates.map((d) => ({ meal_date: d })));
     }
+    try {
+      const res = this.foodDb.rpc(fn, body || {}, u.id);
+      if (res !== undefined) return reply(200, res);
+    } catch (e) {
+      return reply(e.code === '42501' ? 403 : 400, { code: e.code || 'P0001', message: e.message });
+    }
     if (fn === 'recovery_code_status') return reply(200, { has_code: this.recovery.has(u.id), created_at: this.recovery.has(u.id) ? new Date().toISOString() : null });
     if (fn === 'claim_legacy_data') return reply(200, { meal_items: 0, weights: 0, activities: 0 });
     return reply(404, { code: 'PGRST202', message: `Could not find the function public.${fn}` });
@@ -274,6 +296,9 @@ export class MockSupabase {
       if (this.aiFailures > 0) { this.aiFailures--; return reply(503, { error: { code: 'ai_unavailable', message: 'AI is unavailable right now. Please try again, or add the food manually.' } }); }
       this.lastProvider = body.provider;
       const provider = body.provider === 'claude' ? 'claude' : 'gemini';
+      this.ai.push({ mode: body.mode, body });
+      if (body.mode === 'parse') return reply(200, { items: this.mockParse(body.text), provider });
+      if (body.mode === 'estimate') return reply(200, { items: (body.items || []).map((it, index) => this.mockEstimate(it, index)), provider });
       if (body.mode === 'activity') return reply(200, { items: [{ name: 'Badminton', duration_min: 45, met: 5.5, calories_burned: Math.round(4.5 * (Number(body.weight_kg) || 70) * 0.75 * 100) / 100 }], provider });
       // Like the real function: energy is always computed from the macros.
       const item = (food_name, grams, m) => {
@@ -307,6 +332,32 @@ export class MockSupabase {
       return reply(200, { ok: true });
     }
     return reply(404, { error: { code: 'not_found', message: 'Not found' } });
+  }
+
+  /**
+   * AI parse stand-in. Like the real function it returns only items whose words are in the text
+   * (tests can add an invented item through `parseExtra` to prove it's dropped).
+   */
+  mockParse(text) {
+    const t = ` ${String(text).toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ')} `;
+    const items = (this.parseScript?.[text] || []).concat(this.parseExtra || []);
+    return items.filter((it) => t.includes(` ${it.text_span.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()} `))
+      .map((it) => ({ quantity: null, unit: null, amount_vague: false, preparation: null, modifier_of: null, ...it }));
+  }
+
+  /** AI estimate stand-in: known test foods get fixed values (energy from macros, like the server). */
+  mockEstimate(it, index) {
+    const name = String(it.food_name).toLowerCase();
+    const known = {
+      'jeera rice': { food_name: 'Jeera rice', m: [3, 28, 3, 1], grams: 158, servings: [{ label: '1 katori', grams: 158 }] },
+      'homemade peanut chutney': { food_name: 'Peanut chutney', m: [9, 12, 20, 4], grams: 10, servings: [{ label: '1 tbsp', grams: 15 }] },
+      'peanut chutney': { food_name: 'Peanut chutney', m: [9, 12, 20, 4], grams: 10, servings: [{ label: '1 tbsp', grams: 15 }] },
+    }[name] || { food_name: it.food_name.replace(/^./, (c) => c.toUpperCase()), m: [8, 30, 10, 2], grams: 150, servings: [{ label: '1 serving', grams: 150 }] };
+    const [p, c, f, fib] = known.m;
+    const grams = it.unit === 'g' && it.quantity ? it.quantity : known.grams;
+    return { index, food_name: known.food_name, category: 'dish', grams,
+      per_100g: { calories: 4 * p + 4 * c + 9 * f, protein: p, carbs: c, fat: f, fiber: fib, alcohol: 0, sugar: null, saturated_fat: null, sodium_mg: null, cholesterol_mg: null },
+      servings: known.servings, confidence: 'high' };
   }
 
   /** Minimal Phoenix channel server so the realtime client connects cleanly. */

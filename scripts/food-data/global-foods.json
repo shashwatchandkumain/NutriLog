@@ -1,0 +1,6702 @@
+[
+ {
+  "id": "62c14ebc-515f-5368-9198-07aa672c2587",
+  "name": "Boiled egg",
+  "name_key": "boiled egg",
+  "category": "eggs",
+  "preparation": "boiled",
+  "base_unit": "g",
+  "calories": 150.28,
+  "protein": 12.6,
+  "carbs": 1.12,
+  "fat": 10.6,
+  "fiber": 0,
+  "sugar": 1.12,
+  "saturated_fat": 3.27,
+  "trans_fat": null,
+  "sodium_mg": 124,
+  "cholesterol_mg": 373,
+  "micros": {
+   "vitamin_a_ug": 149,
+   "vitamin_b1_mg": 0.066,
+   "vitamin_b2_mg": 0.513,
+   "vitamin_b3_mg": 0.064,
+   "vitamin_b5_mg": 1.4,
+   "vitamin_b6_mg": 0.121,
+   "vitamin_b9_ug": 44,
+   "vitamin_b12_ug": 1.11,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 2.2,
+   "vitamin_e_mg": 1.03,
+   "vitamin_k_ug": 0.3,
+   "calcium_mg": 50,
+   "iron_mg": 1.19,
+   "magnesium_mg": 10,
+   "phosphorus_mg": 172,
+   "potassium_mg": 126,
+   "zinc_mg": 1.05,
+   "copper_mg": 0.013,
+   "manganese_mg": 0.026,
+   "selenium_ug": 30.8
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Egg, whole, cooked, hard-boiled",
+  "source_id": "fdc:173424",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173424/nutrients",
+  "servings": [
+   {
+    "id": "2de2a816-a46b-5816-ac94-7bca3cf5c376",
+    "label": "1 large egg",
+    "grams": 50,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "163e145a-e012-59c2-a28e-c2b2db0b045e",
+    "label": "1 medium egg",
+    "grams": 44,
+    "is_default": false,
+    "sort_order": 1
+   },
+   {
+    "id": "9ed8d9e6-2f77-53ca-aa81-918f06994e83",
+    "label": "1 small egg",
+    "grams": 38,
+    "is_default": false,
+    "sort_order": 2
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "egg",
+    "alias_key": "egg"
+   },
+   {
+    "alias": "hard boiled egg",
+    "alias_key": "boiled egg hard"
+   },
+   {
+    "alias": "anda",
+    "alias_key": "anda"
+   },
+   {
+    "alias": "boiled anda",
+    "alias_key": "anda boiled"
+   },
+   {
+    "alias": "ubla anda",
+    "alias_key": "anda ubla"
+   },
+   {
+    "alias": "whole egg boiled",
+    "alias_key": "boiled egg whole"
+   }
+  ]
+ },
+ {
+  "id": "7eef10cf-ee2d-5e42-957a-fe12596e65cf",
+  "name": "Raw egg",
+  "name_key": "egg raw",
+  "category": "eggs",
+  "preparation": "raw",
+  "base_unit": "g",
+  "calories": 138.87,
+  "protein": 12.6,
+  "carbs": 0.72,
+  "fat": 9.51,
+  "fiber": 0,
+  "sugar": 0.37,
+  "saturated_fat": 3.13,
+  "trans_fat": 0.04,
+  "sodium_mg": 142,
+  "cholesterol_mg": 372,
+  "micros": {
+   "vitamin_a_ug": 160,
+   "vitamin_b1_mg": 0.04,
+   "vitamin_b2_mg": 0.457,
+   "vitamin_b3_mg": 0.075,
+   "vitamin_b5_mg": 1.53,
+   "vitamin_b6_mg": 0.17,
+   "vitamin_b9_ug": 47,
+   "vitamin_b12_ug": 0.89,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 2,
+   "vitamin_e_mg": 1.05,
+   "vitamin_k_ug": 0.3,
+   "calcium_mg": 56,
+   "iron_mg": 1.75,
+   "magnesium_mg": 12,
+   "phosphorus_mg": 198,
+   "potassium_mg": 138,
+   "zinc_mg": 1.29,
+   "copper_mg": 0.072,
+   "manganese_mg": 0.028,
+   "selenium_ug": 30.7
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Egg, whole, raw, fresh",
+  "source_id": "fdc:171287",
+  "source_url": "https://fdc.nal.usda.gov/food-details/171287/nutrients",
+  "servings": [
+   {
+    "id": "85190d6f-458c-59a3-a8bd-46e2acff8062",
+    "label": "1 large egg",
+    "grams": 50,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "3e91cea5-2dee-5948-b159-832e67173275",
+    "label": "1 medium egg",
+    "grams": 44,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "kacha anda",
+    "alias_key": "anda kacha"
+   }
+  ]
+ },
+ {
+  "id": "a164841a-f6b4-537b-9310-4a72469f887b",
+  "name": "Fried egg",
+  "name_key": "egg fried",
+  "category": "eggs",
+  "preparation": "fried",
+  "base_unit": "g",
+  "calories": 190.92,
+  "protein": 13.6,
+  "carbs": 0.83,
+  "fat": 14.8,
+  "fiber": 0,
+  "sugar": 0.4,
+  "saturated_fat": 4.32,
+  "trans_fat": 0.04,
+  "sodium_mg": 207,
+  "cholesterol_mg": 401,
+  "micros": {
+   "vitamin_a_ug": 219,
+   "vitamin_b1_mg": 0.044,
+   "vitamin_b2_mg": 0.495,
+   "vitamin_b3_mg": 0.082,
+   "vitamin_b5_mg": 1.66,
+   "vitamin_b6_mg": 0.184,
+   "vitamin_b9_ug": 51,
+   "vitamin_b12_ug": 0.97,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 2.2,
+   "vitamin_e_mg": 1.31,
+   "vitamin_k_ug": 5.6,
+   "calcium_mg": 62,
+   "iron_mg": 1.89,
+   "magnesium_mg": 13,
+   "phosphorus_mg": 215,
+   "potassium_mg": 152,
+   "zinc_mg": 1.39,
+   "copper_mg": 0.078,
+   "manganese_mg": 0.03,
+   "selenium_ug": 33.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Egg, whole, cooked, fried",
+  "source_id": "fdc:173423",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173423/nutrients",
+  "servings": [
+   {
+    "id": "ad4d379a-c492-56bf-badd-de40bf5daaa4",
+    "label": "1 fried egg",
+    "grams": 46,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "egg fry",
+    "alias_key": "egg fry"
+   },
+   {
+    "alias": "sunny side up",
+    "alias_key": "side sunny up"
+   },
+   {
+    "alias": "bullseye",
+    "alias_key": "bullseye"
+   },
+   {
+    "alias": "half fried egg",
+    "alias_key": "egg fried half"
+   },
+   {
+    "alias": "half fry",
+    "alias_key": "fry half"
+   },
+   {
+    "alias": "half fry egg",
+    "alias_key": "egg fry half"
+   },
+   {
+    "alias": "half-fried egg",
+    "alias_key": "egg fried half"
+   }
+  ]
+ },
+ {
+  "id": "8adf33a0-8050-5f44-8146-e2828686a5fa",
+  "name": "Scrambled egg",
+  "name_key": "egg scrambled",
+  "category": "eggs",
+  "preparation": "scrambled",
+  "base_unit": "g",
+  "calories": 145.4,
+  "protein": 9.99,
+  "carbs": 1.61,
+  "fat": 11,
+  "fiber": 0,
+  "sugar": 1.39,
+  "saturated_fat": 3.33,
+  "trans_fat": 0.62,
+  "sodium_mg": 145,
+  "cholesterol_mg": 277,
+  "micros": {
+   "vitamin_a_ug": 161,
+   "vitamin_b1_mg": 0.04,
+   "vitamin_b2_mg": 0.376,
+   "vitamin_b3_mg": 0.076,
+   "vitamin_b5_mg": 1.22,
+   "vitamin_b6_mg": 0.134,
+   "vitamin_b9_ug": 36,
+   "vitamin_b12_ug": 0.76,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 1.8,
+   "vitamin_e_mg": 1.15,
+   "vitamin_k_ug": 4,
+   "calcium_mg": 66,
+   "iron_mg": 1.31,
+   "magnesium_mg": 11,
+   "phosphorus_mg": 165,
+   "potassium_mg": 132,
+   "zinc_mg": 1.04,
+   "copper_mg": 0.059,
+   "manganese_mg": 0.022,
+   "selenium_ug": 23.5
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Egg, whole, cooked, scrambled",
+  "source_id": "fdc:172187",
+  "source_url": "https://fdc.nal.usda.gov/food-details/172187/nutrients",
+  "servings": [
+   {
+    "id": "bce9debb-a1d4-5029-beb8-ead955e434c2",
+    "label": "2 eggs, scrambled",
+    "grams": 120,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "3f1c4d27-4baa-50ac-ac14-3210ae936f12",
+    "label": "1 egg, scrambled",
+    "grams": 61,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "egg bhurji",
+    "alias_key": "bhurji egg"
+   },
+   {
+    "alias": "anda bhurji",
+    "alias_key": "anda bhurji"
+   },
+   {
+    "alias": "bhurji",
+    "alias_key": "bhurji"
+   }
+  ]
+ },
+ {
+  "id": "d552c928-3f9a-5e61-98d8-5a04383f02cd",
+  "name": "Omelette",
+  "name_key": "omelette",
+  "category": "eggs",
+  "preparation": "omelette",
+  "base_unit": "g",
+  "calories": 150.26,
+  "protein": 10.6,
+  "carbs": 0.64,
+  "fat": 11.7,
+  "fiber": 0,
+  "sugar": 0.31,
+  "saturated_fat": 3.32,
+  "trans_fat": 0.71,
+  "sodium_mg": 155,
+  "cholesterol_mg": 313,
+  "micros": {
+   "vitamin_a_ug": 172,
+   "vitamin_b1_mg": 0.034,
+   "vitamin_b2_mg": 0.386,
+   "vitamin_b3_mg": 0.064,
+   "vitamin_b5_mg": 1.29,
+   "vitamin_b6_mg": 0.143,
+   "vitamin_b9_ug": 39,
+   "vitamin_b12_ug": 0.76,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 1.7,
+   "vitamin_e_mg": 1.29,
+   "vitamin_k_ug": 4.5,
+   "calcium_mg": 48,
+   "iron_mg": 1.48,
+   "magnesium_mg": 11,
+   "phosphorus_mg": 167,
+   "potassium_mg": 117,
+   "zinc_mg": 1.09,
+   "copper_mg": 0.063,
+   "manganese_mg": 0.024,
+   "selenium_ug": 25.8
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Egg, whole, cooked, omelet",
+  "source_id": "fdc:172185",
+  "source_url": "https://fdc.nal.usda.gov/food-details/172185/nutrients",
+  "servings": [
+   {
+    "id": "cd002fd6-fd8b-5d63-8f02-0ad122ac364b",
+    "label": "2-egg omelette",
+    "grams": 120,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "3fb3b623-871a-520d-adfd-5835bc6d8fb0",
+    "label": "1-egg omelette",
+    "grams": 60,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "omelet",
+    "alias_key": "omelet"
+   },
+   {
+    "alias": "egg omelette",
+    "alias_key": "egg omelette"
+   },
+   {
+    "alias": "masala omelette",
+    "alias_key": "masala omelette"
+   },
+   {
+    "alias": "anda omelette",
+    "alias_key": "anda omelette"
+   }
+  ]
+ },
+ {
+  "id": "5d9cf234-2fff-554b-b4ed-ecb45110979d",
+  "name": "Poached egg",
+  "name_key": "egg poached",
+  "category": "eggs",
+  "preparation": "poached",
+  "base_unit": "g",
+  "calories": 138.07,
+  "protein": 12.5,
+  "carbs": 0.71,
+  "fat": 9.47,
+  "fiber": 0,
+  "sugar": 0.37,
+  "saturated_fat": 3.11,
+  "trans_fat": 0.04,
+  "sodium_mg": 297,
+  "cholesterol_mg": 370,
+  "micros": {
+   "vitamin_a_ug": 160,
+   "vitamin_b1_mg": 0.032,
+   "vitamin_b2_mg": 0.387,
+   "vitamin_b3_mg": 0.063,
+   "vitamin_b5_mg": 1.53,
+   "vitamin_b6_mg": 0.144,
+   "vitamin_b9_ug": 35,
+   "vitamin_b12_ug": 0.71,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 2,
+   "vitamin_e_mg": 1.04,
+   "vitamin_k_ug": 0.3,
+   "calcium_mg": 56,
+   "iron_mg": 1.75,
+   "magnesium_mg": 12,
+   "phosphorus_mg": 197,
+   "potassium_mg": 138,
+   "zinc_mg": 1.29,
+   "copper_mg": 0.072,
+   "manganese_mg": 0.028,
+   "selenium_ug": 30.6
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Egg, whole, cooked, poached",
+  "source_id": "fdc:172186",
+  "source_url": "https://fdc.nal.usda.gov/food-details/172186/nutrients",
+  "servings": [
+   {
+    "id": "f74a8fcb-b6ea-5fe2-94bd-69b43986cdb7",
+    "label": "1 large egg",
+    "grams": 50,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": []
+ },
+ {
+  "id": "d72f4303-3ddb-582b-8d54-ca1192830c01",
+  "name": "Egg white",
+  "name_key": "egg white",
+  "category": "eggs",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 48.05,
+  "protein": 10.9,
+  "carbs": 0.73,
+  "fat": 0.17,
+  "fiber": 0,
+  "sugar": 0.71,
+  "saturated_fat": 0,
+  "trans_fat": null,
+  "sodium_mg": 166,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.004,
+   "vitamin_b2_mg": 0.439,
+   "vitamin_b3_mg": 0.105,
+   "vitamin_b5_mg": 0.19,
+   "vitamin_b6_mg": 0.005,
+   "vitamin_b9_ug": 4,
+   "vitamin_b12_ug": 0.09,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 7,
+   "iron_mg": 0.08,
+   "magnesium_mg": 11,
+   "phosphorus_mg": 15,
+   "potassium_mg": 163,
+   "zinc_mg": 0.03,
+   "copper_mg": 0.023,
+   "manganese_mg": 0.011,
+   "selenium_ug": 20
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Egg, white, raw, fresh",
+  "source_id": "fdc:172183",
+  "source_url": "https://fdc.nal.usda.gov/food-details/172183/nutrients",
+  "servings": [
+   {
+    "id": "e5c9b09a-d495-5dda-9868-cb9d5ba2b538",
+    "label": "1 egg white",
+    "grams": 33,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "anda safedi",
+    "alias_key": "anda safedi"
+   }
+  ]
+ },
+ {
+  "id": "1d1029ba-f30d-5a51-9e52-f61817bbe239",
+  "name": "Egg yolk",
+  "name_key": "egg yolk",
+  "category": "eggs",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 316.46,
+  "protein": 15.9,
+  "carbs": 3.59,
+  "fat": 26.5,
+  "fiber": 0,
+  "sugar": 0.56,
+  "saturated_fat": 9.55,
+  "trans_fat": null,
+  "sodium_mg": 48,
+  "cholesterol_mg": 1080,
+  "micros": {
+   "vitamin_a_ug": 381,
+   "vitamin_b1_mg": 0.176,
+   "vitamin_b2_mg": 0.528,
+   "vitamin_b3_mg": 0.024,
+   "vitamin_b5_mg": 2.99,
+   "vitamin_b6_mg": 0.35,
+   "vitamin_b9_ug": 146,
+   "vitamin_b12_ug": 1.95,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 5.4,
+   "vitamin_e_mg": 2.58,
+   "vitamin_k_ug": 0.7,
+   "calcium_mg": 129,
+   "iron_mg": 2.73,
+   "magnesium_mg": 5,
+   "phosphorus_mg": 390,
+   "potassium_mg": 109,
+   "zinc_mg": 2.3,
+   "copper_mg": 0.077,
+   "manganese_mg": 0.055,
+   "selenium_ug": 56
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Egg, yolk, raw, fresh",
+  "source_id": "fdc:172184",
+  "source_url": "https://fdc.nal.usda.gov/food-details/172184/nutrients",
+  "servings": [
+   {
+    "id": "3e10ec9e-6cef-52ff-b60d-b80bfe0c3eb6",
+    "label": "1 yolk",
+    "grams": 17,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "yolk",
+    "alias_key": "yolk"
+   },
+   {
+    "alias": "anda zardi",
+    "alias_key": "anda zardi"
+   }
+  ]
+ },
+ {
+  "id": "799e03ef-c972-517c-a56c-3b52d6144ee5",
+  "name": "Chicken breast, cooked",
+  "name_key": "breast chicken cooked",
+  "category": "protein",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 156.13,
+  "protein": 31,
+  "carbs": 0,
+  "fat": 3.57,
+  "fiber": 0,
+  "sugar": 0,
+  "saturated_fat": 1.01,
+  "trans_fat": null,
+  "sodium_mg": 74,
+  "cholesterol_mg": 85,
+  "micros": {
+   "vitamin_a_ug": 6,
+   "vitamin_b1_mg": 0.07,
+   "vitamin_b2_mg": 0.114,
+   "vitamin_b3_mg": 13.7,
+   "vitamin_b5_mg": 0.965,
+   "vitamin_b6_mg": 0.6,
+   "vitamin_b9_ug": 4,
+   "vitamin_b12_ug": 0.34,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0.1,
+   "vitamin_e_mg": 0.27,
+   "vitamin_k_ug": 0.3,
+   "calcium_mg": 15,
+   "iron_mg": 1.04,
+   "magnesium_mg": 29,
+   "phosphorus_mg": 228,
+   "potassium_mg": 256,
+   "zinc_mg": 1,
+   "copper_mg": 0.049,
+   "manganese_mg": 0.017,
+   "selenium_ug": 27.6
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Chicken, broilers or fryers, breast, meat only, cooked, roasted",
+  "source_id": "fdc:171477",
+  "source_url": "https://fdc.nal.usda.gov/food-details/171477/nutrients",
+  "servings": [
+   {
+    "id": "40779643-44a8-5645-8fc8-8120c63a3594",
+    "label": "1 piece (palm size)",
+    "grams": 100,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "0ec36ce8-f751-5c9e-819f-f1be952df11a",
+    "label": "1 whole breast",
+    "grams": 170,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "chicken breast",
+    "alias_key": "breast chicken"
+   },
+   {
+    "alias": "grilled chicken breast",
+    "alias_key": "breast chicken grilled"
+   },
+   {
+    "alias": "chicken breast grilled",
+    "alias_key": "breast chicken grilled"
+   },
+   {
+    "alias": "roasted chicken breast",
+    "alias_key": "breast chicken roasted"
+   },
+   {
+    "alias": "boiled chicken breast",
+    "alias_key": "boiled breast chicken"
+   },
+   {
+    "alias": "grilled chicken",
+    "alias_key": "chicken grilled"
+   }
+  ]
+ },
+ {
+  "id": "3694e902-39b3-5f21-bed7-5c968680cb9a",
+  "name": "Chicken breast, raw",
+  "name_key": "breast chicken raw",
+  "category": "protein",
+  "preparation": "raw",
+  "base_unit": "g",
+  "calories": 113.4,
+  "protein": 22.5,
+  "carbs": 0,
+  "fat": 2.6,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Chicken breast, raw (skinless)",
+  "source_id": "ref:Chicken breast, raw (skinless)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "5a898926-8918-5a06-a2a0-c9f56a567499",
+    "label": "1 whole breast",
+    "grams": 200,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": []
+ },
+ {
+  "id": "33487e62-fb7c-562e-9842-2467f81cdef9",
+  "name": "Chicken thigh, cooked",
+  "name_key": "chicken cooked thigh",
+  "category": "protein",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 172.55,
+  "protein": 24.8,
+  "carbs": 0,
+  "fat": 8.15,
+  "fiber": 0,
+  "sugar": 0,
+  "saturated_fat": 2.31,
+  "trans_fat": 0.04,
+  "sodium_mg": 106,
+  "cholesterol_mg": 133,
+  "micros": {
+   "vitamin_a_ug": 8,
+   "vitamin_b1_mg": 0.096,
+   "vitamin_b2_mg": 0.218,
+   "vitamin_b3_mg": 6.21,
+   "vitamin_b5_mg": 1.3,
+   "vitamin_b6_mg": 0.462,
+   "vitamin_b9_ug": 5,
+   "vitamin_b12_ug": 0.42,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0.2,
+   "vitamin_e_mg": 0.18,
+   "vitamin_k_ug": 3.9,
+   "calcium_mg": 9,
+   "iron_mg": 1.13,
+   "magnesium_mg": 24,
+   "phosphorus_mg": 230,
+   "potassium_mg": 269,
+   "zinc_mg": 1.92,
+   "copper_mg": 0.067,
+   "manganese_mg": 0.016,
+   "selenium_ug": 27.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Chicken, broilers or fryers, thigh, meat only, cooked, roasted",
+  "source_id": "fdc:172388",
+  "source_url": "https://fdc.nal.usda.gov/food-details/172388/nutrients",
+  "servings": [
+   {
+    "id": "ad20cd60-8a0a-5d00-8bfe-b94e64aedf97",
+    "label": "1 thigh",
+    "grams": 75,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "chicken thigh",
+    "alias_key": "chicken thigh"
+   },
+   {
+    "alias": "chicken leg piece",
+    "alias_key": "chicken leg piece"
+   }
+  ]
+ },
+ {
+  "id": "95471003-e0a4-50d3-b2a0-67577eb09f22",
+  "name": "Mutton, cooked",
+  "name_key": "cooked mutton",
+  "category": "protein",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 135.4,
+  "protein": 27.1,
+  "carbs": 0,
+  "fat": 3,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Mutton / goat meat, cooked",
+  "source_id": "ref:Mutton / goat meat, cooked",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "8789aa89-0ac3-5b62-924a-e8738a09c341",
+    "label": "1 serving",
+    "grams": 100,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "mutton",
+    "alias_key": "mutton"
+   },
+   {
+    "alias": "goat meat",
+    "alias_key": "goat meat"
+   },
+   {
+    "alias": "gosht",
+    "alias_key": "gosht"
+   }
+  ]
+ },
+ {
+  "id": "8044f990-30b7-503b-bdd4-c83b8fb2ffb7",
+  "name": "Mutton curry",
+  "name_key": "curry mutton",
+  "category": "curry",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 149.5,
+  "protein": 12,
+  "carbs": 4,
+  "fat": 9.5,
+  "fiber": 0.8,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Mutton curry",
+  "source_id": "ref:Mutton curry",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "ab816f7b-62ba-52ee-8342-fc6099dbd280",
+    "label": "1 katori (bowl)",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "mutton gravy",
+    "alias_key": "gravy mutton"
+   },
+   {
+    "alias": "gosht curry",
+    "alias_key": "curry gosht"
+   }
+  ]
+ },
+ {
+  "id": "6dec5576-31f4-5acb-8ce0-1280bdbe04ab",
+  "name": "Fish, cooked (lean)",
+  "name_key": "cooked fish lean",
+  "category": "protein",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 128.65,
+  "protein": 26.2,
+  "carbs": 0,
+  "fat": 2.65,
+  "fiber": 0,
+  "sugar": 0,
+  "saturated_fat": 0.94,
+  "trans_fat": null,
+  "sodium_mg": 56,
+  "cholesterol_mg": 57,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.093,
+   "vitamin_b2_mg": 0.073,
+   "vitamin_b3_mg": 4.74,
+   "vitamin_b5_mg": 0.664,
+   "vitamin_b6_mg": 0.123,
+   "vitamin_b9_ug": 6,
+   "vitamin_b12_ug": 1.86,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 3.7,
+   "vitamin_e_mg": 0.79,
+   "vitamin_k_ug": 0.9,
+   "calcium_mg": 14,
+   "iron_mg": 0.69,
+   "magnesium_mg": 34,
+   "phosphorus_mg": 204,
+   "potassium_mg": 380,
+   "zinc_mg": 0.41,
+   "copper_mg": 0.075,
+   "manganese_mg": 0.037,
+   "selenium_ug": 54.4
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Fish, tilapia, cooked, dry heat",
+  "source_id": "fdc:175177",
+  "source_url": "https://fdc.nal.usda.gov/food-details/175177/nutrients",
+  "servings": [
+   {
+    "id": "0ea86ed2-aa18-5d0d-90cd-8522344dacb3",
+    "label": "1 piece",
+    "grams": 100,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "fish",
+    "alias_key": "fish"
+   },
+   {
+    "alias": "tilapia",
+    "alias_key": "tilapia"
+   },
+   {
+    "alias": "rohu",
+    "alias_key": "rohu"
+   },
+   {
+    "alias": "machli",
+    "alias_key": "machli"
+   },
+   {
+    "alias": "fish fillet",
+    "alias_key": "fillet fish"
+   }
+  ]
+ },
+ {
+  "id": "ccef3448-91f1-5cb2-b5e8-598196b62fb4",
+  "name": "Salmon, cooked",
+  "name_key": "cooked salmon",
+  "category": "protein",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 200,
+  "protein": 22.1,
+  "carbs": 0,
+  "fat": 12.4,
+  "fiber": 0,
+  "sugar": 0,
+  "saturated_fat": 2.4,
+  "trans_fat": null,
+  "sodium_mg": 61,
+  "cholesterol_mg": 63,
+  "micros": {
+   "vitamin_a_ug": 69,
+   "vitamin_b1_mg": 0.34,
+   "vitamin_b2_mg": 0.135,
+   "vitamin_b3_mg": 8.04,
+   "vitamin_b5_mg": 1.48,
+   "vitamin_b6_mg": 0.647,
+   "vitamin_b9_ug": 34,
+   "vitamin_b12_ug": 2.8,
+   "vitamin_c_mg": 3.7,
+   "vitamin_d_ug": 13.1,
+   "vitamin_e_mg": 1.14,
+   "vitamin_k_ug": 0.1,
+   "calcium_mg": 15,
+   "iron_mg": 0.34,
+   "magnesium_mg": 30,
+   "phosphorus_mg": 252,
+   "potassium_mg": 384,
+   "zinc_mg": 0.43,
+   "copper_mg": 0.049,
+   "manganese_mg": 0.016,
+   "selenium_ug": 41.4
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Fish, salmon, Atlantic, farmed, cooked, dry heat",
+  "source_id": "fdc:175168",
+  "source_url": "https://fdc.nal.usda.gov/food-details/175168/nutrients",
+  "servings": [
+   {
+    "id": "350479a6-2ef1-55b3-b950-04bbcaca2a69",
+    "label": "1 fillet",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "salmon",
+    "alias_key": "salmon"
+   }
+  ]
+ },
+ {
+  "id": "25d786fc-1b40-58f8-8cc6-189747cb16ba",
+  "name": "Tuna, canned in water",
+  "name_key": "canned in tuna water",
+  "category": "protein",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 86.24,
+  "protein": 19.4,
+  "carbs": 0,
+  "fat": 0.96,
+  "fiber": 0,
+  "sugar": 0,
+  "saturated_fat": 0.21,
+  "trans_fat": 0,
+  "sodium_mg": 247,
+  "cholesterol_mg": 36,
+  "micros": {
+   "vitamin_a_ug": 17,
+   "vitamin_b1_mg": 0.03,
+   "vitamin_b2_mg": 0.084,
+   "vitamin_b3_mg": 10.1,
+   "vitamin_b5_mg": 0.148,
+   "vitamin_b6_mg": 0.319,
+   "vitamin_b9_ug": 4,
+   "vitamin_b12_ug": 2.55,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 1.2,
+   "vitamin_e_mg": 0.33,
+   "vitamin_k_ug": 0.2,
+   "calcium_mg": 17,
+   "iron_mg": 1.63,
+   "magnesium_mg": 23,
+   "phosphorus_mg": 139,
+   "potassium_mg": 179,
+   "zinc_mg": 0.69,
+   "copper_mg": 0.05,
+   "manganese_mg": 0.019,
+   "selenium_ug": 70.6
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Fish, tuna, light, canned in water, drained solids (Includes foods for USDA's Food Distribution Program)",
+  "source_id": "fdc:173709",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173709/nutrients",
+  "servings": [
+   {
+    "id": "c7be3618-7415-5135-ac9a-cf7e304a1c2c",
+    "label": "1 can (drained)",
+    "grams": 140,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "tuna",
+    "alias_key": "tuna"
+   },
+   {
+    "alias": "canned tuna",
+    "alias_key": "canned tuna"
+   }
+  ]
+ },
+ {
+  "id": "15d95d4d-882b-53ca-9e5a-71474a76c1cc",
+  "name": "Prawns, cooked",
+  "name_key": "cooked prawn",
+  "category": "protein",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 99.32,
+  "protein": 24,
+  "carbs": 0.2,
+  "fat": 0.28,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": 0.06,
+  "trans_fat": 0,
+  "sodium_mg": 111,
+  "cholesterol_mg": 189,
+  "micros": {
+   "calcium_mg": 70,
+   "iron_mg": 0.51,
+   "magnesium_mg": 39,
+   "phosphorus_mg": 237,
+   "potassium_mg": 259,
+   "zinc_mg": 1.64,
+   "copper_mg": 0.379,
+   "manganese_mg": 0.033
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Crustaceans, shrimp, cooked",
+  "source_id": "fdc:175180",
+  "source_url": "https://fdc.nal.usda.gov/food-details/175180/nutrients",
+  "servings": [
+   {
+    "id": "2bb1d26f-3961-5185-9163-06475317ddfb",
+    "label": "1 serving",
+    "grams": 100,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "prawns",
+    "alias_key": "prawn"
+   },
+   {
+    "alias": "shrimp",
+    "alias_key": "shrimp"
+   },
+   {
+    "alias": "jhinga",
+    "alias_key": "jhinga"
+   }
+  ]
+ },
+ {
+  "id": "3c66e824-ed5f-52d7-a4a7-0d123535eb0a",
+  "name": "Paneer",
+  "name_key": "paneer",
+  "category": "dairy",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 272.8,
+  "protein": 18.3,
+  "carbs": 3.1,
+  "fat": 20.8,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Paneer (full fat)",
+  "source_id": "ref:Paneer (full fat)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "9ef14b40-1118-5ebe-a988-58faed416636",
+    "label": "1 cube (small piece)",
+    "grams": 25,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "00d01755-6302-58ed-adac-b91340234f7a",
+    "label": "1 serving",
+    "grams": 100,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "cottage cheese indian",
+    "alias_key": "cheese cottage indian"
+   },
+   {
+    "alias": "paneer cubes",
+    "alias_key": "cube paneer"
+   }
+  ]
+ },
+ {
+  "id": "6fd46b24-a4af-5a47-9b01-254558f28e51",
+  "name": "Tofu",
+  "name_key": "tofu",
+  "category": "protein",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 85.09,
+  "protein": 9.04,
+  "carbs": 2.85,
+  "fat": 4.17,
+  "fiber": 0.9,
+  "sugar": 0.6,
+  "saturated_fat": 0.79,
+  "trans_fat": 0,
+  "sodium_mg": 12,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.06,
+   "vitamin_b2_mg": 0.063,
+   "vitamin_b3_mg": 0.101,
+   "vitamin_b5_mg": 0.11,
+   "vitamin_b6_mg": 0.071,
+   "vitamin_b9_ug": 19,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0.2,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.01,
+   "vitamin_k_ug": 2.4,
+   "calcium_mg": 201,
+   "iron_mg": 1.61,
+   "magnesium_mg": 37,
+   "phosphorus_mg": 121,
+   "potassium_mg": 148,
+   "zinc_mg": 0.83,
+   "copper_mg": 0.213,
+   "manganese_mg": 0.625,
+   "selenium_ug": 9.9
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)",
+  "source_id": "fdc:172448",
+  "source_url": "https://fdc.nal.usda.gov/food-details/172448/nutrients",
+  "servings": [
+   {
+    "id": "1e1068bf-6acc-553e-ad3b-a840fab2a456",
+    "label": "1 serving",
+    "grams": 100,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "tofu firm",
+    "alias_key": "firm tofu"
+   },
+   {
+    "alias": "firm tofu",
+    "alias_key": "firm tofu"
+   }
+  ]
+ },
+ {
+  "id": "dd731566-5d42-5b00-97f5-78cfd02c8dc6",
+  "name": "Soya chunks (dry)",
+  "name_key": "chunk dry soya",
+  "category": "protein",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 344.5,
+  "protein": 52,
+  "carbs": 33,
+  "fat": 0.5,
+  "fiber": 13,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Soya chunks (dry)",
+  "source_id": "ref:Soya chunks (dry)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "1a31998e-5817-578c-a776-13b9edec1b4d",
+    "label": "1 serving",
+    "grams": 30,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "soya chunks",
+    "alias_key": "chunk soya"
+   },
+   {
+    "alias": "soya badi",
+    "alias_key": "badi soya"
+   },
+   {
+    "alias": "nutrela",
+    "alias_key": "nutrela"
+   },
+   {
+    "alias": "soy chunks",
+    "alias_key": "chunk soy"
+   }
+  ]
+ },
+ {
+  "id": "81ebf22c-220d-5c92-a8b2-ddac616c757a",
+  "name": "Whey protein",
+  "name_key": "protein whey",
+  "category": "protein",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 351.44,
+  "protein": 78.1,
+  "carbs": 6.25,
+  "fat": 1.56,
+  "fiber": 3.1,
+  "sugar": 0,
+  "saturated_fat": 0.78,
+  "trans_fat": 0,
+  "sodium_mg": 156,
+  "cholesterol_mg": 16,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.609,
+   "vitamin_b2_mg": 2.02,
+   "vitamin_b3_mg": 1.14,
+   "vitamin_b5_mg": 5.52,
+   "vitamin_b6_mg": 0.607,
+   "vitamin_b9_ug": 33,
+   "vitamin_b12_ug": 2.45,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 469,
+   "iron_mg": 1.13,
+   "magnesium_mg": 195,
+   "phosphorus_mg": 1320,
+   "potassium_mg": 500,
+   "zinc_mg": 6.18,
+   "copper_mg": 0.049,
+   "selenium_ug": 26.7
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Beverages, Protein powder whey based",
+  "source_id": "fdc:173180",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173180/nutrients",
+  "servings": [
+   {
+    "id": "80da8745-b543-5de6-9382-e4753d0b8fbd",
+    "label": "1 scoop",
+    "grams": 30,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "whey",
+    "alias_key": "whey"
+   },
+   {
+    "alias": "protein powder",
+    "alias_key": "powder protein"
+   },
+   {
+    "alias": "whey protein powder",
+    "alias_key": "powder protein whey"
+   },
+   {
+    "alias": "protein shake powder",
+    "alias_key": "powder protein shake"
+   }
+  ]
+ },
+ {
+  "id": "bf4d4fab-408f-58ec-8d40-d94db99991bb",
+  "name": "Roti",
+  "name_key": "roti",
+  "category": "grains",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 280.1,
+  "protein": 9,
+  "carbs": 52.7,
+  "fat": 3.7,
+  "fiber": 8.4,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Roti / Chapati (whole wheat, no ghee)",
+  "source_id": "ref:Roti / Chapati (whole wheat, no ghee)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "6ed47900-57f3-5b33-9085-8f7448c88a33",
+    "label": "1 medium roti",
+    "grams": 40,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "74b2aa71-2888-5d1e-8a7a-fd0aaf2b3c04",
+    "label": "1 small roti / phulka",
+    "grams": 30,
+    "is_default": false,
+    "sort_order": 1
+   },
+   {
+    "id": "bcb03a67-7519-51d2-aca9-85823af7200d",
+    "label": "1 large roti",
+    "grams": 55,
+    "is_default": false,
+    "sort_order": 2
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "chapati",
+    "alias_key": "chapati"
+   },
+   {
+    "alias": "chapatti",
+    "alias_key": "chapatti"
+   },
+   {
+    "alias": "chappati",
+    "alias_key": "chappati"
+   },
+   {
+    "alias": "phulka",
+    "alias_key": "phulka"
+   },
+   {
+    "alias": "fulka",
+    "alias_key": "fulka"
+   },
+   {
+    "alias": "indian roti",
+    "alias_key": "indian roti"
+   },
+   {
+    "alias": "wheat roti",
+    "alias_key": "roti wheat"
+   },
+   {
+    "alias": "tawa roti",
+    "alias_key": "roti tawa"
+   }
+  ]
+ },
+ {
+  "id": "8bc82ac3-35e3-5ee0-86ef-7c34adb18a4f",
+  "name": "Rice, white, cooked",
+  "name_key": "cooked rice white",
+  "category": "grains",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 126.08,
+  "protein": 2.69,
+  "carbs": 28.2,
+  "fat": 0.28,
+  "fiber": 0.4,
+  "sugar": 0.05,
+  "saturated_fat": 0.08,
+  "trans_fat": null,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.02,
+   "vitamin_b2_mg": 0.013,
+   "vitamin_b3_mg": 0.4,
+   "vitamin_b5_mg": 0.39,
+   "vitamin_b6_mg": 0.093,
+   "vitamin_b9_ug": 3,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.04,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 10,
+   "iron_mg": 0.2,
+   "magnesium_mg": 12,
+   "phosphorus_mg": 43,
+   "potassium_mg": 35,
+   "zinc_mg": 0.49,
+   "copper_mg": 0.069,
+   "manganese_mg": 0.472,
+   "selenium_ug": 7.5
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Rice, white, long-grain, regular, unenriched, cooked without salt",
+  "source_id": "fdc:169757",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169757/nutrients",
+  "servings": [
+   {
+    "id": "b13b176d-0d13-5726-a342-77b3ab49e8ba",
+    "label": "1 katori (bowl)",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "3df017f6-3fa5-5f75-b00f-14d1bad8845d",
+    "label": "1 cup",
+    "grams": 158,
+    "is_default": false,
+    "sort_order": 1
+   },
+   {
+    "id": "68114a97-607e-5cc3-a805-57ab61c22b5a",
+    "label": "1 plate",
+    "grams": 250,
+    "is_default": false,
+    "sort_order": 2
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "rice",
+    "alias_key": "rice"
+   },
+   {
+    "alias": "white rice",
+    "alias_key": "rice white"
+   },
+   {
+    "alias": "chawal",
+    "alias_key": "chawal"
+   },
+   {
+    "alias": "boiled rice",
+    "alias_key": "boiled rice"
+   },
+   {
+    "alias": "steamed rice",
+    "alias_key": "rice steamed"
+   },
+   {
+    "alias": "plain rice",
+    "alias_key": "plain rice"
+   },
+   {
+    "alias": "cooked rice",
+    "alias_key": "cooked rice"
+   }
+  ]
+ },
+ {
+  "id": "c144aea6-7b53-5b68-b2e9-f8f3ab3db407",
+  "name": "Rice, brown, cooked",
+  "name_key": "brown cooked rice",
+  "category": "grains",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 122.09,
+  "protein": 2.74,
+  "carbs": 25.6,
+  "fat": 0.97,
+  "fiber": 1.6,
+  "sugar": 0.24,
+  "saturated_fat": 0.26,
+  "trans_fat": 0,
+  "sodium_mg": 4,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.178,
+   "vitamin_b2_mg": 0.069,
+   "vitamin_b3_mg": 2.56,
+   "vitamin_b5_mg": 0.38,
+   "vitamin_b6_mg": 0.123,
+   "vitamin_b9_ug": 9,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.17,
+   "vitamin_k_ug": 0.2,
+   "calcium_mg": 3,
+   "iron_mg": 0.56,
+   "magnesium_mg": 39,
+   "phosphorus_mg": 103,
+   "potassium_mg": 86,
+   "zinc_mg": 0.71,
+   "copper_mg": 0.106,
+   "manganese_mg": 0.974,
+   "selenium_ug": 5.8
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Rice, brown, long-grain, cooked (Includes foods for USDA's Food Distribution Program)",
+  "source_id": "fdc:169704",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169704/nutrients",
+  "servings": [
+   {
+    "id": "76313fc8-b7ac-5fe8-ac07-cbb749e8a83b",
+    "label": "1 katori (bowl)",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "b91c09aa-4244-5490-980b-e3169ba842d3",
+    "label": "1 cup",
+    "grams": 195,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "brown rice",
+    "alias_key": "brown rice"
+   }
+  ]
+ },
+ {
+  "id": "8071dfbc-85ca-5f11-90a2-43bb0d8d83dc",
+  "name": "Naan",
+  "name_key": "naan",
+  "category": "grains",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 288.2,
+  "protein": 9,
+  "carbs": 50,
+  "fat": 5.8,
+  "fiber": 2.2,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Naan, plain",
+  "source_id": "ref:Naan, plain",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "b8769827-04ee-529e-99a2-d913b021af05",
+    "label": "1 naan",
+    "grams": 90,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "plain naan",
+    "alias_key": "naan plain"
+   },
+   {
+    "alias": "nan",
+    "alias_key": "nan"
+   }
+  ]
+ },
+ {
+  "id": "474a91b4-6296-59ca-be07-be67e179f281",
+  "name": "White bread",
+  "name_key": "bread white",
+  "category": "grains",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 262.97,
+  "protein": 8.85,
+  "carbs": 49.4,
+  "fat": 3.33,
+  "fiber": 2.7,
+  "sugar": 5.67,
+  "saturated_fat": 0.7,
+  "trans_fat": 0.03,
+  "sodium_mg": 490,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.533,
+   "vitamin_b2_mg": 0.243,
+   "vitamin_b3_mg": 4.78,
+   "vitamin_b5_mg": 0.536,
+   "vitamin_b6_mg": 0.087,
+   "vitamin_b9_ug": 171,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.22,
+   "vitamin_k_ug": 0.2,
+   "calcium_mg": 144,
+   "iron_mg": 3.61,
+   "magnesium_mg": 23,
+   "phosphorus_mg": 98,
+   "potassium_mg": 126,
+   "zinc_mg": 0.74,
+   "copper_mg": 0.101,
+   "manganese_mg": 0.536,
+   "selenium_ug": 22
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Bread, white, commercially prepared (includes soft bread crumbs)",
+  "source_id": "fdc:174924",
+  "source_url": "https://fdc.nal.usda.gov/food-details/174924/nutrients",
+  "servings": [
+   {
+    "id": "bbbf5c6c-d25d-5273-aec3-9ad25219f7e1",
+    "label": "1 slice",
+    "grams": 25,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "bread",
+    "alias_key": "bread"
+   },
+   {
+    "alias": "bread slice",
+    "alias_key": "bread slice"
+   },
+   {
+    "alias": "white bread slice",
+    "alias_key": "bread slice white"
+   },
+   {
+    "alias": "sandwich bread",
+    "alias_key": "bread sandwich"
+   }
+  ]
+ },
+ {
+  "id": "64b0c372-2968-5dac-b40b-cb1f98e8cec1",
+  "name": "Brown bread",
+  "name_key": "bread brown",
+  "category": "grains",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 251.9,
+  "protein": 12.4,
+  "carbs": 42.7,
+  "fat": 3.5,
+  "fiber": 6,
+  "sugar": 4.34,
+  "saturated_fat": 0.72,
+  "trans_fat": 0.02,
+  "sodium_mg": 455,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.394,
+   "vitamin_b2_mg": 0.167,
+   "vitamin_b3_mg": 4.44,
+   "vitamin_b5_mg": 0.646,
+   "vitamin_b6_mg": 0.215,
+   "vitamin_b9_ug": 42,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 2.66,
+   "vitamin_k_ug": 7.8,
+   "calcium_mg": 161,
+   "iron_mg": 2.47,
+   "magnesium_mg": 75,
+   "phosphorus_mg": 212,
+   "potassium_mg": 254,
+   "zinc_mg": 1.77,
+   "copper_mg": 0.227,
+   "manganese_mg": 2.17,
+   "selenium_ug": 25.7
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Bread, whole-wheat, commercially prepared",
+  "source_id": "fdc:172688",
+  "source_url": "https://fdc.nal.usda.gov/food-details/172688/nutrients",
+  "servings": [
+   {
+    "id": "fc0c6ebe-3ea0-5361-bfda-f87d6ee18271",
+    "label": "1 slice",
+    "grams": 28,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "whole wheat bread",
+    "alias_key": "bread wheat whole"
+   },
+   {
+    "alias": "wheat bread",
+    "alias_key": "bread wheat"
+   },
+   {
+    "alias": "brown bread slice",
+    "alias_key": "bread brown slice"
+   },
+   {
+    "alias": "atta bread",
+    "alias_key": "atta bread"
+   }
+  ]
+ },
+ {
+  "id": "1bd05591-e7b8-58d7-b959-0764fc61890a",
+  "name": "Oats (dry)",
+  "name_key": "dry oat",
+  "category": "grains",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 382.28,
+  "protein": 13.2,
+  "carbs": 67.7,
+  "fat": 6.52,
+  "fiber": 10.1,
+  "sugar": 0.99,
+  "saturated_fat": 1.11,
+  "trans_fat": null,
+  "sodium_mg": 6,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.46,
+   "vitamin_b2_mg": 0.155,
+   "vitamin_b3_mg": 1.12,
+   "vitamin_b5_mg": 1.12,
+   "vitamin_b6_mg": 0.1,
+   "vitamin_b9_ug": 32,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.42,
+   "vitamin_k_ug": 2,
+   "calcium_mg": 52,
+   "iron_mg": 4.25,
+   "magnesium_mg": 138,
+   "phosphorus_mg": 410,
+   "potassium_mg": 362,
+   "zinc_mg": 3.64,
+   "copper_mg": 0.391,
+   "manganese_mg": 3.63,
+   "selenium_ug": 28.9
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Cereals, oats, regular and quick, not fortified, dry",
+  "source_id": "fdc:173904",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173904/nutrients",
+  "servings": [
+   {
+    "id": "9085c699-e1d7-50ff-81c3-e469eedf5c9c",
+    "label": "1/2 cup",
+    "grams": 40,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "c9c62092-ad03-5155-bbc0-a6bdf0c88c53",
+    "label": "1 tbsp",
+    "grams": 5,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "oats",
+    "alias_key": "oat"
+   },
+   {
+    "alias": "rolled oats",
+    "alias_key": "oat rolled"
+   },
+   {
+    "alias": "oatmeal dry",
+    "alias_key": "dry oatmeal"
+   },
+   {
+    "alias": "oat",
+    "alias_key": "oat"
+   }
+  ]
+ },
+ {
+  "id": "e12d1d82-2d98-5d0d-ac43-e0cb741a9dc7",
+  "name": "Oatmeal, cooked with water",
+  "name_key": "cooked oatmeal water",
+  "category": "grains",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 71.5,
+  "protein": 2.5,
+  "carbs": 12,
+  "fat": 1.5,
+  "fiber": 1.7,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Oatmeal / porridge, cooked with water",
+  "source_id": "ref:Oatmeal / porridge, cooked with water",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "dab9eb3b-369f-544f-b29f-693e230f9fec",
+    "label": "1 bowl",
+    "grams": 234,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "oatmeal",
+    "alias_key": "oatmeal"
+   },
+   {
+    "alias": "porridge",
+    "alias_key": "porridge"
+   },
+   {
+    "alias": "oats porridge",
+    "alias_key": "oat porridge"
+   },
+   {
+    "alias": "cooked oats",
+    "alias_key": "cooked oat"
+   }
+  ]
+ },
+ {
+  "id": "dadc0cb9-2718-5c68-8e72-32acd522abb3",
+  "name": "Cornflakes",
+  "name_key": "cornflake",
+  "category": "grains",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 357.6,
+  "protein": 7.5,
+  "carbs": 81,
+  "fat": 0.4,
+  "fiber": 3.3,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Cornflakes (dry)",
+  "source_id": "ref:Cornflakes (dry)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "bee73821-0296-5904-9b2d-2ccae70db4c8",
+    "label": "1 cup",
+    "grams": 30,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "corn flakes",
+    "alias_key": "corn flake"
+   }
+  ]
+ },
+ {
+  "id": "5dbbf9c5-969f-56f9-b96d-74a6d0a96f0a",
+  "name": "Pasta, cooked",
+  "name_key": "cooked pasta",
+  "category": "grains",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 155.17,
+  "protein": 5.8,
+  "carbs": 30.9,
+  "fat": 0.93,
+  "fiber": 1.8,
+  "sugar": 0.56,
+  "saturated_fat": 0.18,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.02,
+   "vitamin_b2_mg": 0.02,
+   "vitamin_b3_mg": 0.4,
+   "vitamin_b5_mg": 0.112,
+   "vitamin_b6_mg": 0.049,
+   "vitamin_b9_ug": 7,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.06,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 7,
+   "iron_mg": 0.5,
+   "magnesium_mg": 18,
+   "phosphorus_mg": 58,
+   "potassium_mg": 44,
+   "zinc_mg": 0.51,
+   "copper_mg": 0.1,
+   "manganese_mg": 0.322,
+   "selenium_ug": 26.4
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Pasta, cooked, unenriched, without added salt",
+  "source_id": "fdc:168928",
+  "source_url": "https://fdc.nal.usda.gov/food-details/168928/nutrients",
+  "servings": [
+   {
+    "id": "d03f1397-3803-5690-bdce-b3a1e284987b",
+    "label": "1 cup",
+    "grams": 140,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "pasta",
+    "alias_key": "pasta"
+   },
+   {
+    "alias": "spaghetti",
+    "alias_key": "spaghetti"
+   },
+   {
+    "alias": "macaroni",
+    "alias_key": "macaroni"
+   }
+  ]
+ },
+ {
+  "id": "353795ef-f013-5ccc-8285-4a42406feea9",
+  "name": "Quinoa, cooked",
+  "name_key": "cooked quinoa",
+  "category": "grains",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 120.08,
+  "protein": 4.4,
+  "carbs": 21.3,
+  "fat": 1.92,
+  "fiber": 2.8,
+  "sugar": 0.87,
+  "saturated_fat": 0.23,
+  "trans_fat": null,
+  "sodium_mg": 7,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.107,
+   "vitamin_b2_mg": 0.11,
+   "vitamin_b3_mg": 0.412,
+   "vitamin_b6_mg": 0.123,
+   "vitamin_b9_ug": 42,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.63,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 17,
+   "iron_mg": 1.49,
+   "magnesium_mg": 64,
+   "phosphorus_mg": 152,
+   "potassium_mg": 172,
+   "zinc_mg": 1.09,
+   "copper_mg": 0.192,
+   "manganese_mg": 0.631,
+   "selenium_ug": 2.8
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Quinoa, cooked",
+  "source_id": "fdc:168917",
+  "source_url": "https://fdc.nal.usda.gov/food-details/168917/nutrients",
+  "servings": [
+   {
+    "id": "5fa92e2a-8c6f-5504-af63-a99414a673a1",
+    "label": "1 cup",
+    "grams": 185,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "quinoa",
+    "alias_key": "quinoa"
+   }
+  ]
+ },
+ {
+  "id": "6a91e915-f291-54b0-9aa5-4cc2010c3ffa",
+  "name": "Instant noodles (dry)",
+  "name_key": "dry instant noodle",
+  "category": "grains",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 433,
+  "protein": 9,
+  "carbs": 61,
+  "fat": 17,
+  "fiber": 2,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Instant noodles, masala (dry weight)",
+  "source_id": "ref:Instant noodles, masala (dry weight)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "4aeb77d6-6c44-5271-99a3-77046fb1de13",
+    "label": "1 packet",
+    "grams": 70,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "maggi",
+    "alias_key": "maggi"
+   },
+   {
+    "alias": "instant noodles",
+    "alias_key": "instant noodle"
+   },
+   {
+    "alias": "masala noodles",
+    "alias_key": "masala noodle"
+   }
+  ]
+ },
+ {
+  "id": "a77e0e73-cf5c-55e6-baee-968037067349",
+  "name": "Poha",
+  "name_key": "poha",
+  "category": "breakfast",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 179,
+  "protein": 3.5,
+  "carbs": 30,
+  "fat": 5,
+  "fiber": 1.5,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Poha, cooked (tempered)",
+  "source_id": "ref:Poha, cooked (tempered)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "ec7921fe-91d2-59b8-acf5-980c6e32765a",
+    "label": "1 plate",
+    "grams": 200,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "b03b5466-0184-51b7-b8ef-2e201319a454",
+    "label": "1 katori (bowl)",
+    "grams": 120,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "kanda poha",
+    "alias_key": "kanda poha"
+   },
+   {
+    "alias": "aloo poha",
+    "alias_key": "aloo poha"
+   },
+   {
+    "alias": "chivda poha",
+    "alias_key": "chivda poha"
+   }
+  ]
+ },
+ {
+  "id": "8e32c157-e9d1-53a1-bd17-f077837605fb",
+  "name": "Dosa",
+  "name_key": "dosa",
+  "category": "breakfast",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 167.1,
+  "protein": 4,
+  "carbs": 29,
+  "fat": 3.9,
+  "fiber": 1.5,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Dosa, plain",
+  "source_id": "ref:Dosa, plain",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "8c70b15b-990e-5a9a-b747-1fd713056081",
+    "label": "1 medium dosa",
+    "grams": 75,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "364d0865-dd65-5fe6-aaca-df02df28e642",
+    "label": "1 large dosa",
+    "grams": 120,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "plain dosa",
+    "alias_key": "dosa plain"
+   },
+   {
+    "alias": "sada dosa",
+    "alias_key": "dosa sada"
+   }
+  ]
+ },
+ {
+  "id": "f4c4db9c-da1e-56ae-b3a9-ffacbfdd5700",
+  "name": "Khichdi",
+  "name_key": "khichdi",
+  "category": "grains",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 124.5,
+  "protein": 4.5,
+  "carbs": 21,
+  "fat": 2.5,
+  "fiber": 2,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Khichdi (rice + moong dal)",
+  "source_id": "ref:Khichdi (rice + moong dal)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "b356d4b8-5722-53a1-a958-36b49a58150d",
+    "label": "1 katori (bowl)",
+    "grams": 200,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "khichri",
+    "alias_key": "khichri"
+   },
+   {
+    "alias": "moong dal khichdi",
+    "alias_key": "dal khichdi moong"
+   }
+  ]
+ },
+ {
+  "id": "03471154-010e-52b9-859b-2e4be62837f2",
+  "name": "Dal",
+  "name_key": "dal",
+  "category": "dal",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 104.2,
+  "protein": 6,
+  "carbs": 16,
+  "fat": 1.8,
+  "fiber": 4,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Dal, cooked (plain, medium consistency)",
+  "source_id": "ref:Dal, cooked (plain, medium consistency)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "2760f2a3-cdfc-56bc-b9cc-0f73929e6513",
+    "label": "1 katori (bowl)",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "daal",
+    "alias_key": "daal"
+   },
+   {
+    "alias": "dhal",
+    "alias_key": "dhal"
+   },
+   {
+    "alias": "plain dal",
+    "alias_key": "dal plain"
+   },
+   {
+    "alias": "arhar dal",
+    "alias_key": "arhar dal"
+   },
+   {
+    "alias": "toor dal",
+    "alias_key": "dal toor"
+   },
+   {
+    "alias": "yellow dal",
+    "alias_key": "dal yellow"
+   },
+   {
+    "alias": "moong dal",
+    "alias_key": "dal moong"
+   }
+  ]
+ },
+ {
+  "id": "cb2141f4-8d90-52ed-8a8e-ae0c24e6dca5",
+  "name": "Dal tadka",
+  "name_key": "dal tadka",
+  "category": "dal",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 129,
+  "protein": 6,
+  "carbs": 15,
+  "fat": 5,
+  "fiber": 4,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Dal tadka / dal fry",
+  "source_id": "ref:Dal tadka / dal fry",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "4b9f622d-833b-5302-9ced-75a7448c1d00",
+    "label": "1 katori (bowl)",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "dal fry",
+    "alias_key": "dal fry"
+   },
+   {
+    "alias": "daal tadka",
+    "alias_key": "daal tadka"
+   },
+   {
+    "alias": "dal tarka",
+    "alias_key": "dal tarka"
+   }
+  ]
+ },
+ {
+  "id": "2f26156f-433a-5b50-a30e-b6a639e6d434",
+  "name": "Moong, boiled",
+  "name_key": "boiled moong",
+  "category": "dal",
+  "preparation": "boiled",
+  "base_unit": "g",
+  "calories": 108.3,
+  "protein": 7.02,
+  "carbs": 19.2,
+  "fat": 0.38,
+  "fiber": 7.6,
+  "sugar": 2,
+  "saturated_fat": 0.12,
+  "trans_fat": 0,
+  "sodium_mg": 2,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 1,
+   "vitamin_b1_mg": 0.164,
+   "vitamin_b2_mg": 0.061,
+   "vitamin_b3_mg": 0.577,
+   "vitamin_b5_mg": 0.41,
+   "vitamin_b6_mg": 0.067,
+   "vitamin_b9_ug": 159,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 1,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.15,
+   "vitamin_k_ug": 2.7,
+   "calcium_mg": 27,
+   "iron_mg": 1.4,
+   "magnesium_mg": 48,
+   "phosphorus_mg": 99,
+   "potassium_mg": 266,
+   "zinc_mg": 0.84,
+   "copper_mg": 0.156,
+   "manganese_mg": 0.298,
+   "selenium_ug": 2.5
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Mung beans, mature seeds, cooked, boiled, without salt",
+  "source_id": "fdc:174257",
+  "source_url": "https://fdc.nal.usda.gov/food-details/174257/nutrients",
+  "servings": [
+   {
+    "id": "2704276b-62db-57cc-ac4e-8cebbec51d48",
+    "label": "1 katori (bowl)",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "mung beans boiled",
+    "alias_key": "bean boiled mung"
+   },
+   {
+    "alias": "green gram boiled",
+    "alias_key": "boiled gram green"
+   }
+  ]
+ },
+ {
+  "id": "ac5b4a60-f66e-52c3-bbfc-8e19173a4250",
+  "name": "Lentils, boiled",
+  "name_key": "boiled lentil",
+  "category": "dal",
+  "preparation": "boiled",
+  "base_unit": "g",
+  "calories": 119.9,
+  "protein": 9.02,
+  "carbs": 20.1,
+  "fat": 0.38,
+  "fiber": 7.9,
+  "sugar": 1.8,
+  "saturated_fat": 0.05,
+  "trans_fat": 0,
+  "sodium_mg": 2,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.169,
+   "vitamin_b2_mg": 0.073,
+   "vitamin_b3_mg": 1.06,
+   "vitamin_b5_mg": 0.638,
+   "vitamin_b6_mg": 0.178,
+   "vitamin_b9_ug": 181,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 1.5,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.11,
+   "vitamin_k_ug": 1.7,
+   "calcium_mg": 19,
+   "iron_mg": 3.33,
+   "magnesium_mg": 36,
+   "phosphorus_mg": 180,
+   "potassium_mg": 369,
+   "zinc_mg": 1.27,
+   "copper_mg": 0.251,
+   "manganese_mg": 0.494,
+   "selenium_ug": 2.8
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Lentils, mature seeds, cooked, boiled, without salt",
+  "source_id": "fdc:172421",
+  "source_url": "https://fdc.nal.usda.gov/food-details/172421/nutrients",
+  "servings": [
+   {
+    "id": "82496298-5242-5d3d-8f5d-2a84de45b0b2",
+    "label": "1 katori (bowl)",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "masoor",
+    "alias_key": "masoor"
+   },
+   {
+    "alias": "boiled masoor",
+    "alias_key": "boiled masoor"
+   },
+   {
+    "alias": "lentils",
+    "alias_key": "lentil"
+   },
+   {
+    "alias": "red lentils boiled",
+    "alias_key": "boiled lentil red"
+   }
+  ]
+ },
+ {
+  "id": "bca1524c-ef49-596d-9fe2-e2ffe98424c1",
+  "name": "Chickpeas, boiled",
+  "name_key": "boiled chickpea",
+  "category": "dal",
+  "preparation": "boiled",
+  "base_unit": "g",
+  "calories": 168.35,
+  "protein": 8.86,
+  "carbs": 27.4,
+  "fat": 2.59,
+  "fiber": 7.6,
+  "sugar": 4.8,
+  "saturated_fat": 0.27,
+  "trans_fat": 0,
+  "sodium_mg": 7,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 1,
+   "vitamin_b1_mg": 0.116,
+   "vitamin_b2_mg": 0.063,
+   "vitamin_b3_mg": 0.526,
+   "vitamin_b5_mg": 0.286,
+   "vitamin_b6_mg": 0.139,
+   "vitamin_b9_ug": 172,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 1.3,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.35,
+   "vitamin_k_ug": 4,
+   "calcium_mg": 49,
+   "iron_mg": 2.89,
+   "magnesium_mg": 48,
+   "phosphorus_mg": 168,
+   "potassium_mg": 291,
+   "zinc_mg": 1.53,
+   "copper_mg": 0.352,
+   "manganese_mg": 1.03,
+   "selenium_ug": 3.7
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Chickpeas (garbanzo beans, bengal gram), mature seeds, cooked, boiled, without salt",
+  "source_id": "fdc:173757",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173757/nutrients",
+  "servings": [
+   {
+    "id": "815ee03f-3c34-5881-9712-428f37b57385",
+    "label": "1 katori (bowl)",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "d21464f2-68cb-52d4-ad41-75ab7093d244",
+    "label": "1 cup",
+    "grams": 164,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "chana",
+    "alias_key": "chana"
+   },
+   {
+    "alias": "boiled chana",
+    "alias_key": "boiled chana"
+   },
+   {
+    "alias": "kabuli chana",
+    "alias_key": "chana kabuli"
+   },
+   {
+    "alias": "chickpeas",
+    "alias_key": "chickpea"
+   },
+   {
+    "alias": "chole boiled",
+    "alias_key": "boiled chole"
+   }
+  ]
+ },
+ {
+  "id": "1a2ef805-cc6c-58dd-b26a-c6889b35e507",
+  "name": "Chole",
+  "name_key": "chole",
+  "category": "curry",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 152,
+  "protein": 6.5,
+  "carbs": 18,
+  "fat": 6,
+  "fiber": 5.5,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Chole / chana masala",
+  "source_id": "ref:Chole / chana masala",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "02032440-82bc-5851-90f5-ffaa78ca99ab",
+    "label": "1 katori (bowl)",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "chana masala",
+    "alias_key": "chana masala"
+   },
+   {
+    "alias": "chhole",
+    "alias_key": "chhole"
+   },
+   {
+    "alias": "chole masala",
+    "alias_key": "chole masala"
+   }
+  ]
+ },
+ {
+  "id": "31118fd1-90d5-5925-95c1-a9b7597c54c5",
+  "name": "Rajma, boiled",
+  "name_key": "boiled rajma",
+  "category": "dal",
+  "preparation": "boiled",
+  "base_unit": "g",
+  "calories": 130.38,
+  "protein": 8.67,
+  "carbs": 22.8,
+  "fat": 0.5,
+  "fiber": 6.4,
+  "sugar": 0.32,
+  "saturated_fat": 0.07,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.16,
+   "vitamin_b2_mg": 0.058,
+   "vitamin_b3_mg": 0.578,
+   "vitamin_b5_mg": 0.22,
+   "vitamin_b6_mg": 0.12,
+   "vitamin_b9_ug": 130,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 1.2,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.03,
+   "vitamin_k_ug": 8.4,
+   "calcium_mg": 35,
+   "iron_mg": 2.22,
+   "magnesium_mg": 42,
+   "phosphorus_mg": 138,
+   "potassium_mg": 405,
+   "zinc_mg": 1,
+   "copper_mg": 0.216,
+   "manganese_mg": 0.43,
+   "selenium_ug": 1.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Beans, kidney, all types, mature seeds, cooked, boiled, without salt",
+  "source_id": "fdc:173740",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173740/nutrients",
+  "servings": [
+   {
+    "id": "fcb2802a-4e20-5245-8578-ba087693f2d4",
+    "label": "1 katori (bowl)",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "rajma",
+    "alias_key": "rajma"
+   },
+   {
+    "alias": "kidney beans",
+    "alias_key": "bean kidney"
+   }
+  ]
+ },
+ {
+  "id": "797f0df1-e980-5cf8-ad10-bf9ba95475d9",
+  "name": "Moong sprouts",
+  "name_key": "moong sprout",
+  "category": "dal",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 37.54,
+  "protein": 3.04,
+  "carbs": 5.94,
+  "fat": 0.18,
+  "fiber": 1.8,
+  "sugar": 4.13,
+  "saturated_fat": 0.05,
+  "trans_fat": 0,
+  "sodium_mg": 6,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 1,
+   "vitamin_b1_mg": 0.084,
+   "vitamin_b2_mg": 0.124,
+   "vitamin_b3_mg": 0.749,
+   "vitamin_b5_mg": 0.38,
+   "vitamin_b6_mg": 0.088,
+   "vitamin_b9_ug": 61,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 13.2,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.1,
+   "vitamin_k_ug": 33,
+   "calcium_mg": 13,
+   "iron_mg": 0.91,
+   "magnesium_mg": 21,
+   "phosphorus_mg": 54,
+   "potassium_mg": 149,
+   "zinc_mg": 0.41,
+   "copper_mg": 0.164,
+   "manganese_mg": 0.188,
+   "selenium_ug": 0.6
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Mung beans, mature seeds, sprouted, raw",
+  "source_id": "fdc:169957",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169957/nutrients",
+  "servings": [
+   {
+    "id": "2ed083dc-842a-5432-8175-ede7fbebcbd8",
+    "label": "1 cup",
+    "grams": 104,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "sprouts",
+    "alias_key": "sprout"
+   },
+   {
+    "alias": "sprouted moong",
+    "alias_key": "moong sprouted"
+   },
+   {
+    "alias": "mung sprouts",
+    "alias_key": "mung sprout"
+   }
+  ]
+ },
+ {
+  "id": "1ead2dd9-743b-5adf-9715-82fb83763441",
+  "name": "Roasted chana",
+  "name_key": "chana roasted",
+  "category": "snack",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 365,
+  "protein": 22,
+  "carbs": 58,
+  "fat": 5,
+  "fiber": 17,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Roasted chana (bhuna chana)",
+  "source_id": "ref:Roasted chana (bhuna chana)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "2ed4d6c4-6ddd-5221-9691-9be57f3a265e",
+    "label": "1 handful",
+    "grams": 30,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "bhuna chana",
+    "alias_key": "bhuna chana"
+   },
+   {
+    "alias": "roasted gram",
+    "alias_key": "gram roasted"
+   }
+  ]
+ },
+ {
+  "id": "ad9911b2-49b7-5845-9667-1b51f09783f0",
+  "name": "Milk, whole",
+  "name_key": "milk whole",
+  "category": "dairy",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 61.05,
+  "protein": 3.15,
+  "carbs": 4.8,
+  "fat": 3.25,
+  "fiber": 0,
+  "sugar": 5.05,
+  "saturated_fat": 1.86,
+  "trans_fat": null,
+  "sodium_mg": 43,
+  "cholesterol_mg": 10,
+  "micros": {
+   "vitamin_a_ug": 46,
+   "vitamin_b1_mg": 0.046,
+   "vitamin_b2_mg": 0.169,
+   "vitamin_b3_mg": 0.089,
+   "vitamin_b5_mg": 0.373,
+   "vitamin_b6_mg": 0.036,
+   "vitamin_b9_ug": 5,
+   "vitamin_b12_ug": 0.45,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 1.3,
+   "vitamin_e_mg": 0.07,
+   "vitamin_k_ug": 0.3,
+   "calcium_mg": 113,
+   "iron_mg": 0.03,
+   "magnesium_mg": 10,
+   "phosphorus_mg": 84,
+   "potassium_mg": 132,
+   "zinc_mg": 0.37,
+   "copper_mg": 0.025,
+   "manganese_mg": 0.004,
+   "selenium_ug": 3.7
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Milk, whole, 3.25% milkfat, with added vitamin D",
+  "source_id": "fdc:171265",
+  "source_url": "https://fdc.nal.usda.gov/food-details/171265/nutrients",
+  "servings": [
+   {
+    "id": "b7b91ce8-ff03-5528-ba56-2efa5543b5e7",
+    "label": "1 glass",
+    "grams": 250,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "7b83dba4-1188-5ca1-bcb7-cf3e798708b8",
+    "label": "1 cup",
+    "grams": 240,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "milk",
+    "alias_key": "milk"
+   },
+   {
+    "alias": "full cream milk",
+    "alias_key": "cream full milk"
+   },
+   {
+    "alias": "full fat milk",
+    "alias_key": "fat full milk"
+   },
+   {
+    "alias": "doodh",
+    "alias_key": "doodh"
+   },
+   {
+    "alias": "cow milk",
+    "alias_key": "cow milk"
+   }
+  ]
+ },
+ {
+  "id": "50582651-d6ad-5a33-ae3f-d632f77a8c1e",
+  "name": "Milk, toned",
+  "name_key": "milk toned",
+  "category": "dairy",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 58.2,
+  "protein": 3.1,
+  "carbs": 4.7,
+  "fat": 3,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Milk, toned (3% fat)",
+  "source_id": "ref:Milk, toned (3% fat)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "6d62d6c0-13fb-5714-8038-e6fa04e62ee8",
+    "label": "1 glass",
+    "grams": 250,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "776c807c-e4f0-5bb9-95fe-e9868e072752",
+    "label": "1 cup",
+    "grams": 240,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": []
+ },
+ {
+  "id": "bfafdb0b-9ab5-5bfc-be87-368357b5b96e",
+  "name": "Milk, double toned",
+  "name_key": "double milk toned",
+  "category": "dairy",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 45.1,
+  "protein": 3.2,
+  "carbs": 4.7,
+  "fat": 1.5,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Milk, double toned (1.5% fat)",
+  "source_id": "ref:Milk, double toned (1.5% fat)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "81580850-af26-5e0c-bf3e-bf2272ad3c9b",
+    "label": "1 glass",
+    "grams": 250,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "303585a0-7f8d-50d7-a0fe-9737a01b66af",
+    "label": "1 cup",
+    "grams": 240,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "low fat milk",
+    "alias_key": "fat low milk"
+   }
+  ]
+ },
+ {
+  "id": "2f9512fd-90f5-524a-90ab-0f0d1e2aec8d",
+  "name": "Milk, skimmed",
+  "name_key": "milk skimmed",
+  "category": "dairy",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 34.04,
+  "protein": 3.37,
+  "carbs": 4.96,
+  "fat": 0.08,
+  "fiber": 0,
+  "sugar": 5.09,
+  "saturated_fat": 0.06,
+  "trans_fat": null,
+  "sodium_mg": 42,
+  "cholesterol_mg": 2,
+  "micros": {
+   "vitamin_a_ug": 61,
+   "vitamin_b1_mg": 0.045,
+   "vitamin_b2_mg": 0.182,
+   "vitamin_b3_mg": 0.094,
+   "vitamin_b5_mg": 0.357,
+   "vitamin_b6_mg": 0.037,
+   "vitamin_b9_ug": 5,
+   "vitamin_b12_ug": 0.5,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 1.2,
+   "vitamin_e_mg": 0.01,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 122,
+   "iron_mg": 0.03,
+   "magnesium_mg": 11,
+   "phosphorus_mg": 101,
+   "potassium_mg": 156,
+   "zinc_mg": 0.42,
+   "copper_mg": 0.013,
+   "manganese_mg": 0.003,
+   "selenium_ug": 3.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Milk, nonfat, fluid, with added vitamin A and vitamin D (fat free or skim)",
+  "source_id": "fdc:171269",
+  "source_url": "https://fdc.nal.usda.gov/food-details/171269/nutrients",
+  "servings": [
+   {
+    "id": "4e8e96b7-1cab-54a3-a939-7ea027097835",
+    "label": "1 glass",
+    "grams": 250,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "10608022-6908-5b82-9437-bfade0e61b29",
+    "label": "1 cup",
+    "grams": 240,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "skim milk",
+    "alias_key": "milk skim"
+   },
+   {
+    "alias": "fat free milk",
+    "alias_key": "fat free milk"
+   }
+  ]
+ },
+ {
+  "id": "9c87671c-0f19-522b-840e-64d6a6bf32ba",
+  "name": "Milk, buffalo",
+  "name_key": "buffalo milk",
+  "category": "dairy",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 98.1,
+  "protein": 3.8,
+  "carbs": 5.2,
+  "fat": 6.9,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Milk, buffalo",
+  "source_id": "ref:Milk, buffalo",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "80b617e3-376c-5776-a1cb-8d21b826846d",
+    "label": "1 glass",
+    "grams": 250,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "bhains ka doodh",
+    "alias_key": "bhain doodh ka"
+   }
+  ]
+ },
+ {
+  "id": "c8d87631-5ff3-51ad-9e12-2e567f31330c",
+  "name": "Curd",
+  "name_key": "curd",
+  "category": "dairy",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 61.77,
+  "protein": 3.47,
+  "carbs": 4.66,
+  "fat": 3.25,
+  "fiber": 0,
+  "sugar": 4.66,
+  "saturated_fat": 2.1,
+  "trans_fat": null,
+  "sodium_mg": 46,
+  "cholesterol_mg": 13,
+  "micros": {
+   "vitamin_a_ug": 27,
+   "vitamin_b1_mg": 0.029,
+   "vitamin_b2_mg": 0.142,
+   "vitamin_b3_mg": 0.075,
+   "vitamin_b5_mg": 0.389,
+   "vitamin_b6_mg": 0.032,
+   "vitamin_b9_ug": 7,
+   "vitamin_b12_ug": 0.37,
+   "vitamin_c_mg": 0.5,
+   "vitamin_d_ug": 0.1,
+   "vitamin_e_mg": 0.06,
+   "vitamin_k_ug": 0.2,
+   "calcium_mg": 121,
+   "iron_mg": 0.05,
+   "magnesium_mg": 12,
+   "phosphorus_mg": 95,
+   "potassium_mg": 155,
+   "zinc_mg": 0.59,
+   "copper_mg": 0.009,
+   "manganese_mg": 0.004,
+   "selenium_ug": 2.2
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Yogurt, plain, whole milk",
+  "source_id": "fdc:171284",
+  "source_url": "https://fdc.nal.usda.gov/food-details/171284/nutrients",
+  "servings": [
+   {
+    "id": "b9162878-9b28-58d6-9ada-d4f996dc264c",
+    "label": "1 katori (bowl)",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "4ec94768-2af8-5200-ab0f-95e95a48e0db",
+    "label": "1 cup",
+    "grams": 245,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "dahi",
+    "alias_key": "dahi"
+   },
+   {
+    "alias": "yogurt",
+    "alias_key": "yogurt"
+   },
+   {
+    "alias": "yoghurt",
+    "alias_key": "yoghurt"
+   },
+   {
+    "alias": "plain curd",
+    "alias_key": "curd plain"
+   },
+   {
+    "alias": "plain yogurt",
+    "alias_key": "plain yogurt"
+   }
+  ]
+ },
+ {
+  "id": "9ba361d2-4caf-5420-831e-86ce9a2e629d",
+  "name": "Greek yogurt, plain, non-fat",
+  "name_key": "fat greek non plain yogurt",
+  "category": "dairy",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 58.71,
+  "protein": 10.2,
+  "carbs": 3.6,
+  "fat": 0.39,
+  "fiber": 0,
+  "sugar": 3.24,
+  "saturated_fat": 0.12,
+  "trans_fat": 0.01,
+  "sodium_mg": 36,
+  "cholesterol_mg": 5,
+  "micros": {
+   "vitamin_a_ug": 1,
+   "vitamin_b1_mg": 0.023,
+   "vitamin_b2_mg": 0.278,
+   "vitamin_b3_mg": 0.208,
+   "vitamin_b5_mg": 0.331,
+   "vitamin_b6_mg": 0.063,
+   "vitamin_b9_ug": 7,
+   "vitamin_b12_ug": 0.75,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.01,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 110,
+   "iron_mg": 0.07,
+   "magnesium_mg": 11,
+   "phosphorus_mg": 135,
+   "potassium_mg": 141,
+   "zinc_mg": 0.52,
+   "copper_mg": 0.017,
+   "manganese_mg": 0.009,
+   "selenium_ug": 9.7
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Yogurt, Greek, plain, nonfat (Includes foods for USDA's Food Distribution Program)",
+  "source_id": "fdc:170894",
+  "source_url": "https://fdc.nal.usda.gov/food-details/170894/nutrients",
+  "servings": [
+   {
+    "id": "975c50ed-3fb5-5a69-8528-64b6cf657fc5",
+    "label": "1 cup",
+    "grams": 170,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "greek yogurt",
+    "alias_key": "greek yogurt"
+   },
+   {
+    "alias": "hung curd",
+    "alias_key": "curd hung"
+   }
+  ]
+ },
+ {
+  "id": "cc0bddb1-6abb-5a46-9adc-24fc4db0e23b",
+  "name": "Cheese slice",
+  "name_key": "cheese slice",
+  "category": "dairy",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 373.4,
+  "protein": 18.1,
+  "carbs": 3.7,
+  "fat": 31.8,
+  "fiber": 0,
+  "sugar": 2.26,
+  "saturated_fat": 18.1,
+  "trans_fat": 1.14,
+  "sodium_mg": 1670,
+  "cholesterol_mg": 100,
+  "micros": {
+   "vitamin_a_ug": 250,
+   "vitamin_b1_mg": 0.015,
+   "vitamin_b2_mg": 0.234,
+   "vitamin_b3_mg": 0.076,
+   "vitamin_b5_mg": 0.403,
+   "vitamin_b6_mg": 0.054,
+   "vitamin_b9_ug": 8,
+   "vitamin_b12_ug": 1.5,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0.6,
+   "vitamin_e_mg": 0.8,
+   "vitamin_k_ug": 2.6,
+   "calcium_mg": 1040,
+   "iron_mg": 0.63,
+   "magnesium_mg": 26,
+   "phosphorus_mg": 641,
+   "potassium_mg": 132,
+   "zinc_mg": 2.49,
+   "copper_mg": 0.046,
+   "manganese_mg": 0.041,
+   "selenium_ug": 20.2
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Cheese, pasteurized process, American, without added vitamin D",
+  "source_id": "fdc:171290",
+  "source_url": "https://fdc.nal.usda.gov/food-details/171290/nutrients",
+  "servings": [
+   {
+    "id": "34040450-fabc-5022-a7cb-1d384f9e9b31",
+    "label": "1 slice",
+    "grams": 20,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "cheese",
+    "alias_key": "cheese"
+   },
+   {
+    "alias": "processed cheese",
+    "alias_key": "cheese processed"
+   },
+   {
+    "alias": "amul cheese slice",
+    "alias_key": "amul cheese slice"
+   }
+  ]
+ },
+ {
+  "id": "db5ddc66-90d5-544e-aabb-8c90f89c7645",
+  "name": "Butter",
+  "name_key": "butter",
+  "category": "fats",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 733.54,
+  "protein": 0.85,
+  "carbs": 0.06,
+  "fat": 81.1,
+  "fiber": 0,
+  "sugar": 0.06,
+  "saturated_fat": 50.5,
+  "trans_fat": null,
+  "sodium_mg": 11,
+  "cholesterol_mg": 215,
+  "micros": {
+   "vitamin_a_ug": 684,
+   "vitamin_b1_mg": 0.005,
+   "vitamin_b2_mg": 0.034,
+   "vitamin_b3_mg": 0.042,
+   "vitamin_b5_mg": 0.11,
+   "vitamin_b6_mg": 0.003,
+   "vitamin_b9_ug": 3,
+   "vitamin_b12_ug": 0.17,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 2.32,
+   "vitamin_k_ug": 7,
+   "calcium_mg": 24,
+   "iron_mg": 0.02,
+   "magnesium_mg": 2,
+   "phosphorus_mg": 24,
+   "potassium_mg": 24,
+   "zinc_mg": 0.09,
+   "copper_mg": 0.016,
+   "manganese_mg": 0.004,
+   "selenium_ug": 1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Butter, without salt",
+  "source_id": "fdc:173430",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173430/nutrients",
+  "servings": [
+   {
+    "id": "ca9bca8e-e767-526d-b7ca-1485ce5e238b",
+    "label": "1 tsp",
+    "grams": 5,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "4ff43163-df81-5136-ab56-9eabf8c8f519",
+    "label": "1 tbsp",
+    "grams": 14,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "makhan",
+    "alias_key": "makhan"
+   },
+   {
+    "alias": "unsalted butter",
+    "alias_key": "butter unsalted"
+   },
+   {
+    "alias": "salted butter",
+    "alias_key": "butter salted"
+   },
+   {
+    "alias": "white butter",
+    "alias_key": "butter white"
+   }
+  ]
+ },
+ {
+  "id": "9bfa4138-9072-5c3b-b758-e07163befe06",
+  "name": "Ghee",
+  "name_key": "ghee",
+  "category": "fats",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 896.62,
+  "protein": 0.28,
+  "carbs": 0,
+  "fat": 99.5,
+  "fiber": 0,
+  "sugar": 0,
+  "saturated_fat": 61.9,
+  "trans_fat": null,
+  "sodium_mg": 2,
+  "cholesterol_mg": 256,
+  "micros": {
+   "vitamin_a_ug": 840,
+   "vitamin_b1_mg": 0.001,
+   "vitamin_b2_mg": 0.005,
+   "vitamin_b3_mg": 0.003,
+   "vitamin_b5_mg": 0.01,
+   "vitamin_b6_mg": 0.001,
+   "vitamin_b9_ug": 0,
+   "vitamin_b12_ug": 0.01,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 2.8,
+   "vitamin_k_ug": 8.6,
+   "calcium_mg": 4,
+   "iron_mg": 0,
+   "magnesium_mg": 0,
+   "phosphorus_mg": 3,
+   "potassium_mg": 5,
+   "zinc_mg": 0.01,
+   "copper_mg": 0.001,
+   "manganese_mg": 0,
+   "selenium_ug": 0
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Butter oil, anhydrous",
+  "source_id": "fdc:173412",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173412/nutrients",
+  "servings": [
+   {
+    "id": "d4292935-f9f2-50c9-9729-b7ae4d1523d9",
+    "label": "1 tsp",
+    "grams": 5,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "bcfe4716-28aa-5f45-a48b-c449d0382c99",
+    "label": "1 tbsp",
+    "grams": 13,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "desi ghee",
+    "alias_key": "desi ghee"
+   },
+   {
+    "alias": "clarified butter",
+    "alias_key": "butter clarified"
+   }
+  ]
+ },
+ {
+  "id": "aeee45fc-6576-5c9b-9129-2dc5ea64e774",
+  "name": "Cooking oil",
+  "name_key": "cooking oil",
+  "category": "fats",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 900,
+  "protein": 0,
+  "carbs": 0,
+  "fat": 100,
+  "fiber": 0,
+  "sugar": 0,
+  "saturated_fat": 15.3,
+  "trans_fat": 0.68,
+  "sodium_mg": 0,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0,
+   "vitamin_b2_mg": 0,
+   "vitamin_b3_mg": 0,
+   "vitamin_b5_mg": 0,
+   "vitamin_b6_mg": 0,
+   "vitamin_b9_ug": 0,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_e_mg": 8.18,
+   "vitamin_k_ug": 184,
+   "calcium_mg": 0,
+   "iron_mg": 0.02,
+   "magnesium_mg": 0,
+   "phosphorus_mg": 0,
+   "potassium_mg": 0,
+   "zinc_mg": 0,
+   "copper_mg": 0,
+   "selenium_ug": 0
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Oil, vegetable, soybean, refined",
+  "source_id": "fdc:172370",
+  "source_url": "https://fdc.nal.usda.gov/food-details/172370/nutrients",
+  "servings": [
+   {
+    "id": "5dec2336-7dd6-5ce9-9f89-139211f80f1a",
+    "label": "1 tsp",
+    "grams": 4.5,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "bfd66e50-676f-5ec0-9dde-f7de41afed26",
+    "label": "1 tbsp",
+    "grams": 13.6,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "oil",
+    "alias_key": "oil"
+   },
+   {
+    "alias": "vegetable oil",
+    "alias_key": "oil vegetable"
+   },
+   {
+    "alias": "refined oil",
+    "alias_key": "oil refined"
+   },
+   {
+    "alias": "sunflower oil",
+    "alias_key": "oil sunflower"
+   },
+   {
+    "alias": "soybean oil",
+    "alias_key": "oil soybean"
+   },
+   {
+    "alias": "mustard oil",
+    "alias_key": "mustard oil"
+   }
+  ]
+ },
+ {
+  "id": "768fa07a-93f3-539f-b9cc-d44ed8dd5d1e",
+  "name": "Lassi, sweet",
+  "name_key": "lassi sweet",
+  "category": "drinks",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 74.7,
+  "protein": 2.5,
+  "carbs": 11,
+  "fat": 2.3,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Lassi, sweet",
+  "source_id": "ref:Lassi, sweet",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "0916c575-ad80-5577-a17d-48e88bf38ca1",
+    "label": "1 glass",
+    "grams": 250,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "lassi",
+    "alias_key": "lassi"
+   }
+  ]
+ },
+ {
+  "id": "0c9a7a9d-3355-5f5a-bd25-9f12c444929d",
+  "name": "Buttermilk",
+  "name_key": "buttermilk",
+  "category": "drinks",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 24.4,
+  "protein": 1.4,
+  "carbs": 2,
+  "fat": 1.2,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Chaas / buttermilk (salted)",
+  "source_id": "ref:Chaas / buttermilk (salted)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "a3d54cef-345a-59dd-913f-3608a0a13174",
+    "label": "1 glass",
+    "grams": 250,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "chaas",
+    "alias_key": "chaa"
+   },
+   {
+    "alias": "chhach",
+    "alias_key": "chhach"
+   },
+   {
+    "alias": "mattha",
+    "alias_key": "mattha"
+   },
+   {
+    "alias": "salted buttermilk",
+    "alias_key": "buttermilk salted"
+   }
+  ]
+ },
+ {
+  "id": "56a2e440-b9a8-531f-869d-d4a61fc98fad",
+  "name": "Potato, boiled",
+  "name_key": "boiled potato",
+  "category": "vegetables",
+  "preparation": "boiled",
+  "base_unit": "g",
+  "calories": 87.74,
+  "protein": 1.71,
+  "carbs": 20,
+  "fat": 0.1,
+  "fiber": 1.8,
+  "sugar": 0.89,
+  "saturated_fat": 0.03,
+  "trans_fat": 0,
+  "sodium_mg": 5,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.098,
+   "vitamin_b2_mg": 0.019,
+   "vitamin_b3_mg": 1.31,
+   "vitamin_b5_mg": 0.509,
+   "vitamin_b6_mg": 0.269,
+   "vitamin_b9_ug": 9,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 7.4,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.01,
+   "vitamin_k_ug": 2.2,
+   "calcium_mg": 8,
+   "iron_mg": 0.31,
+   "magnesium_mg": 20,
+   "phosphorus_mg": 40,
+   "potassium_mg": 328,
+   "zinc_mg": 0.27,
+   "copper_mg": 0.167,
+   "manganese_mg": 0.14,
+   "selenium_ug": 0.3
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Potatoes, boiled, cooked without skin, flesh, without salt",
+  "source_id": "fdc:170440",
+  "source_url": "https://fdc.nal.usda.gov/food-details/170440/nutrients",
+  "servings": [
+   {
+    "id": "ed2ab53f-3f58-5d04-a014-29b4479711a5",
+    "label": "1 medium potato",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "potato",
+    "alias_key": "potato"
+   },
+   {
+    "alias": "aloo",
+    "alias_key": "aloo"
+   },
+   {
+    "alias": "boiled aloo",
+    "alias_key": "aloo boiled"
+   }
+  ]
+ },
+ {
+  "id": "08f913b0-f09c-5d7a-b6cf-43899531a167",
+  "name": "Sweet potato, boiled",
+  "name_key": "boiled potato sweet",
+  "category": "vegetables",
+  "preparation": "boiled",
+  "base_unit": "g",
+  "calories": 77.54,
+  "protein": 1.37,
+  "carbs": 17.7,
+  "fat": 0.14,
+  "fiber": 2.5,
+  "sugar": 5.74,
+  "saturated_fat": 0.03,
+  "trans_fat": 0,
+  "sodium_mg": 27,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 787,
+   "vitamin_b1_mg": 0.056,
+   "vitamin_b2_mg": 0.047,
+   "vitamin_b3_mg": 0.538,
+   "vitamin_b5_mg": 0.581,
+   "vitamin_b6_mg": 0.165,
+   "vitamin_b9_ug": 6,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 12.8,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.94,
+   "vitamin_k_ug": 2.1,
+   "calcium_mg": 27,
+   "iron_mg": 0.72,
+   "magnesium_mg": 18,
+   "phosphorus_mg": 32,
+   "potassium_mg": 230,
+   "zinc_mg": 0.2,
+   "copper_mg": 0.094,
+   "manganese_mg": 0.266,
+   "selenium_ug": 0.2
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Sweet potato, cooked, boiled, without skin",
+  "source_id": "fdc:168484",
+  "source_url": "https://fdc.nal.usda.gov/food-details/168484/nutrients",
+  "servings": [
+   {
+    "id": "5878b1e7-0d37-5e3d-9cf2-fb3f1fb1c251",
+    "label": "1 medium",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "sweet potato",
+    "alias_key": "potato sweet"
+   },
+   {
+    "alias": "shakarkandi",
+    "alias_key": "shakarkandi"
+   }
+  ]
+ },
+ {
+  "id": "10922b05-3201-5efb-9329-bed3e79bcdd6",
+  "name": "Onion",
+  "name_key": "onion",
+  "category": "vegetables",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 42.66,
+  "protein": 1.1,
+  "carbs": 9.34,
+  "fat": 0.1,
+  "fiber": 1.7,
+  "sugar": 4.24,
+  "saturated_fat": 0.04,
+  "trans_fat": 0,
+  "sodium_mg": 4,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.046,
+   "vitamin_b2_mg": 0.027,
+   "vitamin_b3_mg": 0.116,
+   "vitamin_b5_mg": 0.123,
+   "vitamin_b6_mg": 0.12,
+   "vitamin_b9_ug": 19,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 7.4,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.02,
+   "vitamin_k_ug": 0.4,
+   "calcium_mg": 23,
+   "iron_mg": 0.21,
+   "magnesium_mg": 10,
+   "phosphorus_mg": 29,
+   "potassium_mg": 146,
+   "zinc_mg": 0.17,
+   "copper_mg": 0.039,
+   "manganese_mg": 0.129,
+   "selenium_ug": 0.5
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Onions, raw",
+  "source_id": "fdc:170000",
+  "source_url": "https://fdc.nal.usda.gov/food-details/170000/nutrients",
+  "servings": [
+   {
+    "id": "8748f940-1f1e-5955-a4b4-c73806fcb2c6",
+    "label": "1 medium onion",
+    "grams": 110,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "pyaz",
+    "alias_key": "pyaz"
+   },
+   {
+    "alias": "pyaaz",
+    "alias_key": "pyaaz"
+   },
+   {
+    "alias": "raw onion",
+    "alias_key": "onion raw"
+   }
+  ]
+ },
+ {
+  "id": "bb8f8988-8ede-59d5-9ce4-9dd0f6ca1431",
+  "name": "Tomato",
+  "name_key": "tomato",
+  "category": "vegetables",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 20.88,
+  "protein": 0.88,
+  "carbs": 3.89,
+  "fat": 0.2,
+  "fiber": 1.2,
+  "sugar": 2.63,
+  "saturated_fat": 0.03,
+  "trans_fat": 0,
+  "sodium_mg": 5,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 42,
+   "vitamin_b1_mg": 0.037,
+   "vitamin_b2_mg": 0.019,
+   "vitamin_b3_mg": 0.594,
+   "vitamin_b5_mg": 0.089,
+   "vitamin_b6_mg": 0.08,
+   "vitamin_b9_ug": 15,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 13.7,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.54,
+   "vitamin_k_ug": 7.9,
+   "calcium_mg": 10,
+   "iron_mg": 0.27,
+   "magnesium_mg": 11,
+   "phosphorus_mg": 24,
+   "potassium_mg": 237,
+   "zinc_mg": 0.17,
+   "copper_mg": 0.059,
+   "manganese_mg": 0.114,
+   "selenium_ug": 0
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Tomatoes, red, ripe, raw, year round average",
+  "source_id": "fdc:170457",
+  "source_url": "https://fdc.nal.usda.gov/food-details/170457/nutrients",
+  "servings": [
+   {
+    "id": "a6a4a244-4acd-5383-8cf3-9a2a138b01a4",
+    "label": "1 medium tomato",
+    "grams": 120,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "tamatar",
+    "alias_key": "tamatar"
+   },
+   {
+    "alias": "raw tomato",
+    "alias_key": "raw tomato"
+   }
+  ]
+ },
+ {
+  "id": "92560508-687b-5642-88d4-0201b6dc87e6",
+  "name": "Cucumber",
+  "name_key": "cucumber",
+  "category": "vegetables",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 18.11,
+  "protein": 0.65,
+  "carbs": 3.63,
+  "fat": 0.11,
+  "fiber": 0.5,
+  "sugar": 1.67,
+  "saturated_fat": 0.04,
+  "trans_fat": 0,
+  "sodium_mg": 2,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 5,
+   "vitamin_b1_mg": 0.027,
+   "vitamin_b2_mg": 0.033,
+   "vitamin_b3_mg": 0.098,
+   "vitamin_b5_mg": 0.259,
+   "vitamin_b6_mg": 0.04,
+   "vitamin_b9_ug": 7,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 2.8,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.03,
+   "vitamin_k_ug": 16.4,
+   "calcium_mg": 16,
+   "iron_mg": 0.28,
+   "magnesium_mg": 13,
+   "phosphorus_mg": 24,
+   "potassium_mg": 147,
+   "zinc_mg": 0.2,
+   "copper_mg": 0.041,
+   "manganese_mg": 0.079,
+   "selenium_ug": 0.3
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Cucumber, with peel, raw",
+  "source_id": "fdc:168409",
+  "source_url": "https://fdc.nal.usda.gov/food-details/168409/nutrients",
+  "servings": [
+   {
+    "id": "73a13d62-6ff8-5e79-9a6e-c24e648bc101",
+    "label": "1 medium",
+    "grams": 200,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "4aa3daf9-0b66-526c-9044-9ae071fc5ad5",
+    "label": "1 cup sliced",
+    "grams": 120,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "kheera",
+    "alias_key": "kheera"
+   },
+   {
+    "alias": "khira",
+    "alias_key": "khira"
+   }
+  ]
+ },
+ {
+  "id": "e7191b9f-dcd6-54f8-9246-d5964cd8730f",
+  "name": "Carrot",
+  "name_key": "carrot",
+  "category": "vegetables",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 44.2,
+  "protein": 0.93,
+  "carbs": 9.58,
+  "fat": 0.24,
+  "fiber": 2.8,
+  "sugar": 4.74,
+  "saturated_fat": 0.03,
+  "trans_fat": 0,
+  "sodium_mg": 69,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 835,
+   "vitamin_b1_mg": 0.066,
+   "vitamin_b2_mg": 0.058,
+   "vitamin_b3_mg": 0.983,
+   "vitamin_b5_mg": 0.273,
+   "vitamin_b6_mg": 0.138,
+   "vitamin_b9_ug": 19,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 5.9,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.66,
+   "vitamin_k_ug": 13.2,
+   "calcium_mg": 33,
+   "iron_mg": 0.3,
+   "magnesium_mg": 12,
+   "phosphorus_mg": 35,
+   "potassium_mg": 320,
+   "zinc_mg": 0.24,
+   "copper_mg": 0.045,
+   "manganese_mg": 0.143,
+   "selenium_ug": 0.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Carrots, raw",
+  "source_id": "fdc:170393",
+  "source_url": "https://fdc.nal.usda.gov/food-details/170393/nutrients",
+  "servings": [
+   {
+    "id": "96cb3a6c-83af-5d84-9140-bd0bc8076a29",
+    "label": "1 medium carrot",
+    "grams": 60,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "gajar",
+    "alias_key": "gajar"
+   }
+  ]
+ },
+ {
+  "id": "46df2084-e23b-5f20-9052-0138d07ec361",
+  "name": "Spinach",
+  "name_key": "spinach",
+  "category": "vegetables",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 29.47,
+  "protein": 2.86,
+  "carbs": 3.63,
+  "fat": 0.39,
+  "fiber": 2.2,
+  "sugar": 0.42,
+  "saturated_fat": 0.06,
+  "trans_fat": 0,
+  "sodium_mg": 79,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 469,
+   "vitamin_b1_mg": 0.078,
+   "vitamin_b2_mg": 0.189,
+   "vitamin_b3_mg": 0.724,
+   "vitamin_b5_mg": 0.065,
+   "vitamin_b6_mg": 0.195,
+   "vitamin_b9_ug": 194,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 28.1,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 2.03,
+   "vitamin_k_ug": 483,
+   "calcium_mg": 99,
+   "iron_mg": 2.71,
+   "magnesium_mg": 79,
+   "phosphorus_mg": 49,
+   "potassium_mg": 558,
+   "zinc_mg": 0.53,
+   "copper_mg": 0.13,
+   "manganese_mg": 0.897,
+   "selenium_ug": 1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Spinach, raw",
+  "source_id": "fdc:168462",
+  "source_url": "https://fdc.nal.usda.gov/food-details/168462/nutrients",
+  "servings": [
+   {
+    "id": "9b46928a-6a3b-57e0-b0d7-530d58a329b4",
+    "label": "1 cup",
+    "grams": 30,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "palak",
+    "alias_key": "palak"
+   },
+   {
+    "alias": "raw spinach",
+    "alias_key": "raw spinach"
+   }
+  ]
+ },
+ {
+  "id": "ba55c50a-b304-5524-82c4-35b7ed7c34ca",
+  "name": "Broccoli",
+  "name_key": "broccoli",
+  "category": "vegetables",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 41.17,
+  "protein": 2.82,
+  "carbs": 6.64,
+  "fat": 0.37,
+  "fiber": 2.6,
+  "sugar": 1.7,
+  "saturated_fat": 0.11,
+  "trans_fat": 0,
+  "sodium_mg": 33,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 31,
+   "vitamin_b1_mg": 0.071,
+   "vitamin_b2_mg": 0.117,
+   "vitamin_b3_mg": 0.639,
+   "vitamin_b5_mg": 0.573,
+   "vitamin_b6_mg": 0.175,
+   "vitamin_b9_ug": 63,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 89.2,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.78,
+   "vitamin_k_ug": 102,
+   "calcium_mg": 47,
+   "iron_mg": 0.73,
+   "magnesium_mg": 21,
+   "phosphorus_mg": 66,
+   "potassium_mg": 316,
+   "zinc_mg": 0.41,
+   "copper_mg": 0.049,
+   "manganese_mg": 0.21,
+   "selenium_ug": 2.5
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Broccoli, raw",
+  "source_id": "fdc:170379",
+  "source_url": "https://fdc.nal.usda.gov/food-details/170379/nutrients",
+  "servings": [
+   {
+    "id": "8284614b-2b63-5c86-850b-1040fac1a88f",
+    "label": "1 cup chopped",
+    "grams": 91,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": []
+ },
+ {
+  "id": "4f27e4da-46aa-5db5-991d-668b50770207",
+  "name": "Green peas, cooked",
+  "name_key": "cooked green pea",
+  "category": "vegetables",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 85.82,
+  "protein": 5.36,
+  "carbs": 15.6,
+  "fat": 0.22,
+  "fiber": 5.5,
+  "sugar": 5.93,
+  "saturated_fat": 0.04,
+  "trans_fat": 0,
+  "sodium_mg": 3,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 40,
+   "vitamin_b1_mg": 0.259,
+   "vitamin_b2_mg": 0.149,
+   "vitamin_b3_mg": 2.02,
+   "vitamin_b5_mg": 0.153,
+   "vitamin_b6_mg": 0.216,
+   "vitamin_b9_ug": 63,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 14.2,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.14,
+   "vitamin_k_ug": 25.9,
+   "calcium_mg": 27,
+   "iron_mg": 1.54,
+   "magnesium_mg": 39,
+   "phosphorus_mg": 117,
+   "potassium_mg": 271,
+   "zinc_mg": 1.19,
+   "copper_mg": 0.173,
+   "manganese_mg": 0.525,
+   "selenium_ug": 1.9
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Peas, green, cooked, boiled, drained, without salt",
+  "source_id": "fdc:170420",
+  "source_url": "https://fdc.nal.usda.gov/food-details/170420/nutrients",
+  "servings": [
+   {
+    "id": "c501c36e-bfcf-506c-b608-264ce1c7d5d6",
+    "label": "1 katori (bowl)",
+    "grams": 100,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "peas",
+    "alias_key": "pea"
+   },
+   {
+    "alias": "matar",
+    "alias_key": "matar"
+   },
+   {
+    "alias": "green peas",
+    "alias_key": "green pea"
+   }
+  ]
+ },
+ {
+  "id": "f84e4aa3-8842-5e74-b2cb-e40cd9deeaca",
+  "name": "Sweet corn, cooked",
+  "name_key": "cooked corn sweet",
+  "category": "vegetables",
+  "preparation": "cooked",
+  "base_unit": "g",
+  "calories": 111.14,
+  "protein": 3.41,
+  "carbs": 21,
+  "fat": 1.5,
+  "fiber": 2.4,
+  "sugar": 4.54,
+  "saturated_fat": 0.2,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 13,
+   "vitamin_b1_mg": 0.093,
+   "vitamin_b2_mg": 0.057,
+   "vitamin_b3_mg": 1.68,
+   "vitamin_b5_mg": 0.792,
+   "vitamin_b6_mg": 0.139,
+   "vitamin_b9_ug": 23,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 5.5,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.09,
+   "vitamin_k_ug": 0.4,
+   "calcium_mg": 3,
+   "iron_mg": 0.45,
+   "magnesium_mg": 26,
+   "phosphorus_mg": 77,
+   "potassium_mg": 218,
+   "zinc_mg": 0.62,
+   "copper_mg": 0.049,
+   "manganese_mg": 0.167,
+   "selenium_ug": 0.2
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Corn, sweet, yellow, cooked, boiled, drained, without salt",
+  "source_id": "fdc:169999",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169999/nutrients",
+  "servings": [
+   {
+    "id": "67f078b5-ff06-56ca-babe-976e165c0a5b",
+    "label": "1 cup",
+    "grams": 145,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "b1efddaa-43d9-58ec-82d2-c753a5bdbc69",
+    "label": "1 cob",
+    "grams": 100,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "corn",
+    "alias_key": "corn"
+   },
+   {
+    "alias": "sweet corn",
+    "alias_key": "corn sweet"
+   },
+   {
+    "alias": "bhutta",
+    "alias_key": "bhutta"
+   },
+   {
+    "alias": "makka",
+    "alias_key": "makka"
+   }
+  ]
+ },
+ {
+  "id": "fdd64f49-44f3-5e75-83d2-75feda240564",
+  "name": "Banana",
+  "name_key": "banana",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 98.53,
+  "protein": 1.09,
+  "carbs": 22.8,
+  "fat": 0.33,
+  "fiber": 2.6,
+  "sugar": 12.2,
+  "saturated_fat": 0.11,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 3,
+   "vitamin_b1_mg": 0.031,
+   "vitamin_b2_mg": 0.073,
+   "vitamin_b3_mg": 0.665,
+   "vitamin_b5_mg": 0.334,
+   "vitamin_b6_mg": 0.367,
+   "vitamin_b9_ug": 20,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 8.7,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.1,
+   "vitamin_k_ug": 0.5,
+   "calcium_mg": 5,
+   "iron_mg": 0.26,
+   "magnesium_mg": 27,
+   "phosphorus_mg": 22,
+   "potassium_mg": 358,
+   "zinc_mg": 0.15,
+   "copper_mg": 0.078,
+   "manganese_mg": 0.27,
+   "selenium_ug": 1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Bananas, raw",
+  "source_id": "fdc:173944",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173944/nutrients",
+  "servings": [
+   {
+    "id": "266ba25d-6ee2-50cf-8de1-2097b5033ba6",
+    "label": "1 medium banana",
+    "grams": 118,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "9a85e4c9-f9c5-571a-b1f9-5408bc981f4d",
+    "label": "1 small banana",
+    "grams": 101,
+    "is_default": false,
+    "sort_order": 1
+   },
+   {
+    "id": "f577fc16-8edc-54cd-a5ec-2d68c9bb69e3",
+    "label": "1 large banana",
+    "grams": 136,
+    "is_default": false,
+    "sort_order": 2
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "kela",
+    "alias_key": "kela"
+   }
+  ]
+ },
+ {
+  "id": "9b5503d1-734c-53af-beb2-07e6c1c752ec",
+  "name": "Apple",
+  "name_key": "apple",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 57.77,
+  "protein": 0.26,
+  "carbs": 13.8,
+  "fat": 0.17,
+  "fiber": 2.4,
+  "sugar": 10.4,
+  "saturated_fat": 0.03,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 3,
+   "vitamin_b1_mg": 0.017,
+   "vitamin_b2_mg": 0.026,
+   "vitamin_b3_mg": 0.091,
+   "vitamin_b5_mg": 0.061,
+   "vitamin_b6_mg": 0.041,
+   "vitamin_b9_ug": 3,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 4.6,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.18,
+   "vitamin_k_ug": 2.2,
+   "calcium_mg": 6,
+   "iron_mg": 0.12,
+   "magnesium_mg": 5,
+   "phosphorus_mg": 11,
+   "potassium_mg": 107,
+   "zinc_mg": 0.04,
+   "copper_mg": 0.027,
+   "manganese_mg": 0.035,
+   "selenium_ug": 0
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)",
+  "source_id": "fdc:171688",
+  "source_url": "https://fdc.nal.usda.gov/food-details/171688/nutrients",
+  "servings": [
+   {
+    "id": "996b3ae3-e437-5b93-8cf9-548941a692da",
+    "label": "1 medium apple",
+    "grams": 182,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "seb",
+    "alias_key": "seb"
+   }
+  ]
+ },
+ {
+  "id": "10dc2818-0b4e-5627-823b-641655139934",
+  "name": "Mango",
+  "name_key": "mango",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 66.7,
+  "protein": 0.82,
+  "carbs": 15,
+  "fat": 0.38,
+  "fiber": 1.6,
+  "sugar": 13.7,
+  "saturated_fat": 0.09,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 54,
+   "vitamin_b1_mg": 0.028,
+   "vitamin_b2_mg": 0.038,
+   "vitamin_b3_mg": 0.669,
+   "vitamin_b5_mg": 0.197,
+   "vitamin_b6_mg": 0.119,
+   "vitamin_b9_ug": 43,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 36.4,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.9,
+   "vitamin_k_ug": 4.2,
+   "calcium_mg": 11,
+   "iron_mg": 0.16,
+   "magnesium_mg": 10,
+   "phosphorus_mg": 14,
+   "potassium_mg": 168,
+   "zinc_mg": 0.09,
+   "copper_mg": 0.111,
+   "manganese_mg": 0.063,
+   "selenium_ug": 0.6
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Mangos, raw",
+  "source_id": "fdc:169910",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169910/nutrients",
+  "servings": [
+   {
+    "id": "36069250-3c1f-5ae8-b117-4f9c3d34ed0b",
+    "label": "1 medium mango (edible part)",
+    "grams": 200,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "1ba88248-3353-5dfe-a9de-3235173ecaf4",
+    "label": "1 cup sliced",
+    "grams": 165,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "aam",
+    "alias_key": "aam"
+   }
+  ]
+ },
+ {
+  "id": "fe518a7d-cbd3-5481-af29-125e8e13d58b",
+  "name": "Orange",
+  "name_key": "orange",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 52.04,
+  "protein": 0.94,
+  "carbs": 11.8,
+  "fat": 0.12,
+  "fiber": 2.4,
+  "sugar": 9.35,
+  "saturated_fat": 0.02,
+  "trans_fat": 0,
+  "sodium_mg": 0,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 11,
+   "vitamin_b1_mg": 0.087,
+   "vitamin_b2_mg": 0.04,
+   "vitamin_b3_mg": 0.282,
+   "vitamin_b5_mg": 0.25,
+   "vitamin_b6_mg": 0.06,
+   "vitamin_b9_ug": 30,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 53.2,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.18,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 40,
+   "iron_mg": 0.1,
+   "magnesium_mg": 10,
+   "phosphorus_mg": 14,
+   "potassium_mg": 181,
+   "zinc_mg": 0.07,
+   "copper_mg": 0.045,
+   "manganese_mg": 0.025,
+   "selenium_ug": 0.5
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Oranges, raw, all commercial varieties",
+  "source_id": "fdc:169097",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169097/nutrients",
+  "servings": [
+   {
+    "id": "0a81e744-c84e-5895-acaf-d395eb2a1c5e",
+    "label": "1 medium orange",
+    "grams": 131,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "santra",
+    "alias_key": "santra"
+   },
+   {
+    "alias": "narangi",
+    "alias_key": "narangi"
+   }
+  ]
+ },
+ {
+  "id": "4183e5a3-049f-5cbc-bbeb-6b693cb802b9",
+  "name": "Papaya",
+  "name_key": "papaya",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 47.42,
+  "protein": 0.47,
+  "carbs": 10.8,
+  "fat": 0.26,
+  "fiber": 1.7,
+  "sugar": 7.82,
+  "saturated_fat": 0.08,
+  "trans_fat": 0,
+  "sodium_mg": 8,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 47,
+   "vitamin_b1_mg": 0.023,
+   "vitamin_b2_mg": 0.027,
+   "vitamin_b3_mg": 0.357,
+   "vitamin_b5_mg": 0.191,
+   "vitamin_b6_mg": 0.038,
+   "vitamin_b9_ug": 37,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 60.9,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.3,
+   "vitamin_k_ug": 2.6,
+   "calcium_mg": 20,
+   "iron_mg": 0.25,
+   "magnesium_mg": 21,
+   "phosphorus_mg": 10,
+   "potassium_mg": 182,
+   "zinc_mg": 0.08,
+   "copper_mg": 0.045,
+   "manganese_mg": 0.04,
+   "selenium_ug": 0.6
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Papayas, raw",
+  "source_id": "fdc:169926",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169926/nutrients",
+  "servings": [
+   {
+    "id": "418386bc-9663-5f8a-a99c-8b4ee9a57256",
+    "label": "1 cup cubes",
+    "grams": 145,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "papita",
+    "alias_key": "papita"
+   }
+  ]
+ },
+ {
+  "id": "e1237154-f13c-5d2c-a22f-81bd3106a237",
+  "name": "Grapes",
+  "name_key": "grape",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 76.72,
+  "protein": 0.72,
+  "carbs": 18.1,
+  "fat": 0.16,
+  "fiber": 0.9,
+  "sugar": 15.5,
+  "saturated_fat": 0.05,
+  "trans_fat": 0,
+  "sodium_mg": 2,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 3,
+   "vitamin_b1_mg": 0.069,
+   "vitamin_b2_mg": 0.07,
+   "vitamin_b3_mg": 0.188,
+   "vitamin_b5_mg": 0.05,
+   "vitamin_b6_mg": 0.086,
+   "vitamin_b9_ug": 2,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 3.2,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.19,
+   "vitamin_k_ug": 14.6,
+   "calcium_mg": 10,
+   "iron_mg": 0.36,
+   "magnesium_mg": 7,
+   "phosphorus_mg": 20,
+   "potassium_mg": 191,
+   "zinc_mg": 0.07,
+   "copper_mg": 0.127,
+   "manganese_mg": 0.071,
+   "selenium_ug": 0.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Grapes, red or green (European type, such as Thompson seedless), raw",
+  "source_id": "fdc:174683",
+  "source_url": "https://fdc.nal.usda.gov/food-details/174683/nutrients",
+  "servings": [
+   {
+    "id": "11dd11bf-dbe2-5170-a1e2-acd7aa1762af",
+    "label": "1 cup",
+    "grams": 151,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "angoor",
+    "alias_key": "angoor"
+   }
+  ]
+ },
+ {
+  "id": "0c41270b-2554-55ca-befe-9f2505784155",
+  "name": "Watermelon",
+  "name_key": "watermelon",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 33.99,
+  "protein": 0.61,
+  "carbs": 7.55,
+  "fat": 0.15,
+  "fiber": 0.4,
+  "sugar": 6.2,
+  "saturated_fat": 0.02,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 28,
+   "vitamin_b1_mg": 0.033,
+   "vitamin_b2_mg": 0.021,
+   "vitamin_b3_mg": 0.178,
+   "vitamin_b5_mg": 0.221,
+   "vitamin_b6_mg": 0.045,
+   "vitamin_b9_ug": 3,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 8.1,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.05,
+   "vitamin_k_ug": 0.1,
+   "calcium_mg": 7,
+   "iron_mg": 0.24,
+   "magnesium_mg": 10,
+   "phosphorus_mg": 11,
+   "potassium_mg": 112,
+   "zinc_mg": 0.1,
+   "copper_mg": 0.042,
+   "manganese_mg": 0.038,
+   "selenium_ug": 0.4
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Watermelon, raw",
+  "source_id": "fdc:167765",
+  "source_url": "https://fdc.nal.usda.gov/food-details/167765/nutrients",
+  "servings": [
+   {
+    "id": "5fdf3afc-ae64-544d-a55d-b6af15af3410",
+    "label": "1 cup diced",
+    "grams": 152,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "tarbooz",
+    "alias_key": "tarbooz"
+   },
+   {
+    "alias": "tarbuj",
+    "alias_key": "tarbuj"
+   }
+  ]
+ },
+ {
+  "id": "3db17f46-32b9-5a53-a8d5-55e005f2af48",
+  "name": "Guava",
+  "name_key": "guava",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 75.95,
+  "protein": 2.55,
+  "carbs": 14.3,
+  "fat": 0.95,
+  "fiber": 5.4,
+  "sugar": 8.92,
+  "saturated_fat": 0.27,
+  "trans_fat": 0,
+  "sodium_mg": 2,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 31,
+   "vitamin_b1_mg": 0.067,
+   "vitamin_b2_mg": 0.04,
+   "vitamin_b3_mg": 1.08,
+   "vitamin_b5_mg": 0.451,
+   "vitamin_b6_mg": 0.11,
+   "vitamin_b9_ug": 49,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 228,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.73,
+   "vitamin_k_ug": 2.6,
+   "calcium_mg": 18,
+   "iron_mg": 0.26,
+   "magnesium_mg": 22,
+   "phosphorus_mg": 40,
+   "potassium_mg": 417,
+   "zinc_mg": 0.23,
+   "copper_mg": 0.23,
+   "manganese_mg": 0.15,
+   "selenium_ug": 0.6
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Guavas, common, raw",
+  "source_id": "fdc:173044",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173044/nutrients",
+  "servings": [
+   {
+    "id": "11c79a13-fc17-5c88-a00f-82e2799e3a81",
+    "label": "1 guava",
+    "grams": 55,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "amrood",
+    "alias_key": "amrood"
+   },
+   {
+    "alias": "amrud",
+    "alias_key": "amrud"
+   }
+  ]
+ },
+ {
+  "id": "fad07e01-3bb6-5985-8a7a-d431a175de6e",
+  "name": "Pomegranate",
+  "name_key": "pomegranate",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 92.01,
+  "protein": 1.67,
+  "carbs": 18.7,
+  "fat": 1.17,
+  "fiber": 4,
+  "sugar": 13.7,
+  "saturated_fat": 0.12,
+  "trans_fat": 0,
+  "sodium_mg": 3,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.067,
+   "vitamin_b2_mg": 0.053,
+   "vitamin_b3_mg": 0.293,
+   "vitamin_b5_mg": 0.377,
+   "vitamin_b6_mg": 0.075,
+   "vitamin_b9_ug": 38,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 10.2,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.6,
+   "vitamin_k_ug": 16.4,
+   "calcium_mg": 10,
+   "iron_mg": 0.3,
+   "magnesium_mg": 12,
+   "phosphorus_mg": 36,
+   "potassium_mg": 236,
+   "zinc_mg": 0.35,
+   "copper_mg": 0.158,
+   "manganese_mg": 0.119,
+   "selenium_ug": 0.5
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Pomegranates, raw",
+  "source_id": "fdc:169134",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169134/nutrients",
+  "servings": [
+   {
+    "id": "644eaf75-8733-55e4-8ef4-cc6edae0255c",
+    "label": "1/2 cup arils",
+    "grams": 87,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "anar",
+    "alias_key": "anar"
+   },
+   {
+    "alias": "pomegranate seeds",
+    "alias_key": "pomegranate seed"
+   }
+  ]
+ },
+ {
+  "id": "02d8943d-0fac-57bf-94e2-e93b58954b0d",
+  "name": "Pineapple",
+  "name_key": "pineapple",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 55.64,
+  "protein": 0.54,
+  "carbs": 13.1,
+  "fat": 0.12,
+  "fiber": 1.4,
+  "sugar": 9.85,
+  "saturated_fat": 0.01,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 3,
+   "vitamin_b1_mg": 0.079,
+   "vitamin_b2_mg": 0.032,
+   "vitamin_b3_mg": 0.5,
+   "vitamin_b5_mg": 0.213,
+   "vitamin_b6_mg": 0.112,
+   "vitamin_b9_ug": 18,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 47.8,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.02,
+   "vitamin_k_ug": 0.7,
+   "calcium_mg": 13,
+   "iron_mg": 0.29,
+   "magnesium_mg": 12,
+   "phosphorus_mg": 8,
+   "potassium_mg": 109,
+   "zinc_mg": 0.12,
+   "copper_mg": 0.11,
+   "manganese_mg": 0.927,
+   "selenium_ug": 0.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Pineapple, raw, all varieties",
+  "source_id": "fdc:169124",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169124/nutrients",
+  "servings": [
+   {
+    "id": "49dcb138-9bec-5f65-9347-f21b1ba696dd",
+    "label": "1 cup chunks",
+    "grams": 165,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "ananas",
+    "alias_key": "anana"
+   }
+  ]
+ },
+ {
+  "id": "c68ea56c-7b3f-535f-9eac-984e5bb7c5fa",
+  "name": "Pear",
+  "name_key": "pear",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 63.5,
+  "protein": 0.36,
+  "carbs": 15.2,
+  "fat": 0.14,
+  "fiber": 3.1,
+  "sugar": 9.75,
+  "saturated_fat": 0.02,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 1,
+   "vitamin_b1_mg": 0.012,
+   "vitamin_b2_mg": 0.026,
+   "vitamin_b3_mg": 0.161,
+   "vitamin_b5_mg": 0.049,
+   "vitamin_b6_mg": 0.029,
+   "vitamin_b9_ug": 7,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 4.3,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.12,
+   "vitamin_k_ug": 4.4,
+   "calcium_mg": 9,
+   "iron_mg": 0.18,
+   "magnesium_mg": 7,
+   "phosphorus_mg": 12,
+   "potassium_mg": 116,
+   "zinc_mg": 0.1,
+   "copper_mg": 0.082,
+   "manganese_mg": 0.048,
+   "selenium_ug": 0.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Pears, raw",
+  "source_id": "fdc:169118",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169118/nutrients",
+  "servings": [
+   {
+    "id": "ce588504-d2ca-5486-aece-bc104667aa61",
+    "label": "1 medium pear",
+    "grams": 178,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "nashpati",
+    "alias_key": "nashpati"
+   }
+  ]
+ },
+ {
+  "id": "2abeea2a-a93d-5d44-b063-6826ebe3d9dd",
+  "name": "Strawberries",
+  "name_key": "strawberry",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 36.1,
+  "protein": 0.67,
+  "carbs": 7.68,
+  "fat": 0.3,
+  "fiber": 2,
+  "sugar": 4.89,
+  "saturated_fat": 0.02,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 1,
+   "vitamin_b1_mg": 0.024,
+   "vitamin_b2_mg": 0.022,
+   "vitamin_b3_mg": 0.386,
+   "vitamin_b5_mg": 0.125,
+   "vitamin_b6_mg": 0.047,
+   "vitamin_b9_ug": 24,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 58.8,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.29,
+   "vitamin_k_ug": 2.2,
+   "calcium_mg": 16,
+   "iron_mg": 0.41,
+   "magnesium_mg": 13,
+   "phosphorus_mg": 24,
+   "potassium_mg": 153,
+   "zinc_mg": 0.14,
+   "copper_mg": 0.048,
+   "manganese_mg": 0.386,
+   "selenium_ug": 0.4
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Strawberries, raw",
+  "source_id": "fdc:167762",
+  "source_url": "https://fdc.nal.usda.gov/food-details/167762/nutrients",
+  "servings": [
+   {
+    "id": "22562d24-cb34-5764-a1c7-0ee9702ea435",
+    "label": "1 cup",
+    "grams": 152,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": []
+ },
+ {
+  "id": "b17eb9c6-9598-5a9a-8342-983bda39bb54",
+  "name": "Dates",
+  "name_key": "date",
+  "category": "fruit",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 308.59,
+  "protein": 1.81,
+  "carbs": 75,
+  "fat": 0.15,
+  "fiber": 6.7,
+  "sugar": 66.5,
+  "saturated_fat": null,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": null,
+  "micros": {
+   "vitamin_a_ug": 7,
+   "vitamin_b1_mg": 0.05,
+   "vitamin_b2_mg": 0.06,
+   "vitamin_b3_mg": 1.61,
+   "vitamin_b5_mg": 0.805,
+   "vitamin_b6_mg": 0.249,
+   "vitamin_b9_ug": 15,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_k_ug": 2.7,
+   "calcium_mg": 64,
+   "iron_mg": 0.9,
+   "magnesium_mg": 54,
+   "phosphorus_mg": 62,
+   "potassium_mg": 696,
+   "zinc_mg": 0.44,
+   "copper_mg": 0.362,
+   "manganese_mg": 0.296
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Dates, medjool",
+  "source_id": "fdc:168191",
+  "source_url": "https://fdc.nal.usda.gov/food-details/168191/nutrients",
+  "servings": [
+   {
+    "id": "39fd49a0-16b1-583c-828a-99948d065f1a",
+    "label": "1 medjool date",
+    "grams": 24,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "khajoor",
+    "alias_key": "khajoor"
+   },
+   {
+    "alias": "khajur",
+    "alias_key": "khajur"
+   },
+   {
+    "alias": "medjool dates",
+    "alias_key": "date medjool"
+   }
+  ]
+ },
+ {
+  "id": "ef9a1842-29ff-579c-9e2f-b7d03b4161c0",
+  "name": "Almonds",
+  "name_key": "almond",
+  "category": "nuts",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 620.3,
+  "protein": 21.2,
+  "carbs": 21.6,
+  "fat": 49.9,
+  "fiber": 12.5,
+  "sugar": 4.35,
+  "saturated_fat": 3.8,
+  "trans_fat": 0.02,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.205,
+   "vitamin_b2_mg": 1.14,
+   "vitamin_b3_mg": 3.62,
+   "vitamin_b5_mg": 0.471,
+   "vitamin_b6_mg": 0.137,
+   "vitamin_b9_ug": 44,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 25.6,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 269,
+   "iron_mg": 3.71,
+   "magnesium_mg": 270,
+   "phosphorus_mg": 481,
+   "potassium_mg": 733,
+   "zinc_mg": 3.12,
+   "copper_mg": 1.03,
+   "manganese_mg": 2.18,
+   "selenium_ug": 4.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Nuts, almonds",
+  "source_id": "fdc:170567",
+  "source_url": "https://fdc.nal.usda.gov/food-details/170567/nutrients",
+  "servings": [
+   {
+    "id": "70af4b00-fa5f-5495-839e-10f14c7664ee",
+    "label": "10 almonds",
+    "grams": 12,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "d1fe6768-eda8-5433-b083-834edb2f2b76",
+    "label": "1 handful",
+    "grams": 28,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "badam",
+    "alias_key": "badam"
+   }
+  ]
+ },
+ {
+  "id": "41b9d573-2065-5ed8-a07f-fc399252342e",
+  "name": "Peanuts, roasted",
+  "name_key": "peanut roasted",
+  "category": "nuts",
+  "preparation": "roasted",
+  "base_unit": "g",
+  "calories": 630.1,
+  "protein": 24.4,
+  "carbs": 21.3,
+  "fat": 49.7,
+  "fiber": 8.4,
+  "sugar": 4.9,
+  "saturated_fat": 7.72,
+  "trans_fat": 0.03,
+  "sodium_mg": 6,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.152,
+   "vitamin_b2_mg": 0.197,
+   "vitamin_b3_mg": 14.4,
+   "vitamin_b5_mg": 1.01,
+   "vitamin_b6_mg": 0.466,
+   "vitamin_b9_ug": 97,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 4.93,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 58,
+   "iron_mg": 1.58,
+   "magnesium_mg": 178,
+   "phosphorus_mg": 363,
+   "potassium_mg": 634,
+   "zinc_mg": 2.77,
+   "copper_mg": 0.428,
+   "manganese_mg": 1.79,
+   "selenium_ug": 9.3
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Peanuts, all types, dry-roasted, without salt",
+  "source_id": "fdc:173806",
+  "source_url": "https://fdc.nal.usda.gov/food-details/173806/nutrients",
+  "servings": [
+   {
+    "id": "03af9592-fb8c-57e6-bad4-a574bea54d63",
+    "label": "1 handful",
+    "grams": 28,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "2064b9ca-39e5-50ce-951c-9fa0b64bc2b1",
+    "label": "1 tbsp",
+    "grams": 9,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "peanuts",
+    "alias_key": "peanut"
+   },
+   {
+    "alias": "moongphali",
+    "alias_key": "moongphali"
+   },
+   {
+    "alias": "mungfali",
+    "alias_key": "mungfali"
+   },
+   {
+    "alias": "groundnuts",
+    "alias_key": "groundnut"
+   }
+  ]
+ },
+ {
+  "id": "305aefa3-b055-5a79-b5ac-9506d2a757cf",
+  "name": "Peanut butter",
+  "name_key": "butter peanut",
+  "category": "nuts",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 640.6,
+  "protein": 22.2,
+  "carbs": 22.3,
+  "fat": 51.4,
+  "fiber": 5,
+  "sugar": 10.5,
+  "saturated_fat": 10.3,
+  "trans_fat": 0.08,
+  "sodium_mg": 17,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.15,
+   "vitamin_b2_mg": 0.192,
+   "vitamin_b3_mg": 13.1,
+   "vitamin_b5_mg": 1.14,
+   "vitamin_b6_mg": 0.441,
+   "vitamin_b9_ug": 87,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 9.1,
+   "vitamin_k_ug": 0.3,
+   "calcium_mg": 49,
+   "iron_mg": 1.74,
+   "magnesium_mg": 168,
+   "phosphorus_mg": 335,
+   "potassium_mg": 558,
+   "zinc_mg": 2.51,
+   "copper_mg": 0.422,
+   "manganese_mg": 1.66,
+   "selenium_ug": 4.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Peanut butter, smooth style, without salt",
+  "source_id": "fdc:172470",
+  "source_url": "https://fdc.nal.usda.gov/food-details/172470/nutrients",
+  "servings": [
+   {
+    "id": "d785203a-8515-5fd9-b5c1-19fd62607e48",
+    "label": "1 tbsp",
+    "grams": 16,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": []
+ },
+ {
+  "id": "1565e61e-f764-5059-80a3-587959d1da56",
+  "name": "Cashews",
+  "name_key": "cashew",
+  "category": "nuts",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 587.8,
+  "protein": 18.2,
+  "carbs": 30.2,
+  "fat": 43.8,
+  "fiber": 3.3,
+  "sugar": 5.91,
+  "saturated_fat": 7.78,
+  "trans_fat": null,
+  "sodium_mg": 12,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.423,
+   "vitamin_b2_mg": 0.058,
+   "vitamin_b3_mg": 1.06,
+   "vitamin_b5_mg": 0.864,
+   "vitamin_b6_mg": 0.417,
+   "vitamin_b9_ug": 25,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0.5,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.9,
+   "vitamin_k_ug": 34.1,
+   "calcium_mg": 37,
+   "iron_mg": 6.68,
+   "magnesium_mg": 292,
+   "phosphorus_mg": 593,
+   "potassium_mg": 660,
+   "zinc_mg": 5.78,
+   "copper_mg": 2.2,
+   "manganese_mg": 1.66,
+   "selenium_ug": 19.9
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Nuts, cashew nuts, raw",
+  "source_id": "fdc:170162",
+  "source_url": "https://fdc.nal.usda.gov/food-details/170162/nutrients",
+  "servings": [
+   {
+    "id": "f9744428-8626-5fb7-9096-f689169891c7",
+    "label": "10 cashews",
+    "grams": 15,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "fa41c565-31f2-543f-a851-06d8d07a0d1a",
+    "label": "1 handful",
+    "grams": 28,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "kaju",
+    "alias_key": "kaju"
+   },
+   {
+    "alias": "cashew nuts",
+    "alias_key": "cashew nut"
+   }
+  ]
+ },
+ {
+  "id": "a5689bb5-e965-5f78-af31-85e0d6c3783e",
+  "name": "Walnuts",
+  "name_key": "walnut",
+  "category": "nuts",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 702.4,
+  "protein": 15.2,
+  "carbs": 13.7,
+  "fat": 65.2,
+  "fiber": 6.7,
+  "sugar": 2.61,
+  "saturated_fat": 6.13,
+  "trans_fat": null,
+  "sodium_mg": 2,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 1,
+   "vitamin_b1_mg": 0.341,
+   "vitamin_b2_mg": 0.15,
+   "vitamin_b3_mg": 1.12,
+   "vitamin_b5_mg": 0.57,
+   "vitamin_b6_mg": 0.537,
+   "vitamin_b9_ug": 98,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 1.3,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.7,
+   "vitamin_k_ug": 2.7,
+   "calcium_mg": 98,
+   "iron_mg": 2.91,
+   "magnesium_mg": 158,
+   "phosphorus_mg": 346,
+   "potassium_mg": 441,
+   "zinc_mg": 3.09,
+   "copper_mg": 1.59,
+   "manganese_mg": 3.41,
+   "selenium_ug": 4.9
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Nuts, walnuts, english",
+  "source_id": "fdc:170187",
+  "source_url": "https://fdc.nal.usda.gov/food-details/170187/nutrients",
+  "servings": [
+   {
+    "id": "58464adf-29e0-55a2-805c-3864b73a829d",
+    "label": "1 handful",
+    "grams": 28,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "akhrot",
+    "alias_key": "akhrot"
+   }
+  ]
+ },
+ {
+  "id": "5ca42e9e-b3c5-5082-ba5e-7b4cb8c0efc8",
+  "name": "Chia seeds",
+  "name_key": "chia seed",
+  "category": "nuts",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 510.7,
+  "protein": 16.5,
+  "carbs": 42.1,
+  "fat": 30.7,
+  "fiber": 34.4,
+  "sugar": null,
+  "saturated_fat": 3.33,
+  "trans_fat": 0.14,
+  "sodium_mg": 16,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_b1_mg": 0.62,
+   "vitamin_b2_mg": 0.17,
+   "vitamin_b3_mg": 8.83,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 1.6,
+   "vitamin_e_mg": 0.5,
+   "calcium_mg": 631,
+   "iron_mg": 7.72,
+   "magnesium_mg": 335,
+   "phosphorus_mg": 860,
+   "potassium_mg": 407,
+   "zinc_mg": 4.58,
+   "copper_mg": 0.924,
+   "manganese_mg": 2.72,
+   "selenium_ug": 55.2
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Seeds, chia seeds, dried",
+  "source_id": "fdc:170554",
+  "source_url": "https://fdc.nal.usda.gov/food-details/170554/nutrients",
+  "servings": [
+   {
+    "id": "93dd5802-ee68-5d32-b147-5bf29118e7f8",
+    "label": "1 tbsp",
+    "grams": 12,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "chia",
+    "alias_key": "chia"
+   }
+  ]
+ },
+ {
+  "id": "87f98852-50e1-50b0-a37a-eb51efd0a2da",
+  "name": "Flax seeds",
+  "name_key": "flax seed",
+  "category": "nuts",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 568.6,
+  "protein": 18.3,
+  "carbs": 28.9,
+  "fat": 42.2,
+  "fiber": 27.3,
+  "sugar": 1.55,
+  "saturated_fat": 3.66,
+  "trans_fat": null,
+  "sodium_mg": 30,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 1.64,
+   "vitamin_b2_mg": 0.161,
+   "vitamin_b3_mg": 3.08,
+   "vitamin_b5_mg": 0.985,
+   "vitamin_b6_mg": 0.473,
+   "vitamin_b9_ug": 87,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0.6,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.31,
+   "vitamin_k_ug": 4.3,
+   "calcium_mg": 255,
+   "iron_mg": 5.73,
+   "magnesium_mg": 392,
+   "phosphorus_mg": 642,
+   "potassium_mg": 813,
+   "zinc_mg": 4.34,
+   "copper_mg": 1.22,
+   "manganese_mg": 2.48,
+   "selenium_ug": 25.4
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Seeds, flaxseed",
+  "source_id": "fdc:169414",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169414/nutrients",
+  "servings": [
+   {
+    "id": "22595262-a3f4-51d9-ac18-e2dbb9b3b705",
+    "label": "1 tbsp",
+    "grams": 10,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "flaxseed",
+    "alias_key": "flaxseed"
+   },
+   {
+    "alias": "alsi",
+    "alias_key": "alsi"
+   },
+   {
+    "alias": "linseed",
+    "alias_key": "linseed"
+   }
+  ]
+ },
+ {
+  "id": "cacd9c40-9682-5711-8d42-abc00fe8e88e",
+  "name": "Makhana, roasted",
+  "name_key": "makhana roasted",
+  "category": "nuts",
+  "preparation": "roasted",
+  "base_unit": "g",
+  "calories": 347.3,
+  "protein": 9.7,
+  "carbs": 76.9,
+  "fat": 0.1,
+  "fiber": 14.5,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Makhana (fox nuts), roasted",
+  "source_id": "ref:Makhana (fox nuts), roasted",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "d026a007-6850-5926-ad1a-565cc0e50ae2",
+    "label": "1 cup",
+    "grams": 15,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "makhana",
+    "alias_key": "makhana"
+   },
+   {
+    "alias": "fox nuts",
+    "alias_key": "fox nut"
+   },
+   {
+    "alias": "lotus seeds",
+    "alias_key": "lotus seed"
+   }
+  ]
+ },
+ {
+  "id": "32c97612-2944-5d91-a1fc-d7fdde6fa008",
+  "name": "Sugar",
+  "name_key": "sugar",
+  "category": "sweeteners",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 400,
+  "protein": 0,
+  "carbs": 100,
+  "fat": 0,
+  "fiber": 0,
+  "sugar": 99.8,
+  "saturated_fat": 0,
+  "trans_fat": null,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0,
+   "vitamin_b2_mg": 0.019,
+   "vitamin_b3_mg": 0,
+   "vitamin_b5_mg": 0,
+   "vitamin_b6_mg": 0,
+   "vitamin_b9_ug": 0,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 1,
+   "iron_mg": 0.05,
+   "magnesium_mg": 0,
+   "phosphorus_mg": 0,
+   "potassium_mg": 2,
+   "zinc_mg": 0.01,
+   "copper_mg": 0.007,
+   "manganese_mg": 0.004,
+   "selenium_ug": 0.6
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Sugars, granulated",
+  "source_id": "fdc:169655",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169655/nutrients",
+  "servings": [
+   {
+    "id": "f3875c24-d962-5ec1-9fab-6cd8d09cb5cc",
+    "label": "1 tsp",
+    "grams": 4,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "684f0736-320a-57a6-aea6-25ae0229ca6a",
+    "label": "1 tbsp",
+    "grams": 12.5,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "cheeni",
+    "alias_key": "cheeni"
+   },
+   {
+    "alias": "chini",
+    "alias_key": "chini"
+   },
+   {
+    "alias": "white sugar",
+    "alias_key": "sugar white"
+   }
+  ]
+ },
+ {
+  "id": "20dcdba4-be44-50cd-9b87-477dc1e902b1",
+  "name": "Jaggery",
+  "name_key": "jaggery",
+  "category": "sweeteners",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 394.5,
+  "protein": 0.4,
+  "carbs": 98,
+  "fat": 0.1,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Jaggery",
+  "source_id": "ref:Jaggery",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "2bc1f935-ce5f-5f3a-8825-e153f638bc3a",
+    "label": "1 tsp",
+    "grams": 5,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "6412a82e-f7a0-5117-a8aa-120c795754f6",
+    "label": "1 small piece",
+    "grams": 10,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "gur",
+    "alias_key": "gur"
+   },
+   {
+    "alias": "gud",
+    "alias_key": "gud"
+   }
+  ]
+ },
+ {
+  "id": "3dbf89f3-e268-5ecf-ae63-f29fbfcb3f6f",
+  "name": "Honey",
+  "name_key": "honey",
+  "category": "sweeteners",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 330.8,
+  "protein": 0.3,
+  "carbs": 82.4,
+  "fat": 0,
+  "fiber": 0.2,
+  "sugar": 82.1,
+  "saturated_fat": 0,
+  "trans_fat": null,
+  "sodium_mg": 4,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0,
+   "vitamin_b2_mg": 0.038,
+   "vitamin_b3_mg": 0.121,
+   "vitamin_b5_mg": 0.068,
+   "vitamin_b6_mg": 0.024,
+   "vitamin_b9_ug": 2,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0.5,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 6,
+   "iron_mg": 0.42,
+   "magnesium_mg": 2,
+   "phosphorus_mg": 4,
+   "potassium_mg": 52,
+   "zinc_mg": 0.22,
+   "copper_mg": 0.036,
+   "manganese_mg": 0.08,
+   "selenium_ug": 0.8
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Honey",
+  "source_id": "fdc:169640",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169640/nutrients",
+  "servings": [
+   {
+    "id": "19487821-8960-54d1-8a7a-d6bb96c8e8ce",
+    "label": "1 tsp",
+    "grams": 7,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "e4b25c58-c3ea-5113-85e0-129e204a5cd7",
+    "label": "1 tbsp",
+    "grams": 21,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "shahad",
+    "alias_key": "shahad"
+   },
+   {
+    "alias": "shehad",
+    "alias_key": "shehad"
+   }
+  ]
+ },
+ {
+  "id": "fd9bbecf-dfa8-55af-a9f3-d9f02ffe5c7d",
+  "name": "Samosa",
+  "name_key": "samosa",
+  "category": "snack",
+  "preparation": "fried",
+  "base_unit": "g",
+  "calories": 301,
+  "protein": 5,
+  "carbs": 32,
+  "fat": 17,
+  "fiber": 3,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Samosa (potato)",
+  "source_id": "ref:Samosa (potato)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "3666bef2-3bff-599f-a882-dac228600139",
+    "label": "1 samosa",
+    "grams": 70,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "aloo samosa",
+    "alias_key": "aloo samosa"
+   }
+  ]
+ },
+ {
+  "id": "f3252e53-6ac8-552d-ad26-87048c6fc41e",
+  "name": "Pakora",
+  "name_key": "pakora",
+  "category": "snack",
+  "preparation": "fried",
+  "base_unit": "g",
+  "calories": 276,
+  "protein": 7,
+  "carbs": 26,
+  "fat": 16,
+  "fiber": 4,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Pakora / bhaji (onion or mixed veg)",
+  "source_id": "ref:Pakora / bhaji (onion or mixed veg)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "707a8a8a-8400-5870-a5e9-56ee8aa3f798",
+    "label": "1 piece",
+    "grams": 20,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "pakoda",
+    "alias_key": "pakoda"
+   },
+   {
+    "alias": "bhajiya",
+    "alias_key": "bhajiya"
+   },
+   {
+    "alias": "bhaji",
+    "alias_key": "bhaji"
+   },
+   {
+    "alias": "onion pakora",
+    "alias_key": "onion pakora"
+   }
+  ]
+ },
+ {
+  "id": "71f38ff4-e340-5e07-914c-e5bf983a8e9a",
+  "name": "Poori",
+  "name_key": "poori",
+  "category": "grains",
+  "preparation": "fried",
+  "base_unit": "g",
+  "calories": 343.5,
+  "protein": 7,
+  "carbs": 44,
+  "fat": 15.5,
+  "fiber": 3.5,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Poori",
+  "source_id": "ref:Poori",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "7eaed6a4-5a28-5239-9a65-62d6f4378ab9",
+    "label": "1 poori",
+    "grams": 25,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "puri",
+    "alias_key": "puri"
+   }
+  ]
+ },
+ {
+  "id": "17561e41-5c5e-5fb3-ab8e-43fa83314309",
+  "name": "Bhatura",
+  "name_key": "bhatura",
+  "category": "grains",
+  "preparation": "fried",
+  "base_unit": "g",
+  "calories": 332,
+  "protein": 8,
+  "carbs": 48,
+  "fat": 12,
+  "fiber": 2,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Bhatura",
+  "source_id": "ref:Bhatura",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "7e9df27f-5461-5bf7-bf9f-ed40ba210e18",
+    "label": "1 bhatura",
+    "grams": 80,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "bhature",
+    "alias_key": "bhature"
+   }
+  ]
+ },
+ {
+  "id": "6b75c89a-d0f1-52a1-89c2-a0e9793b21b1",
+  "name": "Medu vada",
+  "name_key": "medu vada",
+  "category": "breakfast",
+  "preparation": "fried",
+  "base_unit": "g",
+  "calories": 304,
+  "protein": 10,
+  "carbs": 30,
+  "fat": 16,
+  "fiber": 4,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Medu vada",
+  "source_id": "ref:Medu vada",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "0801e7aa-49ea-54a3-a0e0-1bbee6bcfe3a",
+    "label": "1 vada",
+    "grams": 50,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "vada",
+    "alias_key": "vada"
+   },
+   {
+    "alias": "vadai",
+    "alias_key": "vadai"
+   },
+   {
+    "alias": "uddin vada",
+    "alias_key": "uddin vada"
+   }
+  ]
+ },
+ {
+  "id": "3f3bab8d-27ac-5551-97bb-cd358fd68c26",
+  "name": "Kachori",
+  "name_key": "kachori",
+  "category": "snack",
+  "preparation": "fried",
+  "base_unit": "g",
+  "calories": 401,
+  "protein": 8,
+  "carbs": 45,
+  "fat": 21,
+  "fiber": 4,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Kachori",
+  "source_id": "ref:Kachori",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "906fee4f-9dbe-5a42-9bd2-a21b35601c6b",
+    "label": "1 kachori",
+    "grams": 60,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "kachauri",
+    "alias_key": "kachauri"
+   }
+  ]
+ },
+ {
+  "id": "551ecf29-5f0c-551e-a4ef-7f5d938dda0e",
+  "name": "Vada pav",
+  "name_key": "pav vada",
+  "category": "snack",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 195,
+  "protein": 5,
+  "carbs": 28,
+  "fat": 7,
+  "fiber": 2.5,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Vada pav",
+  "source_id": "ref:Vada pav",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "5d16a1b0-1d32-5e3d-a1a3-ebcfc8ab34b7",
+    "label": "1 vada pav",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "wada pav",
+    "alias_key": "pav wada"
+   },
+   {
+    "alias": "vadapav",
+    "alias_key": "vadapav"
+   }
+  ]
+ },
+ {
+  "id": "f6db5a1a-a6fc-5b00-893d-95b8f3245049",
+  "name": "Dhokla",
+  "name_key": "dhokla",
+  "category": "snack",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 161.2,
+  "protein": 6.5,
+  "carbs": 23,
+  "fat": 4.8,
+  "fiber": 2,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Dhokla",
+  "source_id": "ref:Dhokla",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "87072d8d-36fa-59d5-8225-7d4563e09bdb",
+    "label": "1 piece",
+    "grams": 30,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "khaman dhokla",
+    "alias_key": "dhokla khaman"
+   },
+   {
+    "alias": "khaman",
+    "alias_key": "khaman"
+   }
+  ]
+ },
+ {
+  "id": "61b94c19-f124-5e18-9cee-f4485d2fc5b6",
+  "name": "Gulab jamun",
+  "name_key": "gulab jamun",
+  "category": "sweets",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 377,
+  "protein": 4,
+  "carbs": 52,
+  "fat": 17,
+  "fiber": 0.3,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Gulab jamun (with syrup)",
+  "source_id": "ref:Gulab jamun (with syrup)",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "3eb30bbc-11d2-53b4-9f18-01d393d2f7d2",
+    "label": "1 piece",
+    "grams": 40,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "gulabjamun",
+    "alias_key": "gulabjamun"
+   }
+  ]
+ },
+ {
+  "id": "49e444d8-c72d-5010-8481-3ea1051a3be7",
+  "name": "Jalebi",
+  "name_key": "jalebi",
+  "category": "sweets",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 400,
+  "protein": 2,
+  "carbs": 62,
+  "fat": 16,
+  "fiber": 0.5,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Jalebi",
+  "source_id": "ref:Jalebi",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "53e843ec-4036-5158-a371-085e57daab5d",
+    "label": "1 piece",
+    "grams": 25,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "jilebi",
+    "alias_key": "jilebi"
+   }
+  ]
+ },
+ {
+  "id": "e6024f6a-9290-5dd4-bcec-a3b9f86480e0",
+  "name": "Marie biscuit",
+  "name_key": "biscuit marie",
+  "category": "snack",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 449,
+  "protein": 7,
+  "carbs": 76,
+  "fat": 13,
+  "fiber": 1.5,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Biscuit, glucose / Marie type",
+  "source_id": "ref:Biscuit, glucose / Marie type",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "03991574-4127-5513-ba8c-854460bcb70a",
+    "label": "1 biscuit",
+    "grams": 7,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "biscuit",
+    "alias_key": "biscuit"
+   },
+   {
+    "alias": "glucose biscuit",
+    "alias_key": "biscuit glucose"
+   },
+   {
+    "alias": "parle g",
+    "alias_key": "g parle"
+   },
+   {
+    "alias": "marie",
+    "alias_key": "marie"
+   }
+  ]
+ },
+ {
+  "id": "6110f621-76ad-52a8-9083-a1515946e130",
+  "name": "Potato chips",
+  "name_key": "chip potato",
+  "category": "snack",
+  "preparation": null,
+  "base_unit": "g",
+  "calories": 555,
+  "protein": 7,
+  "carbs": 53,
+  "fat": 35,
+  "fiber": 4.4,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Potato chips",
+  "source_id": "ref:Potato chips",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "aea8799c-bddf-58f6-b7a2-e4eb30814c70",
+    "label": "1 small pack",
+    "grams": 30,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "chips",
+    "alias_key": "chip"
+   },
+   {
+    "alias": "wafers",
+    "alias_key": "wafer"
+   },
+   {
+    "alias": "lays",
+    "alias_key": "lay"
+   }
+  ]
+ },
+ {
+  "id": "606c1c02-41b7-51b9-96fa-a9d07b4e9c9c",
+  "name": "Chai with sugar",
+  "name_key": "chai sugar",
+  "category": "drinks",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 44.5,
+  "protein": 1.2,
+  "carbs": 7,
+  "fat": 1.3,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Tea (chai) with milk and sugar",
+  "source_id": "ref:Tea (chai) with milk and sugar",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "5580e24f-69b5-5e2b-aa2b-ce29d5b98bac",
+    "label": "1 cup",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "chai",
+    "alias_key": "chai"
+   },
+   {
+    "alias": "tea",
+    "alias_key": "tea"
+   },
+   {
+    "alias": "masala chai",
+    "alias_key": "chai masala"
+   },
+   {
+    "alias": "milk tea",
+    "alias_key": "milk tea"
+   },
+   {
+    "alias": "tea with sugar",
+    "alias_key": "sugar tea"
+   },
+   {
+    "alias": "chai with milk and sugar",
+    "alias_key": "chai milk sugar"
+   }
+  ]
+ },
+ {
+  "id": "c50fa3e8-1e2a-5004-9356-8b5e3d99a1d4",
+  "name": "Chai without sugar",
+  "name_key": "chai sugar without",
+  "category": "drinks",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 20.7,
+  "protein": 1.1,
+  "carbs": 1.6,
+  "fat": 1.1,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Tea with milk, no sugar",
+  "source_id": "ref:Tea with milk, no sugar",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "1bf5650c-aceb-5cab-8ab9-82b9f8620e4d",
+    "label": "1 cup",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "tea without sugar",
+    "alias_key": "sugar tea without"
+   },
+   {
+    "alias": "chai no sugar",
+    "alias_key": "chai no sugar"
+   },
+   {
+    "alias": "sugar free chai",
+    "alias_key": "chai free sugar"
+   },
+   {
+    "alias": "chai without cheeni",
+    "alias_key": "chai cheeni without"
+   }
+  ]
+ },
+ {
+  "id": "3afea0ad-31d9-52b0-ae95-f73b826edbbe",
+  "name": "Coffee with milk and sugar",
+  "name_key": "coffee milk sugar",
+  "category": "drinks",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 49.5,
+  "protein": 1.6,
+  "carbs": 6.5,
+  "fat": 1.9,
+  "fiber": 0,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Coffee with milk and sugar",
+  "source_id": "ref:Coffee with milk and sugar",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "742bcfe3-4a71-52e0-b161-e54fb031bb0d",
+    "label": "1 cup",
+    "grams": 150,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "coffee",
+    "alias_key": "coffee"
+   },
+   {
+    "alias": "milk coffee",
+    "alias_key": "coffee milk"
+   },
+   {
+    "alias": "filter coffee",
+    "alias_key": "coffee filter"
+   }
+  ]
+ },
+ {
+  "id": "ac87c38f-526e-57e5-acea-229e9bfe05fc",
+  "name": "Black coffee",
+  "name_key": "black coffee",
+  "category": "drinks",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 0.66,
+  "protein": 0.12,
+  "carbs": 0,
+  "fat": 0.02,
+  "fiber": 0,
+  "sugar": 0,
+  "saturated_fat": 0,
+  "trans_fat": 0,
+  "sodium_mg": 2,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0.014,
+   "vitamin_b2_mg": 0.076,
+   "vitamin_b3_mg": 0.191,
+   "vitamin_b5_mg": 0.254,
+   "vitamin_b6_mg": 0.001,
+   "vitamin_b9_ug": 2,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.01,
+   "vitamin_k_ug": 0.1,
+   "calcium_mg": 2,
+   "iron_mg": 0.01,
+   "magnesium_mg": 3,
+   "phosphorus_mg": 3,
+   "potassium_mg": 49,
+   "zinc_mg": 0.02,
+   "copper_mg": 0.002,
+   "manganese_mg": 0.023,
+   "selenium_ug": 0
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Beverages, coffee, brewed, prepared with tap water",
+  "source_id": "fdc:171890",
+  "source_url": "https://fdc.nal.usda.gov/food-details/171890/nutrients",
+  "servings": [
+   {
+    "id": "5485fdd3-7047-575d-a6a5-15b2f0cce51e",
+    "label": "1 cup",
+    "grams": 240,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "black coffee no sugar",
+    "alias_key": "black coffee no sugar"
+   },
+   {
+    "alias": "americano",
+    "alias_key": "americano"
+   }
+  ]
+ },
+ {
+  "id": "92cce8c2-e60c-563b-b978-65cc6074657f",
+  "name": "Cola",
+  "name_key": "cola",
+  "category": "drinks",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 43.85,
+  "protein": 0,
+  "carbs": 10.4,
+  "fat": 0.25,
+  "fiber": 0,
+  "sugar": 9.94,
+  "saturated_fat": 0,
+  "trans_fat": 0,
+  "sodium_mg": 3,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 0,
+   "vitamin_b1_mg": 0,
+   "vitamin_b2_mg": 0,
+   "vitamin_b3_mg": 0,
+   "vitamin_b5_mg": 0,
+   "vitamin_b6_mg": 0,
+   "vitamin_b9_ug": 0,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 0,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0,
+   "vitamin_k_ug": 0,
+   "calcium_mg": 1,
+   "iron_mg": 0.02,
+   "magnesium_mg": 0,
+   "phosphorus_mg": 9,
+   "potassium_mg": 5,
+   "zinc_mg": 0.09,
+   "copper_mg": 0.007,
+   "manganese_mg": 0.003,
+   "selenium_ug": 0.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Beverages, carbonated, cola, regular",
+  "source_id": "fdc:174852",
+  "source_url": "https://fdc.nal.usda.gov/food-details/174852/nutrients",
+  "servings": [
+   {
+    "id": "4eb3369d-d988-501c-9dd9-3e782209ca83",
+    "label": "1 can",
+    "grams": 330,
+    "is_default": true,
+    "sort_order": 0
+   },
+   {
+    "id": "ff68e764-d506-59f9-995c-c97ff11f851b",
+    "label": "1 glass",
+    "grams": 250,
+    "is_default": false,
+    "sort_order": 1
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "coke",
+    "alias_key": "coke"
+   },
+   {
+    "alias": "pepsi",
+    "alias_key": "pepsi"
+   },
+   {
+    "alias": "soft drink",
+    "alias_key": "drink soft"
+   },
+   {
+    "alias": "cold drink",
+    "alias_key": "cold drink"
+   },
+   {
+    "alias": "thums up",
+    "alias_key": "thum up"
+   }
+  ]
+ },
+ {
+  "id": "0980f258-0e64-5a0f-971f-be40417009f3",
+  "name": "Orange juice",
+  "name_key": "juice orange",
+  "category": "drinks",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 46.2,
+  "protein": 0.7,
+  "carbs": 10.4,
+  "fat": 0.2,
+  "fiber": 0.2,
+  "sugar": 8.4,
+  "saturated_fat": 0.02,
+  "trans_fat": 0,
+  "sodium_mg": 1,
+  "cholesterol_mg": 0,
+  "micros": {
+   "vitamin_a_ug": 10,
+   "vitamin_b1_mg": 0.09,
+   "vitamin_b2_mg": 0.03,
+   "vitamin_b3_mg": 0.4,
+   "vitamin_b5_mg": 0.19,
+   "vitamin_b6_mg": 0.04,
+   "vitamin_b9_ug": 30,
+   "vitamin_b12_ug": 0,
+   "vitamin_c_mg": 50,
+   "vitamin_d_ug": 0,
+   "vitamin_e_mg": 0.04,
+   "vitamin_k_ug": 0.1,
+   "calcium_mg": 11,
+   "iron_mg": 0.2,
+   "magnesium_mg": 11,
+   "phosphorus_mg": 17,
+   "potassium_mg": 200,
+   "zinc_mg": 0.05,
+   "copper_mg": 0.044,
+   "manganese_mg": 0.014,
+   "selenium_ug": 0.1
+  },
+  "source_type": "verified_source",
+  "source": "USDA FoodData Central, SR Legacy: Orange juice, raw (Includes foods for USDA's Food Distribution Program)",
+  "source_id": "fdc:169098",
+  "source_url": "https://fdc.nal.usda.gov/food-details/169098/nutrients",
+  "servings": [
+   {
+    "id": "9997d247-2649-57bb-815a-ceb6c5cdfdd0",
+    "label": "1 glass",
+    "grams": 250,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "orange juice fresh",
+    "alias_key": "fresh juice orange"
+   },
+   {
+    "alias": "santra juice",
+    "alias_key": "juice santra"
+   }
+  ]
+ },
+ {
+  "id": "cad2b5bc-149b-51ad-9ab4-3b7770550306",
+  "name": "Coconut water",
+  "name_key": "coconut water",
+  "category": "drinks",
+  "preparation": null,
+  "base_unit": "ml",
+  "calories": 19.4,
+  "protein": 0.7,
+  "carbs": 3.7,
+  "fat": 0.2,
+  "fiber": 1.1,
+  "sugar": null,
+  "saturated_fat": null,
+  "trans_fat": null,
+  "sodium_mg": null,
+  "cholesterol_mg": null,
+  "micros": {},
+  "source_type": "global_manual",
+  "source": "NutriLog reference table (IFCT 2017 / USDA FoodData Central / Indian labels): Coconut water",
+  "source_id": "ref:Coconut water",
+  "source_url": null,
+  "servings": [
+   {
+    "id": "8ce89984-81b5-533a-94e7-a4d2c036e4b4",
+    "label": "1 coconut",
+    "grams": 250,
+    "is_default": true,
+    "sort_order": 0
+   }
+  ],
+  "aliases": [
+   {
+    "alias": "nariyal pani",
+    "alias_key": "nariyal pani"
+   },
+   {
+    "alias": "tender coconut water",
+    "alias_key": "coconut tender water"
+   }
+  ]
+ }
+]

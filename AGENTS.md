@@ -17,9 +17,19 @@ See README.md for setup and architecture.
   every route except the dashboard is lazy-loaded (`ROUTES[…].load`), and sheets used from other
   screens are opened through `views/lazy.js`. Navigation: Dashboard / Food / Progress / Measure /
   More (bottom tabs on phones, sidebar on desktop).
-- Food logging is AI-first. "My foods" searches the user's own recent items + `favorite_foods`
-  (`lib/food-library.js`). There is deliberately **no generic food database** — don't add one. The
-  shared AI rules and the staple-food reference table live in `supabase/functions/_shared/`.
+- **Global Food Database** (migrations 005/006): ONE shared food table in Supabase (`foods`,
+  `food_servings`, `food_aliases`), per 100 g with provenance and a verification status. Every way
+  of logging (text, voice, photo, barcode, search) resolves **each item separately**: database →
+  product database → AI — `services/meal-analysis.js`. Never call AI for a food the database
+  knows; never send the whole meal to AI when one item is unknown. AI only parses text and
+  estimates unknown foods; it never writes shared data — `submit_food` validates candidates, and
+  an AI food is shared only after two users confirm matching values (or an admin approves).
+  Shared tables hold no user data; who submitted what lives in private tables.
+- "My foods" = the user's recent items + `favorite_foods`, linked to shared foods by `food_ref`.
+  Logged items keep a nutrition snapshot (incl. `micros`), so editing a shared food never
+  changes history. Seed data is generated: edit `scripts/food-data/global-foods.mjs`, then
+  `USDA_SR_JSON=… npm run build:food-seed` — don't hand-edit 006 or `global-foods.json`.
+  `food_key()` (SQL) and `nameKey()` (`lib/food-key.js`) must stay identical (a test checks).
 - `supabase/migrations/` schema + RLS; `supabase/functions/` Edge Functions (Deno, TypeScript).
 
 ## Guardrails

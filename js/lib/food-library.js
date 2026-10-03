@@ -22,6 +22,7 @@ export function foodFrom(row) {
     quantity: Number(row.quantity) > 0 ? Number(row.quantity) : 1,
     unit: String(row.unit || 'g').trim() || 'g',
     grams: row.grams == null ? null : num(row.grams),
+    food_ref: row.food_ref || null, // the Global Food Database food it came from, if any
   };
   for (const k of NUTRIENTS) food[k] = num(row[k]);
   return food;
@@ -69,7 +70,7 @@ export function searchFoods(foods, query, limit = 30) {
 export function scaleFood(food, quantity) {
   const q = Number(quantity);
   const f = q > 0 ? q / (Number(food.quantity) || 1) : 0;
-  const out = { food_name: food.food_name, quantity: q > 0 ? q : 0, unit: food.unit, grams: food.grams == null ? null : food.grams * f };
+  const out = { food_name: food.food_name, quantity: q > 0 ? q : 0, unit: food.unit, grams: food.grams == null ? null : food.grams * f, food_ref: food.food_ref || null };
   for (const k of NUTRIENTS) out[k] = (Number(food[k]) || 0) * f;
   return out;
 }

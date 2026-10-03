@@ -776,3 +776,26 @@ img, svg { display: block; max-width: 100%; }
   .bar > span, .water-bar > span, .chart .bar-mark { forced-color-adjust: none; }
 }
 .right { text-align: right; }
+
+/* ── Global Food Database: review, amounts, voice, admin ───────────────── */
+.review-title { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.review-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.review-actions { gap: 6px 12px; }
+.amount-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); font-weight: 600; font-size: 0.875rem; text-align: left; }
+.amount-btn:hover { border-color: var(--accent); }
+.amount-ask { border: 1px dashed var(--warning); background: var(--warning-soft); border-radius: var(--radius-sm); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.check-row { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
+.check-row input { margin-top: 2px; accent-color: var(--accent); }
+.stepper { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 6px; align-items: center; max-width: 260px; }
+.stepper .input { text-align: center; font-weight: 700; }
+.stepper .icon-btn { width: 44px; height: 44px; border: 1px solid var(--border); font-size: 1.25rem; font-weight: 700; }
+.sum-line { font-size: 0.875rem; color: var(--text-2); background: var(--surface-2); border-radius: var(--radius-sm); padding: 10px 12px; }
+.sum-line b { color: var(--text); }
+[data-voice].listening { border-color: var(--danger); color: var(--danger); animation: pulse-ring 1.4s ease-in-out infinite; }
+@keyframes pulse-ring { 0%, 100% { box-shadow: 0 0 0 0 var(--danger-soft); } 50% { box-shadow: 0 0 0 6px var(--danger-soft); } }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+.data-table th, .data-table td { padding: 6px 4px; border-bottom: 1px solid var(--border); text-align: right; }
+.data-table th:first-child, .data-table td:first-child { text-align: left; }
+.data-table th { color: var(--text-3); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { [data-voice].listening { animation: none; } }
+.src-line svg, .eyebrow svg { display: inline-block; vertical-align: -2px; margin-right: 2px; }

@@ -1,9 +1,10 @@
 // Global app state + a tiny event bus. Views read `state` and re-render on events.
 import { today } from './lib/utils.js';
 
-export const APP_VERSION = '2.2.0';
+export const APP_VERSION = '2.3.0';
 
 export const state = {
+  isAdmin: false,       // may review the shared Global Food Database (checked again by the server)
   session: null,
   user: null,
   profile: null,

@@ -6,6 +6,7 @@
 // activities with MET and net calories burned. Requires a signed-in user; rate limited per user.
 import { consumeAiQuota, HttpError, json, readJson, requireUser, serve } from '../_shared/http.ts';
 import { generateJson, pickProvider, requireAiConfigured } from '../_shared/ai.ts';
+import { ESTIMATE_SCHEMA, ESTIMATE_SYSTEM, estimateText, normalizeEstimates, PARSE_SCHEMA, PARSE_SYSTEM, validateParsed } from '../_shared/meal-parse.ts';
 import {
   ACTIVITY_RESULT_SCHEMA, FOOD_RESULT_SCHEMA, FOOD_RULES, normalizeActivities, normalizeFoods,
 } from '../_shared/nutrition.ts';
@@ -19,7 +20,8 @@ ${FOOD_RULES}`;
 
 const PHOTO_SYSTEM = `${FOOD_SYSTEM}
 
-For photos: identify every food and drink visible and estimate each eaten portion from visual cues (dinner plate ≈ 26 cm, katori ≈ 150 ml, steel glass ≈ 250 ml, tablespoon ≈ 15 ml).`;
+For photos: identify every food and drink visible and estimate each eaten portion from visual cues (dinner plate ≈ 26 cm, katori ≈ 150 ml, steel glass ≈ 250 ml, tablespoon ≈ 15 ml).
+Only list what you can actually see (or what the user's note names). Never add foods that are usually served together but aren't visible. Name the preparation you can see ("boiled egg", "fried egg").`;
 
 const ACTIVITY_SYSTEM = `You convert exercise descriptions into activities with whole-minute durations and MET values, and return structured data only.
 - Split into separate activities. If a duration is missing, assume 30 minutes.
@@ -31,7 +33,8 @@ const ACTIVITY_SYSTEM = `You convert exercise descriptions into activities with 
 serve(async (req) => {
   const { user, supabase } = await requireUser(req);
   requireAiConfigured();
-  const body = await readJson<{ mode?: string; text?: string; provider?: string; weight_kg?: number; image?: { mediaType?: string; base64?: string } }>(req);
+  const body = await readJson<{ mode?: string; text?: string; provider?: string; weight_kg?: number; image?: { mediaType?: string; base64?: string };
+    items?: { food_name?: unknown; preparation?: unknown; quantity?: unknown; unit?: unknown; text_span?: unknown }[] }>(req);
   const mode = body.mode;
   const text = String(body.text ?? '').trim().slice(0, 1000);
   const provider = pickProvider(body.provider, 'food');
@@ -46,6 +49,37 @@ serve(async (req) => {
       effort: 'medium',
     });
     return json(req, { items: normalizeFoods(data), provider: used });
+  }
+
+  // Step 1 of the database-first flow: understand the meal (no nutrition).
+  if (mode === 'parse') {
+    if (!text) throw new HttpError(400, 'empty', 'Describe what you ate.');
+    await consumeAiQuota(supabase, 'food_parse');
+    const { data, provider: used } = await generateJson(provider, {
+      system: PARSE_SYSTEM,
+      text: `User text: """${text}"""`,
+      schema: PARSE_SCHEMA,
+      effort: 'low',
+    });
+    return json(req, { items: validateParsed(data, text), provider: used });
+  }
+
+  // Step 2: nutrition only for the foods NutriLog's database doesn't know.
+  if (mode === 'estimate') {
+    const list = (Array.isArray(body.items) ? body.items : []).slice(0, 10)
+      .map((it) => ({ food_name: String(it?.food_name ?? '').trim().slice(0, 80), preparation: it?.preparation ? String(it.preparation).slice(0, 40) : null,
+        quantity: Number(it?.quantity) > 0 ? Number(it.quantity) : null, unit: it?.unit ? String(it.unit).slice(0, 30) : null,
+        text_span: String(it?.text_span ?? '').slice(0, 120) }))
+      .filter((it) => it.food_name);
+    if (!list.length) throw new HttpError(400, 'empty', 'Nothing to estimate.');
+    await consumeAiQuota(supabase, 'food_estimate');
+    const { data, provider: used } = await generateJson(provider, {
+      system: ESTIMATE_SYSTEM,
+      text: estimateText(list),
+      schema: ESTIMATE_SCHEMA,
+      effort: 'medium',
+    });
+    return json(req, { items: normalizeEstimates(data, list.length), provider: used });
   }
 
   if (mode === 'image') {

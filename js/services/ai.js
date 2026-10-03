@@ -19,6 +19,18 @@ export async function analyzeFoodImage(image, note = '') {
   return { items: res?.items || [], provider: res?.provider || aiProvider() };
 }
 
+/** Splits a meal description into foods with quantities — no nutrition. → { items, provider } */
+export async function parseMealWithAi(text) {
+  const res = await callFunction('ai-food-analysis', { mode: 'parse', text, provider: aiProvider() });
+  return { items: res?.items || [], provider: res?.provider || aiProvider() };
+}
+
+/** Nutrition for foods the database doesn't know: items [{ food_name, preparation, quantity, unit, text_span }]. */
+export async function estimateFoodsWithAi(items) {
+  const res = await callFunction('ai-food-analysis', { mode: 'estimate', items, provider: aiProvider() });
+  return { items: res?.items || [], provider: res?.provider || aiProvider() };
+}
+
 /** Activities with MET and minutes; `weightKg` is the user's weight on that day. → items */
 export async function analyzeActivity(text, weightKg) {
   const res = await callFunction('ai-food-analysis', { mode: 'activity', text, weight_kg: weightKg, provider: aiProvider() });

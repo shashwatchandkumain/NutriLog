@@ -39,7 +39,7 @@ export const FOOD_RESULT_SCHEMA = {
   properties: { items: { type: 'array', items: FOOD_ITEM_SCHEMA } },
 };
 
-export const FOOD_RULES = `Estimation protocol (follow exactly — results must not depend on which AI model you are):
+export const FOOD_RULES_CORE = `Estimation protocol (follow exactly — results must not depend on which AI model you are):
 - One entry per distinct food or drink. Split combined meals ("dal chawal" -> dal + rice; "chole bhature" -> chole + bhature).
 - Give the single MOST LIKELY value for every number — not a cautious low estimate and not a generous high one.
 - per_100g is the food AS EATEN (cooked, including its cooking oil/ghee/sugar), from standard references (IFCT 2017, USDA FoodData Central). When a food matches a REFERENCE row below, use that row's per-100 g values and its portion weights unchanged.
@@ -56,7 +56,10 @@ export const FOOD_RULES = `Estimation protocol (follow exactly — results must 
 - For a dish that is not in the reference, build it from its standard recipe (ingredients + cooking fat above) rather than guessing a calorie density.
 - carbs = total carbohydrate including fiber; calories per 100 g = 4×protein + 4×carbs + 9×fat + 7×alcohol.
 - Never exceed 900 kcal or 100 g of macros per 100 g.
-- If the input is not food, return an empty items array.
+- If the input is not food, return an empty items array.`;
+
+/** The rules plus the reference table (used where the Global Food Database isn't consulted first). */
+export const FOOD_RULES = `${FOOD_RULES_CORE}
 
 REFERENCE (per 100 g or 100 ml as eaten):
 ${REFERENCE_TABLE}`;

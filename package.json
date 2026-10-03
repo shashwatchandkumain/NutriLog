@@ -7,6 +7,7 @@
     "serve": "python3 -m http.server 8080",
     "build": "node scripts/build.mjs",
     "build:icons": "node scripts/build-icons.mjs",
+    "build:food-seed": "node scripts/build-food-seed.mjs",
     "setup:supabase": "bash scripts/setup-supabase.sh",
     "lint": "eslint .",
     "test": "node --test tests/unit/*.test.mjs tests/db/*.test.mjs",

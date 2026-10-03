@@ -6,11 +6,12 @@ import { sumNutrition, NUTRIENTS } from '../lib/nutrition.js';
 import { openSheet, toast, bindActions, $ } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { logItems, updateItem, deleteItem, addFavorite, removeFavorite, isFavorite, cachedDay, fetchDay } from '../services/data.js';
-import { openFoodLogger } from './food-logger.js';
+import { openFoodLogger, openCorrection } from './food-logger.js';
+import { foodById } from '../services/food-db.js';
 
 const macroLine = (n) => `P ${fmt1(n.protein)} · C ${fmt1(n.carbs)} · F ${fmt1(n.fat)}`;
 const copyOf = (it) => ({ food_id: it.food_id, food_name: it.food_name, source: it.source, quantity: it.quantity, unit: it.unit, grams: it.grams,
-  calories: it.calories, protein: it.protein, carbs: it.carbs, fat: it.fat, fiber: it.fiber });
+  calories: it.calories, protein: it.protein, carbs: it.carbs, fat: it.fat, fiber: it.fiber, food_ref: it.food_ref || null, micros: it.micros || null });
 
 /** The meal sections for `day` (on `date`). `yesterday` (optional) enables "repeat" links. */
 export function mealsView(day, date, { yesterday = null } = {}) {
@@ -112,6 +113,7 @@ export function editItem(item) {
         <button type="button" class="btn btn-ghost btn-sm" data-dup>${icon('copy', 16)} Duplicate</button>
         <button type="button" class="btn btn-ghost btn-sm" data-fav>${icon(isFavorite(item) ? 'starFill' : 'star', 16)} ${isFavorite(item) ? 'Saved to favorites' : 'Save to favorites'}</button>
       </div>
+      ${item.food_ref ? html`<p class="tiny muted src-line">${icon('database', 12)} From the NutriLog database — this entry keeps the values it was logged with. <button type="button" class="link-btn" data-report>Report wrong values</button></p>` : ''}
     </form>`);
   setHTML(sheet.foot, html`<button type="button" class="btn btn-danger" data-del>${icon('trash', 16)} Delete</button><button type="button" class="btn btn-primary" data-save>Save</button>`);
   const form = $('#e-form', sheet.body);
@@ -154,6 +156,13 @@ export function editItem(item) {
     const [copy] = logItems(item.meal_date, meal, [copyOf(item)]);
     sheet.close();
     toast(`${item.food_name} duplicated ✓`, 'success', { action: 'Undo', onAction: () => deleteItem({ ...copy, meal_date: item.meal_date }) });
+  });
+  form.querySelector('[data-report]')?.addEventListener('click', async () => {
+    try {
+      const food = await foodById(item.food_ref);
+      if (!food) { toast('That food is no longer in the database.', 'error'); return; }
+      openCorrection(food);
+    } catch (e) { toast("Couldn't load the food. Check your connection.", 'error'); console.warn(e); }
   });
   form.querySelector('[data-fav]').addEventListener('click', () => {
     if (isFavorite(item)) { removeFavorite(item); toast(`Removed ${item.food_name} from favorites.`); }

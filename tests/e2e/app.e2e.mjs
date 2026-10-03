@@ -80,12 +80,26 @@ const FAKE_SCALE = () => {
   Object.defineProperty(navigator, 'bluetooth', { configurable: true, value: { requestDevice: async () => device } });
 };
 
-async function newDevice({ viewport = { width: 390, height: 844 }, colorScheme = 'light', scale = false, serviceWorkers = 'block' } = {}) {
+/** A fake speech recogniser: "hears" window.__speech (or a default) shortly after start. */
+const FAKE_SPEECH = () => {
+  class FakeRecognition {
+    start() {
+      const text = window.__speech || 'I had one and a half bananas';
+      setTimeout(() => this.onresult?.({ results: [[{ transcript: text }]] }), 150);
+      setTimeout(() => this.onend?.(), 300);
+    }
+    stop() { this.onend?.(); }
+  }
+  window.SpeechRecognition = FakeRecognition;
+};
+
+async function newDevice({ viewport = { width: 390, height: 844 }, colorScheme = 'light', scale = false, speech = false, serviceWorkers = 'block' } = {}) {
   const ctx = await browser.newContext({ viewport, colorScheme, acceptDownloads: true, serviceWorkers });
   if (scale) await ctx.addInitScript(FAKE_SCALE);
+  if (speech) await ctx.addInitScript(FAKE_SPEECH);
   await ctx.route(`${MOCK_URL}/**`, (r) => backend.handle(r));
   await ctx.routeWebSocket(/mock\.supabase\.co/, (ws) => backend.realtime(ws));
-  await ctx.route('https://world.openfoodfacts.org/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+  await ctx.route('https://world.openfoodfacts.org/**', (r) => (backend.offHits = (backend.offHits || 0) + 1) && r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
     status: 1, product: { product_name: 'Test Oats', brands: 'Acme', serving_quantity: 40, serving_size: '40 g', nutriments: { 'energy-kcal_100g': 379, proteins_100g: 13.2, carbohydrates_100g: 67.7, fat_100g: 6.5, fiber_100g: 10.1 } },
   }) }));
   const page = await ctx.newPage();
@@ -122,6 +136,35 @@ async function go(page, name) {
     return bottom.getByRole('link', { name, exact: true }).click();
   }
   return page.locator('.side-nav').getByRole('link', { name, exact: true }).click();
+}
+
+const SEED = JSON.parse(await readFile(new URL('../../scripts/food-data/global-foods.json', import.meta.url), 'utf8'));
+const SEED_ID = (name) => SEED.find((f) => f.name === name).id;
+
+/** Another user, already signed in and set up, on a fresh device. */
+async function signedInDevice(email, options = {}) {
+  const { randomUUID } = await import('node:crypto');
+  const user = { id: randomUUID(), email, password: 'pass-word-123', user_metadata: {}, created_at: new Date().toISOString() };
+  backend.users.set(user.id, user);
+  backend.createDefaults(user.id);
+  Object.assign(backend.db.profiles.find((p) => p.id === user.id), { display_name: email.split('@')[0], age: 30, sex: 'male', height_cm: 175, weight_kg: 75, onboarding_completed: true });
+  const s = backend.session(user, options.ttl || 3600);
+  const device = await newDevice(options);
+  if (options.clock) await device.page.clock.install({ time: options.clock });
+  await device.page.goto(`${base}#access_token=${s.access_token}&expires_at=${s.expires_at}&expires_in=${s.expires_in}&refresh_token=${s.refresh_token}&token_type=bearer&type=magiclink`);
+  await device.page.locator('main h1').filter({ hasText: /Good (morning|afternoon|evening)/ }).waitFor();
+  return { ...device, user };
+}
+
+/** A review card by its food's title. */
+const reviewCard = (page, name) => page.locator('.review-item', { has: page.locator('.review-title, .review-name', { hasText: new RegExp(`^${name}$`) }) });
+
+/** Logs food by text and waits for the review. */
+async function analyze(page, text) {
+  await page.locator('#d-quick').getByRole('button', { name: 'Log food' }).click();
+  await page.getByLabel('What did you eat?').fill(text);
+  await page.getByRole('button', { name: 'Analyze' }).click();
+  await page.getByRole('heading', { name: 'Review & add' }).waitFor();
 }
 
 const EMAIL = 'asha@example.com';
@@ -231,17 +274,26 @@ test('Log food opens straight to AI; there is no generic food database', async (
   await shot(page, '05-add-food');
 });
 
-test('describe with AI → review (labelled as an estimate) → adjust grams → totals are consistent', async () => {
+test('describe a meal → known foods come from the shared database, only the unknown one is estimated by AI', async () => {
   const { page } = device1;
+  const aiBefore = backend.ai.length;
   await page.getByLabel('What did you eat?').fill('1 katori dal tadka and jeera rice');
   await page.getByRole('button', { name: 'Analyze' }).click();
   await page.getByRole('heading', { name: 'Review & add' }).waitFor();
   await page.getByText('AI-generated estimate — verify portions and ingredients.').waitFor();
   await page.getByText(/Estimated by Gemini/).first().waitFor();
-  assert.equal(await page.locator('.review-item .tag', { hasText: 'AI estimate' }).count(), 2);
-  await page.getByLabel('Grams of Jeera rice').fill('200');
-  await page.getByLabel('Grams of Jeera rice').press('Tab');
-  await page.getByText(/302 kcal/).first().waitFor(); // (3·4 + 28·4 + 3·9) = 151 kcal/100 g × 200 g
+  const dal = page.locator('.review-item', { hasText: 'Dal tadka' });
+  const rice = page.locator('.review-item', { hasText: 'Jeera rice' });
+  await dal.getByText('NutriLog database').waitFor();
+  await rice.getByText('AI estimate').waitFor();
+  assert.match(await dal.innerText(), /1 katori \(bowl\) \(150 g\)[\s\S]*194 kcal/); // per 100 g: 4·6 + 4·15 + 9·5 = 129
+  const calls = backend.ai.slice(aiBefore);
+  assert.deepEqual(calls.map((c) => [c.mode, c.body.items?.map((i) => i.food_name)]), [['estimate', ['jeera rice']]], 'one AI call, for the unknown food only');
+  await rice.getByRole('button', { name: 'Change amount of Jeera rice' }).click();
+  await page.locator('.serving-picker [data-sp="serving"]').selectOption('__grams__');
+  await page.locator('.serving-picker [data-sp="qty"]').fill('200');
+  await page.getByRole('button', { name: 'Save amount' }).click();
+  await rice.getByText(/302 kcal/).waitFor(); // (3·4 + 28·4 + 3·9) = 151 kcal/100 g × 200 g
   await shot(page, '06-ai-review');
   await page.getByRole('button', { name: 'Add 2 items' }).click();
   await page.locator('.toast', { hasText: 'Added 2 items' }).waitFor();
@@ -255,6 +307,11 @@ test('describe with AI → review (labelled as an estimate) → adjust grams →
   assert.match(macros, new RegExp(`${Math.round(protein * 10) / 10}`));
   assert.match(macros, /%/);
   assert.match(await page.locator('#d-meals .meal-group').filter({ has: page.locator('.item') }).first().innerText(), /496 kcal/, 'meal header shows its total');
+  const saved = backend.db.meal_items.find((i) => i.food_name === 'Dal tadka');
+  assert.deepEqual([saved.source, saved.food_ref, saved.unit, saved.quantity, saved.grams], ['global', SEED_ID('Dal tadka'), 'katori (bowl)', 1, 150], 'linked to the shared food');
+  assert.equal(backend.db.meal_items.find((i) => i.food_name === 'Jeera rice').source, 'ai_text');
+  // The confirmed AI food becomes a candidate — private to this user until someone else confirms it.
+  await until(() => [...backend.foodDb.foods.values()].some((f) => f.name === 'Jeera rice' && f.status === 'pending'), 'the candidate food');
 });
 
 test('AI failure shows a friendly message, not a raw error', async () => {
@@ -269,9 +326,11 @@ test('AI failure shows a friendly message, not a raw error', async () => {
 
 test('edit an item: amount rescales, name can be corrected', async () => {
   const { page } = device1;
+  await page.locator('#modal-root .overlay').first().waitFor({ state: 'detached' }).catch(() => {});
   await page.getByRole('button', { name: 'Edit Dal tadka' }).click();
-  await page.locator('#e-qty').fill('300');
-  assert.equal(await page.locator('#e-calories').inputValue(), '387');
+  await page.getByText('From the NutriLog database').waitFor();
+  await page.locator('#e-qty').fill('2'); // 2 katori
+  await page.waitForFunction(() => document.querySelector('#e-calories')?.value === '387');
   await page.locator('#e-name').fill('Dal tadka (home)');
   await page.locator('.sheet').getByRole('button', { name: 'Save', exact: true }).click();
   await page.locator('.toast', { hasText: 'Dal tadka (home) updated' }).waitFor();
@@ -540,9 +599,9 @@ test('My foods: star a food, search recent & favorites, re-log in one tap (no ge
   await sheet.locator('.food-row').first().waitFor();
   assert.equal(await sheet.locator('.food-row').count(), 1);
   await sheet.getByRole('button', { name: 'Recent & favorites' }).click();
-  await sheet.getByLabel('Search your foods').fill('pizza');
+  await sheet.getByLabel('Search foods').fill('pizza');
   await sheet.getByText('No saved food matches “pizza”').waitFor();
-  await sheet.getByLabel('Search your foods').fill('jee');
+  await sheet.getByLabel('Search foods').fill('jee');
   await sheet.locator('.food-row', { hasText: 'Jeera rice' }).waitFor();
   assert.equal(await sheet.locator('.food-row').count(), 1);
   await shot(page, '14-my-foods');
@@ -688,6 +747,150 @@ test(`no horizontal scrolling on any screen from ${WIDTHS[0]} to ${WIDTHS.at(-1)
   assert.deepEqual(problems, []);
 });
 
+// ── Global Food Database ──────────────────────────────────────────────────
+test('a meal of known foods is calculated from the shared database with zero AI calls', async () => {
+  const { page } = device1;
+  const aiBefore = backend.ai.length;
+  await analyze(page, 'I ate 1 roti with 10g butter and 4 boiled eggs');
+  assert.equal(backend.ai.length, aiBefore, 'no AI call at all');
+  await page.getByText('All from the NutriLog database').waitFor();
+  const card = (name) => page.locator('.review-item', { has: page.locator('.review-title', { hasText: new RegExp(`^${name}$`) }) });
+  assert.match(await card('Roti').innerText(), /1 medium roti \(40 g\)[\s\S]*112 kcal/);
+  assert.match(await card('Butter').innerText(), /10 g[\s\S]*73 kcal/);
+  assert.match(await card('Boiled egg').innerText(), /4 × 1 large egg \(200 g\)[\s\S]*301 kcal/);
+  assert.equal(await page.locator('.review-item .tag', { hasText: 'AI estimate' }).count(), 0);
+  // "+ Add" one more egg → merge with the existing eggs.
+  await card('Boiled egg').getByRole('button', { name: 'Add more Boiled egg' }).click();
+  await page.getByRole('button', { name: 'Merge with Boiled egg' }).click();
+  assert.match(await card('Boiled egg').innerText(), /5 × 1 large egg \(250 g\)[\s\S]*376 kcal/);
+  await shot(page, '16-review-database');
+  await page.getByRole('button', { name: 'Add 3 items' }).click();
+  await until(() => backend.db.meal_items.some((i) => i.food_name === 'Boiled egg'), 'the eggs to sync');
+  const egg = backend.db.meal_items.find((i) => i.food_name === 'Boiled egg');
+  assert.deepEqual([egg.source, egg.food_ref, egg.quantity, egg.unit, egg.grams], ['global', SEED_ID('Boiled egg'), 5, 'large egg', 250]);
+  assert.ok(Math.abs(egg.micros.iron_mg - 2.975) < 0.001, 'vitamins and minerals are saved with the entry');
+  assert.equal(backend.ai.length, aiBefore);
+});
+
+test('a vague amount is asked, never guessed — and nothing the user didn’t say is added', async () => {
+  const { page } = device1;
+  const aiBefore = backend.ai.length;
+  await analyze(page, 'I ate one roti with three boiled eggs and a half-fried egg with a little butter');
+  assert.equal(backend.ai.length, aiBefore, 'all four foods are known — no AI');
+  const titles = await page.locator('.review-item .review-title').allInnerTexts();
+  assert.deepEqual(titles, ['Roti', 'Boiled egg', 'Fried egg', 'Butter']);
+  assert.match(await reviewCard(page, 'Fried egg').innerText(), /you said “a half-fried egg”/);
+  assert.match(await reviewCard(page, 'Butter').innerText(), /with Fried egg/);
+  assert.doesNotMatch(await page.locator('.sheet').innerText(), /bread|toast/i);
+  const add = page.locator('#rv-add');
+  await page.getByText('How much butter?').waitFor();
+  assert.equal(await add.isDisabled(), true, "can't save until the amount is chosen");
+  await reviewCard(page, 'Butter').getByRole('button', { name: '1 tsp' }).click();
+  assert.equal(await add.isDisabled(), false);
+  assert.match(await reviewCard(page, 'Butter').innerText(), /1 tsp \(5 g\)/);
+  await page.keyboard.press('Escape');
+});
+
+test('only the unknown food goes to AI; a new food is shared once a second user confirms it; then nobody needs AI for it', async () => {
+  const { page } = device1;
+  let aiBefore = backend.ai.length;
+  await analyze(page, '1 roti with 10g homemade peanut chutney and 4 boiled eggs');
+  assert.deepEqual(backend.ai.slice(aiBefore).map((c) => [c.mode, c.body.items.map((i) => i.food_name)]), [['estimate', ['homemade peanut chutney']]], 'only the chutney');
+  assert.equal(await page.locator('.review-item .tag', { hasText: 'NutriLog database' }).count(), 2);
+  await page.locator('.review-item', { hasText: 'Peanut chutney' }).getByText('AI estimate').waitFor();
+  await page.getByRole('button', { name: 'Add 3 items' }).click();
+  await until(() => [...backend.foodDb.foods.values()].some((f) => f.name === 'Peanut chutney' && f.status === 'pending'), 'the private candidate');
+
+  // User 2 doesn't see the unconfirmed food: AI again, then their confirmation shares it.
+  const two = await signedInDevice('ravi@example.com');
+  aiBefore = backend.ai.length;
+  await analyze(two.page, '10g peanut chutney');
+  assert.equal(backend.ai.length, aiBefore + 1);
+  await two.page.getByRole('button', { name: 'Add 1 item' }).click();
+  await until(() => [...backend.foodDb.foods.values()].some((f) => f.name === 'Peanut chutney' && f.status === 'verified'), 'the food to be shared');
+  await two.ctx.close();
+
+  // User 3 gets it from the shared database — zero AI calls.
+  const three = await signedInDevice('meera@example.com');
+  aiBefore = backend.ai.length;
+  await analyze(three.page, '1 tbsp peanut chutney');
+  assert.equal(backend.ai.length, aiBefore, 'no AI call for a food the community already confirmed');
+  assert.match(await three.page.locator('.review-item').innerText(), /NutriLog database[\s\S]*1 tbsp \(15 g\)[\s\S]*40 kcal/);
+  await three.ctx.close();
+});
+
+test('voice: a spoken meal goes through the same database-first flow', async () => {
+  const me = await signedInDevice('voice@example.com', { speech: true });
+  const aiBefore = backend.ai.length;
+  await me.page.locator('#d-quick').getByRole('button', { name: 'Log food' }).click();
+  await me.page.locator('[data-voice]').click();
+  await me.page.getByRole('heading', { name: 'Review & add' }).waitFor();
+  assert.equal(await me.page.getByLabel('What did you eat?').count(), 0);
+  assert.match(await me.page.locator('.review-item').innerText(), /Banana[\s\S]*NutriLog database[\s\S]*1\.5 × 1 medium banana \(177 g\)[\s\S]*174 kcal/);
+  assert.equal(backend.ai.length, aiBefore);
+  await me.ctx.close();
+});
+
+test('My foods also searches the shared database: pick a serving and amount, add it', async () => {
+  const { page } = device1;
+  await page.locator('#d-quick').getByRole('button', { name: 'Log food' }).click();
+  await page.getByRole('tab', { name: /My foods/ }).click();
+  await page.getByLabel('Search foods').fill('omelette');
+  await page.getByText('From the NutriLog database').waitFor();
+  await page.getByRole('button', { name: 'Add Omelette' }).click();
+  await page.locator('.serving-picker [data-sp="serving"]').selectOption('1-egg omelette');
+  await page.locator('.serving-picker [data-q="2"]').click();
+  assert.match(await page.locator('.serving-picker').innerText(), /= 120 g[\s\S]*kcal/);
+  await shot(page, '17-serving-picker');
+  await page.getByRole('button', { name: 'Add to log' }).click();
+  await until(() => backend.db.meal_items.some((i) => i.food_name === 'Omelette'), 'the omelette');
+  const om = backend.db.meal_items.find((i) => i.food_name === 'Omelette');
+  assert.deepEqual([om.food_ref, om.source, om.quantity, om.unit, om.grams], [SEED_ID('Omelette'), 'global', 2, '1-egg omelette', 120]);
+});
+
+test('a scanned product is shared, so the next scan comes from the database without an outside lookup', async () => {
+  const { page } = device1;
+  await until(() => [...backend.foodDb.foods.values()].some((f) => f.source_id === 'off:8901234567890' && f.status === 'verified'), 'the scanned product to be shared');
+  const off = backend.offHits;
+  await page.locator('#d-quick').getByRole('button', { name: 'Scan barcode' }).click();
+  await page.getByLabel('Barcode number').fill('8901234567890');
+  await page.getByRole('button', { name: 'Look up' }).click();
+  await page.locator('.sheet').getByText('NutriLog database').waitFor();
+  assert.equal(backend.offHits, off, 'no Open Food Facts request');
+  await page.keyboard.press('Escape');
+});
+
+test('wrong values can be reported (never edited directly), and the admin page reviews reports and new foods', async () => {
+  const { page } = device1;
+  await page.locator('#d-quick').getByRole('button', { name: 'Log food' }).click();
+  await page.getByRole('tab', { name: /My foods/ }).click();
+  await page.getByLabel('Search foods').fill('poached egg');
+  await page.getByRole('button', { name: 'Add Poached egg' }).click();
+  await page.getByRole('button', { name: 'Values look wrong?' }).click();
+  await page.locator('#cr-protein').fill('13');
+  await page.locator('#cr-reason').fill('Label on my egg tray');
+  await page.getByRole('button', { name: 'Send report' }).click();
+  await until(() => backend.db.food_corrections.length === 1, 'the report');
+  assert.equal(backend.foodDb.foods.get(SEED_ID('Poached egg')).protein, 12.5, 'the shared food is unchanged');
+  await page.keyboard.press('Escape');
+
+  backend.foodDb.admins.add(asha().id);
+  await page.reload();
+  await page.locator('main h1').first().waitFor();
+  await go(page, 'More');
+  await page.getByRole('link', { name: /Food database \(admin\)/ }).click();
+  await page.getByRole('heading', { name: 'Food database' }).waitFor();
+  const text = await page.locator('main').innerText();
+  assert.match(text, /AI calls avoided/);
+  assert.match(text, /Jeera rice/, 'the private AI food waits for review');
+  await shot(page, '18-admin');
+  await page.locator('.review-item', { hasText: 'Jeera rice' }).getByRole('button', { name: 'Approve' }).click();
+  await until(() => [...backend.foodDb.foods.values()].some((f) => f.name === 'Jeera rice' && f.status === 'verified'), 'approval');
+  await page.locator('.review-item', { hasText: 'Poached egg' }).getByRole('button', { name: 'Apply' }).click();
+  await until(() => backend.foodDb.foods.get(SEED_ID('Poached egg')).protein === 13, 'the correction');
+  await go(page, 'Dashboard');
+});
+
 test('export my data as JSON', async () => {
   const { page } = device1;
   await go(page, 'Settings');
@@ -737,14 +940,16 @@ test('log out, recovery-code reset, and delete account', async () => {
   await page.getByRole('heading', { name: /Asha/ }).waitFor();
 
   await go(page, 'Settings');
+  const uid = asha().id;
   await page.getByRole('button', { name: 'Delete my account' }).click();
   const confirm = page.getByRole('button', { name: 'Delete forever' });
   assert.equal(await confirm.isDisabled(), true);
   await page.getByLabel('Type DELETE to confirm').fill('DELETE');
   await confirm.click();
   await page.getByRole('link', { name: 'Create account' }).waitFor();
-  assert.equal(backend.db.meal_items.length, 0);
-  assert.equal(backend.users.size, 0);
+  assert.equal(backend.db.meal_items.filter((i) => i.user_id === uid).length, 0);
+  assert.equal(backend.users.has(uid), false);
+  assert.ok(backend.foodDb.foods.size > 100, 'shared foods stay — they hold no personal data');
 });
 
 test('password-reset email link opens "choose a new password" and signs in', async () => {

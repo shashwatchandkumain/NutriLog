@@ -283,7 +283,7 @@ export function weighInRecord(kg, { source = 'manual', measuredAt = null, heartR
 }
 
 // ── My foods: favorites and recently logged foods ─────────────────────────
-const FOOD_COLUMNS = 'food_name, quantity, unit, grams, calories, protein, carbs, fat, fiber';
+const FOOD_COLUMNS = 'food_name, quantity, unit, grams, calories, protein, carbs, fat, fiber, food_ref';
 
 function overlayFavorites(rows) {
   const map = new Map(rows.map((f) => [foodKey(f.food_name, f.unit), f]));
@@ -314,7 +314,8 @@ export const isFavorite = (food) => (state.favorites || []).some((f) => foodKey(
 /** Saves a food (name + portion + nutrition for that portion) to favorites. */
 export function addFavorite(food) {
   const row = { id: uuid(), food_name: String(food.food_name || '').trim().slice(0, 200), quantity: Number(food.quantity) > 0 ? Number(food.quantity) : 1,
-    unit: String(food.unit || 'g').slice(0, 60), grams: food.grams == null ? null : r2(food.grams), created_at: new Date().toISOString() };
+    unit: String(food.unit || 'g').slice(0, 60), grams: food.grams == null ? null : r2(food.grams), created_at: new Date().toISOString(),
+    food_ref: UUID_RE.test(String(food.food_ref || '')) ? food.food_ref : null };
   for (const k of ['calories', 'protein', 'carbs', 'fat', 'fiber']) row[k] = r2(Math.max(0, Number(food[k]) || 0));
   if (!row.food_name) return;
   dropQueued((op) => (op.t === 'favorite' || op.t === 'unfavorite') && foodKey(op.food_name ?? op.row?.food_name, op.unit ?? op.row?.unit) === foodKey(row.food_name, row.unit));
@@ -368,10 +369,14 @@ function enqueue(op) {
 }
 
 const NUMERIC = ['quantity', 'grams', 'calories', 'protein', 'carbs', 'fat', 'fiber'];
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function cleanItem(it) {
   const out = {
     id: it.id || uuid(),
     food_id: it.food_id || null,
+    food_ref: UUID_RE.test(String(it.food_ref || '')) ? it.food_ref : null,
+    micros: it.micros && typeof it.micros === 'object'
+      ? Object.fromEntries(Object.entries(it.micros).filter(([, v]) => Number.isFinite(Number(v))).map(([k, v]) => [k, Number(v)])) : null,
     food_name: String(it.food_name || '').trim().slice(0, 200),
     source: it.source || 'manual',
     unit: String(it.unit || 'g').slice(0, 60),
@@ -411,6 +416,19 @@ export function setWater(date, ml) {
   dropQueued((op) => op.t === 'water' && op.date === date);
   enqueue({ t: 'water', date, ml: Math.round(Math.max(0, Math.min(20000, Number(ml) || 0))) });
   updateCachedDay(date);
+}
+
+/**
+ * A food the user confirmed that the shared database didn't have (an AI estimate or a scanned
+ * product) — sent as a candidate; the server validates it and shares it once confirmed.
+ */
+export function submitFoodCandidate(food) {
+  enqueue({ t: 'submitFood', date: null, food });
+}
+
+/** "This food's values look wrong": a correction request for an admin to review. */
+export function reportFoodCorrection(foodId, suggested, reason) {
+  enqueue({ t: 'correction', date: null, row: { id: uuid(), food_id: foodId, suggested, reason: String(reason || '').slice(0, 500) } });
 }
 
 /** Adds (or with a negative amount removes) water for a day. Returns the new total in ml. */
@@ -486,6 +504,14 @@ async function execute(op) {
       return check(await sb.from('water_logs').upsert({ user_id: uid, log_date: op.date, ml: op.ml ?? (op.glasses || 0) * 250 }, { onConflict: 'user_id,log_date' }));
     case 'favorite':
       return check(await sb.from('favorite_foods').upsert({ ...op.row, user_id: uid }, { onConflict: 'user_id,food_name,unit', ignoreDuplicates: true }));
+    case 'submitFood': {
+      const { data, error, status } = await sb.rpc('submit_food', { p_food: op.food });
+      // An invalid candidate (e.g. impossible values) is simply not shared — the log entry is already saved.
+      if (error && Number(status) >= 400 && Number(status) < 500 && error.code === '22023') { console.warn('[NutriLog] food not shared:', error.message); return null; }
+      return check({ data, error, status });
+    }
+    case 'correction':
+      return check(await sb.from('food_corrections').upsert({ ...op.row, user_id: uid }, { onConflict: 'id', ignoreDuplicates: true }));
     case 'unfavorite':
       return check(await sb.from('favorite_foods').delete().eq('food_name', op.food_name).eq('unit', op.unit));
     case 'activity':
@@ -508,7 +534,7 @@ function isTransient(e) {
     msg.includes('fetch') || msg.includes('network') || msg.includes('jwt') || msg.includes('timeout');
 }
 
-const OP_LABEL = { log: 'a meal', updateItem: 'an edit', deleteItem: 'a deletion', water: 'water', activity: 'an activity', deleteActivity: 'a deletion', weight: 'a weigh-in', deleteWeight: 'a deletion', favorite: 'a favorite', unfavorite: 'a favorite' };
+const OP_LABEL = { submitFood: 'a new food', correction: 'a correction', log: 'a meal', updateItem: 'an edit', deleteItem: 'a deletion', water: 'water', activity: 'an activity', deleteActivity: 'a deletion', weight: 'a weigh-in', deleteWeight: 'a deletion', favorite: 'a favorite', unfavorite: 'a favorite' };
 
 /** Changes the server rejected, newest last: [{ label, date, failedAt }]. */
 export const failedChanges = () => failed.map((op) => ({ label: OP_LABEL[op.t] || 'a change', date: op.date, failedAt: op.failedAt }));
