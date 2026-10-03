@@ -2,12 +2,13 @@
 // used by the browser tests. It enforces per-user ownership like the real RLS policies.
 import { randomUUID } from 'node:crypto';
 import { MockFoods } from './mock-foods.mjs';
+import { MockBilling } from './mock-billing.mjs';
 
 export const MOCK_URL = 'https://mock.supabase.co';
 
 const b64u = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-const OWNER = { profiles: 'id', user_preferences: 'user_id', daily_goals: 'user_id', meals: 'user_id', meal_items: 'user_id', weight_history: 'user_id', activities: 'user_id', water_logs: 'user_id', favorite_foods: 'user_id', food_corrections: 'user_id' };
-const PK = { profiles: ['id'], user_preferences: ['user_id'], daily_goals: ['user_id'], meals: ['id'], meal_items: ['id'], weight_history: ['id'], activities: ['id'], water_logs: ['user_id', 'log_date'], favorite_foods: ['id'], food_corrections: ['id'] };
+const OWNER = { profiles: 'id', user_preferences: 'user_id', daily_goals: 'user_id', meals: 'user_id', meal_items: 'user_id', weight_history: 'user_id', activities: 'user_id', water_logs: 'user_id', favorite_foods: 'user_id', food_corrections: 'user_id', ai_reports: 'user_id' };
+const PK = { profiles: ['id'], user_preferences: ['user_id'], daily_goals: ['user_id'], meals: ['id'], meal_items: ['id'], weight_history: ['id'], activities: ['id'], water_logs: ['user_id', 'log_date'], favorite_foods: ['id'], food_corrections: ['id'], ai_reports: ['id'] };
 // Unique constraints besides the primary key (like the real schema).
 const UNIQUE = { favorite_foods: ['user_id', 'food_name', 'unit'], weight_history: ['user_id', 'recorded_on'] };
 
@@ -20,6 +21,8 @@ export class MockSupabase {
     this.calls = [];             // log of requests (for assertions)
     this.aiFailures = 0;
     this.foodDb = new MockFoods();
+    this.billing = new MockBilling(this);
+    this.otps = new Map();      // phone → code (WhatsApp OTP stand-in)
     this.db.food_corrections = this.foodDb.corrections; // the same list, so admin tools see reports
     this.ai = [];               // every AI request: { mode, body } — to check what reached AI
   }
@@ -35,7 +38,7 @@ export class MockSupabase {
     return { access_token: access, token_type: 'bearer', expires_in: ttl, expires_at: now + ttl, refresh_token: refresh, user: this.publicUser(user) };
   }
   publicUser(u) {
-    return { id: u.id, aud: 'authenticated', role: 'authenticated', email: u.email, email_confirmed_at: new Date().toISOString(), phone: '', app_metadata: { provider: 'email', providers: ['email'] }, user_metadata: u.user_metadata || {}, identities: [{ id: u.id, provider: 'email' }], created_at: u.created_at, updated_at: new Date().toISOString(), is_anonymous: false };
+    return { id: u.id, aud: 'authenticated', role: 'authenticated', email: u.email, email_confirmed_at: new Date().toISOString(), phone: u.phone || '', phone_confirmed_at: u.phone_confirmed ? new Date().toISOString() : null, app_metadata: { provider: 'email', providers: ['email'] }, user_metadata: u.user_metadata || {}, identities: [{ id: u.id, provider: 'email' }], created_at: u.created_at, updated_at: new Date().toISOString(), is_anonymous: false };
   }
   userFrom(headers) {
     const token = (headers.authorization || '').replace(/^Bearer\s+/i, '');
@@ -44,7 +47,7 @@ export class MockSupabase {
   }
   createDefaults(uid) {
     const now = new Date().toISOString();
-    this.db.profiles.push({ id: uid, display_name: null, age: null, sex: null, height_cm: null, weight_kg: null, start_weight_kg: null, target_weight_kg: null, target_date: null, goal: 'maintain', activity_level: 'sedentary', daily_steps: null, workouts_per_week: null, diet_type: null, macro_style: 'balanced', allergies: [], onboarding_completed: false, created_at: now, updated_at: now });
+    this.db.profiles.push({ id: uid, display_name: null, age: null, sex: null, height_cm: null, weight_kg: null, start_weight_kg: null, target_weight_kg: null, target_date: null, goal: 'maintain', activity_level: 'sedentary', daily_steps: null, workouts_per_week: null, diet_type: null, macro_style: 'balanced', allergies: [], onboarding_completed: false, phone: null, phone_verified: false, created_at: now, updated_at: now });
     this.db.user_preferences.push({ user_id: uid, weight_unit: 'kg', height_unit: 'cm', theme: 'system', water_goal: 8, water_goal_ml: 2000, exercise_mode: 'included', reminders_enabled: false, reminder_time: '20:00:00', ai_provider: 'gemini', updated_at: now });
     this.db.daily_goals.push({ user_id: uid, calories: null, protein_g: null, carbs_g: null, fat_g: null, fiber_g: null, is_custom: false, updated_at: now });
   }
@@ -63,6 +66,10 @@ export class MockSupabase {
   }
   /** BEFORE INSERT/UPDATE triggers from migration 004: water ml ↔ glasses stay in sync. */
   beforeWrite(table, row, old) {
+    if (table === 'profiles') {
+      const u = this.users.get(row.id);
+      row.phone_verified = !!(row.phone && u?.phone_confirmed && `+${u.phone}` === row.phone); // like profiles_phone_guard
+    }
     if (table === 'water_logs') {
       row.ml = Number(row.ml ?? 0); row.glasses = Number(row.glasses ?? 0);
       if (!old) { if (row.ml === 0 && row.glasses > 0) row.ml = row.glasses * 250; }
@@ -120,7 +127,8 @@ export class MockSupabase {
     if (p === 'token') {
       const grant = url.searchParams.get('grant_type');
       if (grant === 'password') {
-        const u = [...this.users.values()].find((x) => x.email === body.email && x.password === body.password);
+        const u = [...this.users.values()].find((x) => x.password === body.password &&
+          (body.phone ? x.phone_confirmed && `+${x.phone}` === body.phone.replace(/^(?!\+)/, '+') : x.email === body.email));
         if (!u) return reply(400, { code: 'invalid_credentials', error_code: 'invalid_credentials', msg: 'Invalid login credentials' });
         return reply(200, this.session(u));
       }
@@ -136,8 +144,25 @@ export class MockSupabase {
       if (method === 'PUT') {
         if (body.password) u.password = body.password;
         if (body.data) u.user_metadata = { ...u.user_metadata, ...body.data };
+        if (body.phone) {
+          if (!this.billing.phoneVerification) return reply(400, { code: 'phone_provider_disabled', msg: 'Phone logins are disabled' });
+          const digits = body.phone.replace(/\D/g, '');
+          if ([...this.users.values()].some((x) => x !== u && x.phone === digits && x.phone_confirmed)) return reply(422, { code: 'phone_exists', msg: 'A user with this phone number has already been registered' });
+          u.phone_change = digits;
+          this.otps.set(digits, '246810'); // "sent on WhatsApp"
+        }
       }
       return reply(200, this.publicUser(u));
+    }
+    if (p === 'verify' && method === 'POST' && body.type === 'phone_change') {
+      // Like GoTrue: found by the pending number, no session needed.
+      const digits = String(body.phone || '').replace(/\D/g, '');
+      const u = [...this.users.values()].find((x) => x.phone_change === digits);
+      if (!u || this.otps.get(digits) !== body.token) return reply(403, { code: 'otp_expired', msg: 'Token has expired or is invalid' });
+      u.phone = digits; u.phone_confirmed = true; u.phone_change = null; this.otps.delete(digits);
+      const prof = this.db.profiles.find((x) => x.id === u.id);
+      if (prof) Object.assign(prof, this.beforeWrite('profiles', { ...prof, phone: `+${digits}` }, { ...prof })); // on_auth_phone_confirmed
+      return reply(200, this.session(u));
     }
     if (p === 'logout') return reply(204);
     if (p === 'recover' || p === 'otp' || p === 'resend') return reply(200, {});
@@ -279,6 +304,8 @@ export class MockSupabase {
       return reply(200, dates.map((d) => ({ meal_date: d })));
     }
     try {
+      const bill = this.billing.rpc(fn, body || {}, u.id);
+      if (bill !== undefined) return reply(200, bill);
       const res = this.foodDb.rpc(fn, body || {}, u.id);
       if (res !== undefined) return reply(200, res);
     } catch (e) {
@@ -293,9 +320,11 @@ export class MockSupabase {
     const u = this.userFrom(headers);
     if (name === 'ai-food-analysis') {
       if (!u) return reply(401, { error: { code: 'unauthorized', message: 'Please log in again.' } });
-      if (this.aiFailures > 0) { this.aiFailures--; return reply(503, { error: { code: 'ai_unavailable', message: 'AI is unavailable right now. Please try again, or add the food manually.' } }); }
+      const spend = this.billing.spend(u.id, { text: 'food_text', image: 'food_image', parse: 'food_parse', estimate: 'food_estimate', activity: 'activity' }[body.mode]);
+      if (!spend.ok) return reply(402, { error: { code: 'no_credits', message: "You've used your AI credits for now. Upgrade for more — foods from the NutriLog database still log for free." } });
+      if (this.aiFailures > 0) { this.aiFailures--; spend.refund(); return reply(503, { error: { code: 'ai_unavailable', message: 'AI is unavailable right now. Please try again, or add the food manually.' } }); }
       this.lastProvider = body.provider;
-      const provider = body.provider === 'claude' ? 'claude' : 'gemini';
+      const provider = body.provider === 'claude' && spend.features.claude ? 'claude' : 'gemini';
       this.ai.push({ mode: body.mode, body });
       if (body.mode === 'parse') return reply(200, { items: this.mockParse(body.text), provider });
       if (body.mode === 'estimate') return reply(200, { items: (body.items || []).map((it, index) => this.mockEstimate(it, index)), provider });
@@ -313,7 +342,45 @@ export class MockSupabase {
     }
     if (name === 'ai-chat') {
       if (!u) return reply(401, { error: { code: 'unauthorized', message: 'Please log in again.' } });
-      return reply(200, { reply: 'You are doing well today. Add some protein at dinner.', foods: [], provider: body.provider === 'claude' ? 'claude' : 'gemini' });
+      const feature = { weekly_report: 'weekly_report', plan: 'meal_plan' }[body.mode];
+      if (feature && !this.billing.entitlement(u.id).features[feature]) {
+        return reply(403, { error: { code: 'plan_required', message: `This is a ${feature === 'meal_plan' ? 'Pro AI' : 'Pro'} feature. Upgrade to use it.` } });
+      }
+      const action = body.mode === 'plan' ? (body.days === 7 ? 'meal_plan_week' : 'meal_plan_day') : body.mode === 'meal_plan' ? 'suggest_meal' : body.mode || 'chat';
+      const spend = this.billing.spend(u.id, action);
+      if (!spend.ok) return reply(402, { error: { code: 'no_credits', message: "You've used your AI credits for now. Upgrade for more — foods from the NutriLog database still log for free." } });
+      this.ai.push({ mode: body.mode, body });
+      const provider = body.provider === 'claude' && spend.features.claude ? 'claude' : 'gemini';
+      const save = (kind, content) => {
+        const row = { id: randomUUID(), user_id: u.id, kind, params: {}, content, created_at: new Date().toISOString() };
+        this.db.ai_reports.push(row);
+        return row;
+      };
+      if (body.mode === 'weekly_report') {
+        const content = { headline: 'A steady week — protein is the thing to fix', wins: ['You logged 2 days.'],
+          changes: [{ title: 'Add protein at breakfast', detail: 'Two boiled eggs or 150 g curd.' }], focus: 'Hit 110 g protein on 5 days.',
+          stats: { start: '2026-09-27', end: '2026-10-03', days_logged: 2, avg_calories: 1650, target_calories: 1621, calorie_days_on_target: 1, avg_protein: 62.5, target_protein: 110,
+            protein_days_hit: 0, avg_carbs: 200, avg_fat: 50, avg_fiber: 20, weight_start: 70, weight_end: 70.5, weight_change: 0.5, active_days: 1, activity_minutes: 30, activity_kcal: 100, avg_water_ml: 580, water_goal_ml: 2000 }, provider };
+        const row = save('weekly_report', content);
+        return reply(200, { id: row.id, created_at: row.created_at, report: content });
+      }
+      if (body.mode === 'plan') {
+        const it = (food_name, portion, grams, protein, carbs, fat) => ({ food_name, portion, grams, protein, carbs, fat, fiber: 2, calories: Math.round(4 * protein + 4 * carbs + 9 * fat) });
+        const meals = [{ meal_type: 'breakfast', items: [it('Vegetable poha', '1 plate', 200, 7, 60, 10)] }, { meal_type: 'lunch', items: [it('Dal tadka', '1 katori', 150, 9, 22.5, 7.5), it('Roti', '2 roti', 80, 7.2, 42.2, 3)] },
+          { meal_type: 'snack', items: [it('Roasted chana', '1 handful', 30, 6.6, 17.4, 1.5)] }, { meal_type: 'dinner', items: [it('Paneer bhurji', '1 katori', 150, 22, 9, 25)] }]
+          .map((m) => ({ ...m, calories: m.items.reduce((sum, x) => sum + x.calories, 0), protein: m.items.reduce((sum, x) => sum + x.protein, 0) }));
+        const days = Array.from({ length: body.days === 7 ? 7 : 1 }, (_, i) => ({ day: i + 1, meals, calories: meals.reduce((sum, m) => sum + m.calories, 0), protein: meals.reduce((sum, m) => sum + m.protein, 0) }));
+        const content = { days, grocery: [{ item: 'Poha', quantity: '200 g', category: 'grains' }, { item: 'Paneer', quantity: '150 g', category: 'dairy' }],
+          notes: '', targets: { calories: 1621, protein: 110 }, provider };
+        const row = save('meal_plan', content);
+        return reply(200, { id: row.id, created_at: row.created_at, plan: content });
+      }
+      return reply(200, { reply: 'You are doing well today. Add some protein at dinner.', foods: [], provider });
+    }
+    if (name === 'billing') {
+      if (!u) return reply(401, { error: { code: 'unauthorized', message: 'Please log in again.' } });
+      const [status, out] = this.billing.handle(u.id, body || {});
+      return reply(status, out);
     }
     if (name === 'account-recovery') {
       if (body.action === 'generate') { if (!u) return reply(401, {}); const code = 'NUTRI-AB2C-DE3F'; this.recovery.set(u.id, code); return reply(200, { code }); }
@@ -326,6 +393,7 @@ export class MockSupabase {
     }
     if (name === 'delete-account') {
       if (!u) return reply(401, {});
+      for (const sub of this.billing.subs.filter((x) => x.user_id === u.id && ['authenticated', 'active', 'pending'].includes(x.status))) { this.billing.cancels.push(sub.id); sub.status = 'cancelled'; }
       for (const t of Object.keys(this.db)) this.db[t] = this.db[t].filter((r) => r[OWNER[t]] !== u.id);
       this.users.delete(u.id);
       for (const [k, v] of this.tokens) if (v === u.id) this.tokens.delete(k);

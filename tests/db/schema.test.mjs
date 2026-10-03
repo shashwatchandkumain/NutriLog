@@ -19,7 +19,8 @@ let db;
 const SUPABASE_STUB = `
   create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
   create schema auth; create schema extensions;
-  create table auth.users (id uuid primary key, email text, is_anonymous boolean default false);
+  create table auth.users (id uuid primary key, email text, is_anonymous boolean default false, phone text,
+    phone_confirmed_at timestamptz, created_at timestamptz default now(), last_sign_in_at timestamptz);
   create function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
   grant usage on schema auth, extensions, public to anon, authenticated, service_role;
@@ -57,7 +58,7 @@ before(async () => {
   await db.exec(`insert into auth.users (id, email) values ('${A}', 'a@example.com'), ('${B}', 'b@example.com'),
                  ('${ANON_LEGACY}', null)`);
   for (const f of ['001_initial_schema.sql', '002_legacy_import.sql', '003_scale_goals_ai.sql', '004_water_ml_favorites.sql',
-    '005_global_foods.sql', '006_global_foods_seed.sql']) {
+    '005_global_foods.sql', '006_global_foods_seed.sql', '007_subscriptions.sql']) {
     await db.exec(readFileSync(new URL(`../../supabase/migrations/${f}`, import.meta.url), 'utf8'));
   }
 });
@@ -489,6 +490,134 @@ test('food resolution statistics are counted per day and visible to admins only'
     const [today] = (await db.query(`select admin_overview() o`)).rows[0].o.stats;
     assert.deepEqual([today.items, today.global_hits, today.external_hits, today.ai_items, today.ai_calls, today.ai_calls_avoided], [7, 5, 1, 1, 1, 6]);
   });
+});
+
+// ── Subscriptions, credits, trial ──────────────────────────────────────────
+const D = '77777777-7777-4777-8777-777777777777';
+const E = '88888888-8888-4888-8888-888888888888';
+async function asService(fn) {
+  await db.exec('reset role; set role service_role');
+  try { return await fn(); } finally { await db.exec('reset role'); }
+}
+const ent = (uid) => asService(() => db.query('select entitlement_for($1) e', [uid]).then((r) => r.rows[0].e));
+const spend = (uid, action) => asService(() => db.query('select consume_credits($1, $2) r', [uid, action]).then((r) => r.rows[0].r));
+const addSub = (row) => db.query(`insert into billing_subscriptions (id, user_id, plan_id, period, is_trial, status, start_at, current_start, current_end, cancel_at_cycle_end, mode)
+  values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'test')`, [row.id, row.user, row.plan, row.period || 'month', !!row.trial, row.status,
+  row.start_at || null, row.current_start || null, row.current_end || null, !!row.cancel]);
+const days = (n) => new Date(Date.now() + n * 86400000).toISOString();
+
+test('plans and prices are readable, not writable; Free starts with 20 credits', async () => {
+  await db.exec(`insert into auth.users (id, email) values ('${D}', 'd@example.com'), ('${E}', 'e@example.com')`);
+  await as(D, async () => {
+    const { rows } = await db.query('select plan_id, period, list_paise, price_paise, gst_rate from plan_prices order by plan_id, period');
+    assert.deepEqual(rows.map((r) => [r.plan_id, r.period, r.list_paise, r.price_paise, Number(r.gst_rate)]),
+      [['pro', 'month', 29900, 14900, 0.18], ['pro', 'year', 358800, 99900, 0.18], ['pro_ai', 'month', 60000, 29900, 0.18], ['pro_ai', 'year', 720000, 199900, 0.18]]);
+    await assert.rejects(db.query(`update plan_prices set price_paise = 100`), /permission denied/);
+    await assert.rejects(db.query(`insert into billing_subscriptions (id, user_id, plan_id, period, status, mode) values ('sub_x', '${D}', 'pro_ai', 'month', 'active', 'test')`), /permission denied/);
+    const e = (await db.query('select my_entitlement() e')).rows[0].e;
+    assert.deepEqual([e.plan, e.source, e.credits.allowance, e.credits.remaining], ['free', 'free', 20, 20]);
+    await assert.rejects(db.query(`select consume_credits('${D}', 'chat')`), /permission denied/, 'users cannot spend or refund credits directly');
+    await assert.rejects(db.query(`select refund_credits('${D}', 'm:2026-10', 5)`), /permission denied/);
+    await assert.rejects(db.query(`select entitlement_for('${E}')`), /permission denied/, "nobody can read another user's plan");
+  });
+});
+
+test('AI credits: spent per action, never past the allowance, refundable by the server', async () => {
+  for (let i = 0; i < 4; i++) assert.equal((await spend(D, 'food_image')).ok, true); // 4 × 5 = 20
+  const no = await spend(D, 'chat');
+  assert.deepEqual([no.ok, no.remaining, no.plan], [false, 0, 'free']);
+  const before = await ent(D);
+  await asService(() => db.query('select refund_credits($1, $2, 5)', [D, before.credits.period_key]));
+  assert.equal((await ent(D)).credits.remaining, 5);
+  await assert.rejects(spend(D, 'unknown_action'), /unknown action/);
+});
+
+test('subscriptions: active, trial (also when cancelled during it), past-due grace, halted, cancelled until period end', async () => {
+  await addSub({ id: 'sub_trial', user: E, plan: 'pro_ai', trial: true, status: 'authenticated', start_at: days(7) });
+  let e = await ent(E);
+  assert.deepEqual([e.plan, e.source, e.status, e.credits.allowance, e.credits.period_key], ['pro_ai', 'trial', 'trialing', 150, 't:sub_trial']);
+  assert.equal(e.features.claude, true);
+  await db.query(`update billing_subscriptions set status = 'cancelled' where id = 'sub_trial'`);
+  e = await ent(E);
+  assert.deepEqual([e.plan, e.status, e.cancel_at_period_end], ['pro_ai', 'trialing', true], 'cancelled trial keeps access until it ends');
+  await db.query(`update billing_subscriptions set start_at = $1 where id = 'sub_trial'`, [days(-1)]);
+  assert.equal((await ent(E)).plan, 'free', 'trial over, nothing charged');
+
+  await addSub({ id: 'sub_pro', user: E, plan: 'pro', status: 'active', current_start: days(-3), current_end: days(27) });
+  e = await ent(E);
+  assert.deepEqual([e.plan, e.source, e.status, e.credits.allowance], ['pro', 'subscription', 'active', 150]);
+  await db.query(`update billing_subscriptions set status = 'pending', current_end = $1 where id = 'sub_pro'`, [days(-1)]);
+  assert.deepEqual([(await ent(E)).plan, (await ent(E)).status], ['pro', 'past_due'], 'payment retrying: 3-day grace');
+  await db.query(`update billing_subscriptions set status = 'halted' where id = 'sub_pro'`);
+  assert.equal((await ent(E)).plan, 'free');
+  await db.query(`update billing_subscriptions set status = 'cancelled', current_end = $1 where id = 'sub_pro'`, [days(10)]);
+  assert.deepEqual([(await ent(E)).plan, (await ent(E)).status], ['pro', 'cancelling']);
+  await as(E, async () => {
+    assert.equal((await db.query('select count(*)::int n from billing_subscriptions')).rows[0].n, 2);
+  });
+  await as(D, async () => {
+    assert.equal((await db.query('select count(*)::int n from billing_subscriptions')).rows[0].n, 0, "others' billing is private");
+  });
+});
+
+test('phone numbers: verified only by Supabase Auth, never by the user', async () => {
+  await as(D, async () => {
+    await db.query(`update profiles set phone = '+919876543210', phone_verified = true`);
+    const { rows: [p] } = await db.query('select phone, phone_verified from profiles');
+    assert.deepEqual([p.phone, p.phone_verified], ['+919876543210', false]);
+    await assert.rejects(db.query(`update profiles set phone = '98765'`), /check/);
+  });
+  await db.query(`update auth.users set phone = '919876543210', phone_confirmed_at = now() where id = '${D}'`);
+  const { rows: [p] } = await db.query(`select phone, phone_verified from profiles where id = '${D}'`);
+  assert.deepEqual([p.phone, p.phone_verified], ['+919876543210', true]);
+});
+
+test('the free trial: once per phone and per email — even after the account is deleted', async () => {
+  const elig = (uid, verified = true) => asService(() => db.query('select trial_eligibility_for($1, $2) r', [uid, verified]).then((r) => r.rows[0].r));
+  await db.query(`update profiles set phone = '+919800000000' where id = '${E}'`);
+  assert.equal((await elig(E, false)).reason, 'already_subscribed');
+  const F = '99999999-9999-4999-8999-999999999999';
+  const G = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  await db.exec(`insert into auth.users (id, email) values ('${F}', 'f@example.com'), ('${G}', 'g@example.com')`);
+  assert.equal((await elig(F)).reason, 'no_phone');
+  await db.query(`update profiles set phone = '+919811111111' where id = '${F}'`);
+  assert.equal((await elig(F)).reason, 'phone_unverified');
+  assert.deepEqual(await elig(F, false), { eligible: true, reason: null }, 'allowed while WhatsApp verification is off');
+  assert.equal(await asService(() => db.query(`select claim_trial('${F}', 'sub_f') r`).then((r) => r.rows[0].r)), true);
+  assert.equal(await asService(() => db.query(`select claim_trial('${F}', 'sub_f2') r`).then((r) => r.rows[0].r)), false);
+  await db.query(`update profiles set phone = '+919811111111' where id = '${G}'`);
+  assert.equal((await elig(G, false)).reason, 'phone_used', 'same number on another account');
+  // Delete F, sign up again with the same email and a new number: still no second trial.
+  await db.query(`delete from auth.users where id = '${F}'`);
+  await db.query(`update auth.users set email = 'F@Example.com' where id = '${G}'`);
+  await db.query(`update profiles set phone = '+919822222222' where id = '${G}'`);
+  assert.equal((await elig(G, false)).reason, 'email_used');
+  assert.equal((await db.query('select count(*)::int n from trial_claims')).rows[0].n, 1, 'the claim outlived the account');
+  const { rows: [c] } = await db.query('select * from trial_claims');
+  assert.equal(c.user_id, null);
+  assert.doesNotMatch(JSON.stringify(c), /98111|example/i, 'only hashes are stored');
+  await as(G, async () => { await assert.rejects(db.query('select * from trial_claims'), /permission denied/); });
+});
+
+test('admin: grant a plan, add credits, see users and billing — admins only', async () => {
+  await as(D, async () => {
+    await assert.rejects(db.query(`select admin_grant_plan('${D}', 'pro_ai', 30, 'self')`), /admins only/);
+    await assert.rejects(db.query(`select admin_users('')`), /admins only/);
+  });
+  await as(ADMIN, async () => {
+    await db.query(`select admin_grant_plan('${D}', 'pro_ai', 30, 'tester')`);
+    await db.query(`select admin_add_credits('${D}', 50)`);
+    const users = (await db.query(`select admin_users('d@ex') u`)).rows[0].u;
+    assert.deepEqual([users.length, users[0].phone, users[0].entitlement.plan, users[0].entitlement.source], [1, '+919876543210', 'pro_ai', 'grant']);
+    assert.equal(users[0].entitlement.credits.allowance, 650);
+    const o = (await db.query('select admin_billing_overview() o')).rows[0].o;
+    assert.ok(o.users.pro_ai >= 1);
+  });
+  await as(D, async () => {
+    assert.equal((await db.query('select my_entitlement() e')).rows[0].e.plan, 'pro_ai');
+    await db.query(`insert into ai_reports (kind, content) values ('weekly_report', '{"headline": "ok"}')`);
+  });
+  await as(E, async () => { assert.equal((await db.query('select count(*)::int n from ai_reports')).rows[0].n, 0); });
 });
 
 test('deleting an auth user cascades to all of their data', async () => {

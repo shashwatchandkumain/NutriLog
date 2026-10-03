@@ -40,6 +40,8 @@ export function toast(message, type = 'info', { action, onAction, duration } = {
 
 /** Shows a friendly message for any error (details go to the console). */
 export function showError(err, context) {
+  // Out of credits / a higher plan's feature: the upgrade sheet explains it instead.
+  if (err?.code === 'no_credits' || err?.code === 'plan_required') return;
   toast(friendlyError(err, context), 'error');
 }
 

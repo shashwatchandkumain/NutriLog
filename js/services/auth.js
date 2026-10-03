@@ -3,6 +3,7 @@
 // automatically, so reopening the site restores the user without logging in again.
 import { sb, APP_URL, callFunction } from './supabase.js';
 import { UserError } from '../lib/utils.js';
+import { toE164, looksLikePhone } from '../lib/phone.js';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -33,13 +34,15 @@ export function onAuthChange(fn) {
  * app version, that user is upgraded instead (same user id), so its data carries over.
  * Returns { needsConfirmation } — true when Supabase requires email confirmation first.
  */
-export async function signUp({ email, password, name }) {
+export async function signUp({ email, password, name, phone }) {
   const cleanEmail = validateEmail(email);
+  // The phone number (primary contact) is kept with the account and saved to the profile on first login.
+  const cleanPhone = phone ? toE164(phone.code, phone.number) : null;
   validatePassword(password);
   const { data: { session } } = await sb.auth.getSession();
   if (session?.user?.is_anonymous) {
     const { error } = await sb.auth.updateUser(
-      { email: cleanEmail, data: { display_name: name || null, needs_password: true } },
+      { email: cleanEmail, data: { display_name: name || null, needs_password: true, phone: cleanPhone } },
       { emailRedirectTo: APP_URL },
     );
     if (error) throw error;
@@ -48,7 +51,7 @@ export async function signUp({ email, password, name }) {
   const { data, error } = await sb.auth.signUp({
     email: cleanEmail,
     password,
-    options: { emailRedirectTo: APP_URL, data: { display_name: name || null } },
+    options: { emailRedirectTo: APP_URL, data: { display_name: name || null, phone: cleanPhone } },
   });
   if (error) throw error;
   // With "Confirm email" on, Supabase returns a user with no session. It also returns a
@@ -59,10 +62,22 @@ export async function signUp({ email, password, name }) {
   return { needsConfirmation: !data.session };
 }
 
-export async function signIn({ email, password }) {
-  const cleanEmail = validateEmail(email);
+/** Logs in with a phone number (once verified) or an email, and a password. */
+export async function signIn({ login, email, password }) {
+  login = login ?? email; // older callers pass { email }
   if (!password) throw new UserError('Enter your password.');
-  const { error } = await sb.auth.signInWithPassword({ email: cleanEmail, password });
+  if (looksLikePhone(login)) {
+    const phone = toE164('+91', login);
+    const { error } = await sb.auth.signInWithPassword({ phone, password });
+    if (error) {
+      if (/invalid login credentials|phone.*(disabled|not.*enabled|provider)/i.test(error.message)) {
+        throw new UserError('Phone number or password is incorrect. If your number isn\u2019t verified yet, log in with your email.', error);
+      }
+      throw error;
+    }
+    return;
+  }
+  const { error } = await sb.auth.signInWithPassword({ email: validateEmail(login), password });
   if (error) throw error;
 }
 
@@ -123,7 +138,7 @@ export async function recoverWithCode({ email, code, password }) {
   if (body.length !== 8) throw new UserError('Recovery codes look like NUTRI-XXXX-XXXX.');
   const formatted = `NUTRI-${body.slice(0, 4)}-${body.slice(4)}`;
   await callFunction('account-recovery', { action: 'recover', email: cleanEmail, code: formatted, password });
-  await signIn({ email: cleanEmail, password });
+  await signIn({ login: cleanEmail, password });
 }
 
 export async function deleteAccount() {

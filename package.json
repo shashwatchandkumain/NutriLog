@@ -12,8 +12,8 @@
     "lint": "eslint .",
     "test": "node --test tests/unit/*.test.mjs tests/db/*.test.mjs",
     "test:e2e": "node --test --test-timeout=300000 tests/e2e/*.e2e.mjs",
-    "test:functions": "cd supabase/functions && npx -y deno@2 test --allow-env --node-modules-dir=none _shared/",
-    "check:functions": "cd supabase/functions && npx -y deno@2 check --node-modules-dir=none ai-food-analysis/index.ts ai-chat/index.ts account-recovery/index.ts delete-account/index.ts"
+    "test:functions": "cd supabase/functions && npx -y deno@2 test --allow-env --node-modules-dir=none _shared/ razorpay-webhook/ send-otp/",
+    "check:functions": "cd supabase/functions && npx -y deno@2 check --node-modules-dir=none ai-food-analysis/index.ts ai-chat/index.ts account-recovery/index.ts delete-account/index.ts billing/index.ts razorpay-webhook/index.ts send-otp/index.ts"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

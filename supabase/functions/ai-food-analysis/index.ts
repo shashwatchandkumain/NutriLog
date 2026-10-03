@@ -4,7 +4,7 @@
 // provider: 'gemini' | 'claude' — the model the user picked (the other one is a fallback).
 // Returns: { items: [...], provider } — foods with per-100 g values and computed totals, or
 // activities with MET and net calories burned. Requires a signed-in user; rate limited per user.
-import { consumeAiQuota, HttpError, json, readJson, requireUser, serve } from '../_shared/http.ts';
+import { HttpError, json, readJson, requireUser, serve, spendCredits, withRefund } from '../_shared/http.ts';
 import { generateJson, pickProvider, requireAiConfigured } from '../_shared/ai.ts';
 import { ESTIMATE_SCHEMA, ESTIMATE_SYSTEM, estimateText, normalizeEstimates, PARSE_SCHEMA, PARSE_SYSTEM, validateParsed } from '../_shared/meal-parse.ts';
 import {
@@ -37,30 +37,32 @@ serve(async (req) => {
     items?: { food_name?: unknown; preparation?: unknown; quantity?: unknown; unit?: unknown; text_span?: unknown }[] }>(req);
   const mode = body.mode;
   const text = String(body.text ?? '').trim().slice(0, 1000);
-  const provider = pickProvider(body.provider, 'food');
+  const requested = pickProvider(body.provider, 'food');
 
   if (mode === 'text') {
     if (!text) throw new HttpError(400, 'empty', 'Describe what you ate.');
-    await consumeAiQuota(supabase, 'food_text');
-    const { data, provider: used } = await generateJson(provider, {
+    const spend = await spendCredits(supabase, user.id, 'food_text');
+    const provider = spend.features.claude ? requested : 'gemini'; // choosing Claude is a Pro AI feature
+    const { data, provider: used } = await withRefund(spend, () => generateJson(provider, {
       system: FOOD_SYSTEM,
       text: `Food description: """${text}"""`,
       schema: FOOD_RESULT_SCHEMA,
       effort: 'medium',
-    });
+    }));
     return json(req, { items: normalizeFoods(data), provider: used });
   }
 
   // Step 1 of the database-first flow: understand the meal (no nutrition).
   if (mode === 'parse') {
     if (!text) throw new HttpError(400, 'empty', 'Describe what you ate.');
-    await consumeAiQuota(supabase, 'food_parse');
-    const { data, provider: used } = await generateJson(provider, {
+    const spend = await spendCredits(supabase, user.id, 'food_parse');
+    const provider = spend.features.claude ? requested : 'gemini'; // choosing Claude is a Pro AI feature
+    const { data, provider: used } = await withRefund(spend, () => generateJson(provider, {
       system: PARSE_SYSTEM,
       text: `User text: """${text}"""`,
       schema: PARSE_SCHEMA,
       effort: 'low',
-    });
+    }));
     return json(req, { items: validateParsed(data, text), provider: used });
   }
 
@@ -72,13 +74,14 @@ serve(async (req) => {
         text_span: String(it?.text_span ?? '').slice(0, 120) }))
       .filter((it) => it.food_name);
     if (!list.length) throw new HttpError(400, 'empty', 'Nothing to estimate.');
-    await consumeAiQuota(supabase, 'food_estimate');
-    const { data, provider: used } = await generateJson(provider, {
+    const spend = await spendCredits(supabase, user.id, 'food_estimate');
+    const provider = spend.features.claude ? requested : 'gemini'; // choosing Claude is a Pro AI feature
+    const { data, provider: used } = await withRefund(spend, () => generateJson(provider, {
       system: ESTIMATE_SYSTEM,
       text: estimateText(list),
       schema: ESTIMATE_SCHEMA,
       effort: 'medium',
-    });
+    }));
     return json(req, { items: normalizeEstimates(data, list.length), provider: used });
   }
 
@@ -88,32 +91,34 @@ serve(async (req) => {
     if (!IMAGE_TYPES.has(mediaType) || !base64 || base64.length > MAX_IMAGE_BASE64 || !/^[A-Za-z0-9+/=]+$/.test(base64)) {
       throw new HttpError(400, 'bad_image', 'Please use a JPEG, PNG or WebP photo under 2 MB.');
     }
-    await consumeAiQuota(supabase, 'food_image');
-    const { data, provider: used } = await generateJson(provider, {
+    const spend = await spendCredits(supabase, user.id, 'food_image');
+    const provider = spend.features.claude ? requested : 'gemini'; // choosing Claude is a Pro AI feature
+    const { data, provider: used } = await withRefund(spend, () => generateJson(provider, {
       system: PHOTO_SYSTEM,
       text: `Identify each food in this photo and estimate its portion.${text ? ` The user adds: """${text}"""` : ''}`,
       image: { mediaType, base64 },
       schema: FOOD_RESULT_SCHEMA,
       effort: 'medium',
-    });
+    }));
     return json(req, { items: normalizeFoods(data), provider: used });
   }
 
   if (mode === 'activity') {
     if (!text) throw new HttpError(400, 'empty', 'Describe your activity.');
-    await consumeAiQuota(supabase, 'activity');
+    const spend = await spendCredits(supabase, user.id, 'activity');
+    const provider = spend.features.claude ? requested : 'gemini'; // choosing Claude is a Pro AI feature
     // The app sends the user's weight on the activity's date; otherwise use the profile weight.
     let weightKg = Number(body.weight_kg);
     if (!(weightKg >= 20 && weightKg <= 400)) {
       const { data: profile } = await supabase.from('profiles').select('weight_kg').eq('id', user.id).maybeSingle();
       weightKg = Number(profile?.weight_kg) || 70;
     }
-    const { data, provider: used } = await generateJson(provider, {
+    const { data, provider: used } = await withRefund(spend, () => generateJson(provider, {
       system: ACTIVITY_SYSTEM,
       text: `Activities: """${text}"""`,
       schema: ACTIVITY_RESULT_SCHEMA,
       effort: 'low',
-    });
+    }));
     return json(req, { items: normalizeActivities(data, weightKg), provider: used });
   }
 

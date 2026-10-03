@@ -1,6 +1,7 @@
 // Signed-out screens: welcome, create account, log in, forgot password, recovery code,
 // "check your email", and set-new-password (after a reset link).
-import { html, setHTML } from '../lib/utils.js';
+import { html, setHTML, UserError } from '../lib/utils.js';
+import { COUNTRIES } from '../lib/phone.js';
 import { $, toast, showError, withBusy, formData } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { CONFIG } from '../config.js';
@@ -55,7 +56,11 @@ function bindGoogle(root) {
 
 /** Remembers the email typed on one screen so the next auth screen can prefill it. */
 function trackEmail(root) {
-  root.querySelector('input[type=email]')?.addEventListener('input', (e) => { pendingEmail = e.target.value.trim(); });
+  // Carries an email typed on one screen (incl. the "Phone or email" login field) to the next.
+  root.querySelector('input[type=email], #li-email')?.addEventListener('input', (e) => {
+    const v = e.target.value.trim();
+    if (e.target.type === 'email' || v.includes('@')) pendingEmail = v;
+  });
 }
 
 function formError(form, message) {
@@ -90,7 +95,11 @@ export function renderSignup(root, { legacyAnonymous = false } = {}) {
       <p class="sub">${legacyAnonymous ? 'Your existing data on this device will be kept.' : 'Takes less than a minute. No credit card, no API keys.'}</p>
       <form class="stack" id="signup-form" novalidate>
         <div class="field"><label for="su-name">Name <span class="faint">(optional)</span></label><input class="input" id="su-name" name="name" autocomplete="given-name" maxlength="80"></div>
-        <div class="field"><label for="su-email">Email</label><input class="input" id="su-email" name="email" type="email" autocomplete="email" inputmode="email" required></div>
+        <div class="field"><label for="su-phone">Mobile number</label>
+          <div class="phone-input"><select class="select" id="su-code" name="code" aria-label="Country code">${COUNTRIES.map(([c, n]) => html`<option value="${c}">${c} ${n}</option>`)}</select>
+            <input class="input" id="su-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="16" placeholder="98765 43210" required></div>
+          <span class="hint">Your main contact. One free trial per number.</span></div>
+        <div class="field"><label for="su-email">Email <span class="faint">(backup)</span></label><input class="input" id="su-email" name="email" type="email" autocomplete="email" inputmode="email" required></div>
         ${passwordField('su-password', 'Password', 'new-password')}
         <div class="field"><label for="su-confirm">Confirm password</label><input class="input" id="su-confirm" name="confirm" type="password" autocomplete="new-password" required></div>
         <ul class="pw-rules" id="su-rules" aria-live="polite"><li data-rule="len">At least 8 characters</li><li data-rule="match">Both passwords match</li></ul>
@@ -115,12 +124,13 @@ export function renderSignup(root, { legacyAnonymous = false } = {}) {
     const btn = form.querySelector('[type=submit]');
     withBusy(btn, 'Creating account…', async () => {
       formError(form, '');
-      const { name, email, password, confirm } = formData(form);
+      const { name, email, password, confirm, code, phone } = formData(form);
       const ok = rules();
       if (!ok.len) { formError(form, 'Use at least 8 characters for your password.'); return; }
       if (password !== confirm) { formError(form, "The passwords don't match."); return; }
       try {
-        const res = await auth.signUp({ email, password, name });
+        if (!phone) { formError(form, 'Enter your mobile number.'); return; }
+        const res = await auth.signUp({ email, password, name, phone: { code, number: phone } });
         pendingEmail = email;
         if (res.needsConfirmation) {
           checkEmailKind = res.upgraded ? 'upgrade' : 'confirm';
@@ -140,7 +150,7 @@ export function renderLogin(root) {
       <h2>Welcome back</h2>
       <p class="sub">Log in to see your meals and progress on this device.</p>
       <form class="stack" id="login-form" novalidate>
-        <div class="field"><label for="li-email">Email</label><input class="input" id="li-email" name="email" type="email" autocomplete="email" inputmode="email" required value="${pendingEmail}"></div>
+        <div class="field"><label for="li-email">Phone or email</label><input class="input" id="li-email" name="login" type="text" autocomplete="username" required value="${pendingEmail}" placeholder="98765 43210 or you@example.com"></div>
         ${passwordField('li-password', 'Password', 'current-password')}
         <div class="row between"><a href="#/forgot" class="small">Forgot password?</a><button type="button" class="link-btn small" data-magic>Email me a sign-in link</button></div>
         <button class="btn btn-primary btn-block btn-lg" type="submit">Log in</button>
@@ -156,15 +166,16 @@ export function renderLogin(root) {
     e.preventDefault();
     withBusy(form.querySelector('[type=submit]'), 'Logging in…', async () => {
       formError(form, '');
-      const { email, password } = formData(form);
-      pendingEmail = email;
-      try { await auth.signIn({ email, password }); } catch (err) { formError(form, err.userMessage || auth.friendlyAuthError(err)); }
+      const { login, password } = formData(form);
+      pendingEmail = login.includes('@') ? login : pendingEmail;
+      try { await auth.signIn({ login, password }); } catch (err) { formError(form, err.userMessage || auth.friendlyAuthError(err)); }
     });
   });
   root.querySelector('[data-magic]').addEventListener('click', (e) => withBusy(e.currentTarget, 'Sending…', async () => {
     formError(form, '');
-    const email = form.email.value.trim();
+    const email = form.login.value.trim();
     try {
+      if (!email.includes('@')) throw new UserError('Enter your email to get a sign-in link.');
       await auth.sendMagicLink(email);
       pendingEmail = email; checkEmailKind = 'magic';
       navigate('check-email');

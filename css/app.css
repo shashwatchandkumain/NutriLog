@@ -799,3 +799,49 @@ img, svg { display: block; max-width: 100%; }
 .data-table th { color: var(--text-3); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { [data-voice].listening { animation: none; } }
 .src-line svg, .eyebrow svg { display: inline-block; vertical-align: -2px; margin-right: 2px; }
+
+/* ── Plans, offer, phone, reports ───────────────────────────────────────── */
+.plan-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: stretch; }
+@media (min-width: 900px) { .plan-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.plan-card { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg, 18px); padding: 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow-sm); }
+.plan-card.popular { border: 2px solid var(--accent); }
+.plan-card.current { background: var(--accent-softer, var(--surface-2)); }
+.plan-flag { position: absolute; top: -11px; left: 20px; background: var(--accent); color: #fff; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; }
+.plan-name { font-family: var(--font-display); font-size: 1.15rem; }
+.plan-price-row { display: flex; align-items: center; gap: 8px; }
+.plan-list { color: var(--text-3); font-size: 1rem; }
+.plan-off { background: var(--danger); color: #fff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; letter-spacing: 0.02em; }
+.plan-price b { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; }
+.plan-price span { color: var(--text-2); font-weight: 600; margin-left: 2px; }
+.plan-gst { font-size: 0.8125rem; color: var(--text-2); }
+.plan-features { list-style: none; display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; flex: 1; font-size: 0.9rem; }
+.plan-features li { display: flex; gap: 8px; align-items: flex-start; }
+.plan-features svg { flex: none; color: var(--success); margin-top: 2px; }
+.plan-save { font-size: 0.6875rem; font-weight: 700; color: var(--success); margin-left: 4px; }
+.plan-now { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.offer { border-radius: var(--radius-lg, 18px); padding: 20px; margin-bottom: 16px; color: #fff; background: linear-gradient(135deg, #0f766e, #115e59 55%, #134e4a); display: flex; flex-direction: column; gap: 8px; }
+.offer h2 { font-family: var(--font-display); font-size: 1.35rem; color: #fff; }
+.offer p { color: rgba(255, 255, 255, 0.9); font-size: 0.9rem; }
+.offer s { opacity: 0.75; }
+.offer .tiny { opacity: 0.8; }
+.offer .btn-primary { background: #fff; color: #0f766e; align-self: flex-start; }
+.offer-tag { align-self: flex-start; background: #fbbf24; color: #422006; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.06em; padding: 3px 10px; border-radius: 999px; }
+.upgrade-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.upgrade-row > div { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; display: flex; flex-direction: column; gap: 2px; }
+.plan-link { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.plan-link .grow { display: flex; flex-direction: column; min-width: 0; }
+.plan-cta { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 12px; border: 1px dashed var(--accent); border-radius: var(--radius-sm); color: var(--text); text-decoration: none; }
+.plan-cta .grow { display: flex; flex-direction: column; }
+.plan-cta small { color: var(--text-2); font-size: var(--text-xs); }
+.phone-input { display: grid; grid-template-columns: minmax(0, 130px) minmax(0, 1fr); gap: 8px; }
+.otp-input { font-size: 1.5rem; letter-spacing: 0.4em; text-align: center; font-weight: 700; }
+.locked-chart { width: 100%; margin-top: 12px; padding: 18px; border: 1px dashed var(--border); border-radius: var(--radius-sm); color: var(--text-2); background: var(--surface-2); font-weight: 600; }
+.report-headline { font-family: var(--font-display); font-size: 1.1rem; }
+.report h4 { font-size: 0.95rem; margin-bottom: 6px; }
+.report-list { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; }
+.plan-item { padding: 3px 0; }
+.grocery-cat { margin-bottom: 10px; }
+.grocery-cat .check-row { padding: 4px 0; font-size: 0.9rem; }
+.grocery-cat .done { text-decoration: line-through; color: var(--text-3); }
+.micros .sum-row { margin-bottom: 6px; }
+.section-title { font-family: var(--font-display); font-size: 1.05rem; margin: 6px 0 10px; }

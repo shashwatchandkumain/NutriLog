@@ -28,6 +28,43 @@ On phones these are the bottom tabs; on desktop they're in the sidebar. **Log fo
 
 **Logging food:** type, say (🎤 Voice) or photograph what you ate, scan a barcode, or search. Every food is looked up in NutriLog's shared **Global Food Database** first — known foods are calculated instantly on your device, with no AI call. Only foods the database doesn't know yet are estimated by AI, one item at a time (in "2 roti, 4 boiled eggs and homemade peanut chutney", only the chutney goes to AI). You review every item before it's saved: each one shows whether it came from the database or is an AI estimate, its amount (servings like "1 large egg", fractions, or grams) and its nutrition. **My foods** finds the foods you've logged or starred and the shared database.
 
+## Plans, AI credits and the free trial
+
+| | Free | Pro | Pro AI |
+|---|---|---|---|
+| Price (+ 18% GST) | ₹0 | ~~₹299~~ **₹149**/month · ~~₹3,588~~ **₹999**/year | ~~₹600~~ **₹299**/month · ~~₹7,200~~ **₹1,999**/year |
+| AI credits a month | 20 | 150 | 600 |
+| Everything else in the app (database foods, My foods, barcodes, voice, water, weight, smart scale) | ✅ | ✅ | ✅ |
+| Progress history | 30 days | all | all |
+| Weekly AI report · vitamins & minerals · body-composition history | — | ✅ | ✅ |
+| AI meal plan + grocery list · choosing Claude | — | — | ✅ |
+
+- **AI credits** are only spent when AI actually runs: a meal with foods the database doesn't know (1–2), a photo (5), a coach message (1), a weekly report (10), a meal plan (5 for a day, 10 for a week). Foods from the NutriLog database, My foods, barcodes and manual entries are free. Credits refill on the 1st of each month (IST). Costs are in `public.ai_credit_costs`.
+- **Exclusive offer — one week of Pro AI free.** The user sets up UPI autopay or a card with Razorpay (₹0 today; the bank may show a small reversed authorisation). After 7 days Pro AI monthly is charged unless they cancel in Settings → Plan & billing (cancelling during the trial charges nothing and keeps Pro AI until it ends). **One trial per phone number and per email, ever** — the ledger keeps only hashes and survives account deletion.
+- **Prices live in the database** (`public.plan_prices`, in paise, before GST; `list_paise` is the crossed-out price). After changing a price, open **Admin → Set up Razorpay plans** so Razorpay has a plan with the new amount; existing subscribers keep their old plan.
+- **Phone numbers** are every account's primary contact (email is the backup). Log in with phone or email + password once the phone is verified.
+- **Admin** is a role (`public.app_admins`), not a plan. Admins see **More → Admin**: users by plan, monthly revenue, payment events, search users by phone/email, give someone a plan for 30 days or add credits, plus the food-database tools.
+
+### Turning on payments (Razorpay)
+
+1. Create a Razorpay account (test mode works at once; live mode needs business KYC). **Settings → API Keys → Generate** (test).
+2. Add the keys as Edge Function secrets (never in the website):
+   ```bash
+   npx supabase secrets set RAZORPAY_KEY_ID=rzp_test_... RAZORPAY_KEY_SECRET=... --project-ref YOUR_REF
+   ```
+3. **Settings → Webhooks → Add**: URL `https://YOUR_REF.supabase.co/functions/v1/razorpay-webhook`, a secret of your choice, events `subscription.*`. Then `npx supabase secrets set RAZORPAY_WEBHOOK_SECRET=that-secret`.
+4. In NutriLog (as admin): **More → Admin → Set up Razorpay plans** — creates the four plans with GST included.
+5. Test with Razorpay's test cards / UPI (`success@razorpay`). To go live: repeat 1–4 with the live keys.
+
+Charging GST requires a GSTIN. If you aren't GST-registered yet, set `gst_rate` to 0 in `public.plan_prices` (then run step 4 again).
+
+### Turning on phone verification (WhatsApp)
+
+1. In Meta Business: create a WhatsApp Business app, add a phone number that is **not** on the WhatsApp app, and create an **Authentication** template named `nutrilog_otp` with a **Copy code** button. Create a System User token with `whatsapp_business_messaging` permission.
+2. Secrets: `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` (and `WHATSAPP_TEMPLATE` / `WHATSAPP_TEMPLATE_LANG` if different).
+3. Supabase Dashboard → **Authentication → Sign In / Providers → Phone**: enable, confirmations on. **Authentication → Hooks → Send SMS hook**: HTTPS, URL `https://YOUR_REF.supabase.co/functions/v1/send-otp`; copy the generated secret into `SEND_SMS_HOOK_SECRETS`. (Or set `[auth.hook.send_sms] enabled = true` in `supabase/config.toml` and `npx supabase config push`.)
+4. `npx supabase secrets set PHONE_VERIFICATION=on` — from then on, accounts verify their number with a WhatsApp code, the trial requires a verified number, and phone + password login works. Until then numbers are saved but not verified.
+
 ## Global Food Database
 
 One shared food database in Supabase, used by every NutriLog user, that grows as people use the app.
@@ -50,6 +87,9 @@ One shared food database in Supabase, used by every NutriLog user, that grows as
 | **Supabase anon / publishable key** | `js/config.js` → `SUPABASE_ANON_KEY`, or the GitHub repository variable `SUPABASE_ANON_KEY` | Yes, designed to be public (RLS protects the data) |
 | **Gemini API key** | Supabase Dashboard → **Edge Functions → Secrets** → `GEMINI_API_KEY` | **No, secret** |
 | **Claude API key** | Supabase Dashboard → **Edge Functions → Secrets** → `CLAUDE_API_KEY` | **No, secret** |
+| Razorpay Key ID | Edge Function secret `RAZORPAY_KEY_ID` (the app receives it from the billing function) | Yes (it's shown to Checkout) |
+| Razorpay Key Secret / Webhook secret | Edge Function secrets `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | **No, secret** |
+| WhatsApp (Meta) token, Supabase hook secret | Edge Function secrets `WHATSAPP_TOKEN`, `SEND_SMS_HOOK_SECRETS` | **No, secret** |
 | Supabase service_role / secret key | Nowhere. Edge Functions get it automatically. | **No, never put it in the website** |
 | Database password | Nowhere in this repo | **No** |
 
@@ -94,6 +134,7 @@ The schema lives in `supabase/migrations/`:
 | `004_water_ml_favorites.sql` | Water in **millilitres** (and the water goal in ml), kept in sync with the old glasses columns by triggers so an older app version still works; the **favorite foods** table (private to each user by RLS); logged foods can be renamed. |
 | `005_global_foods.sql` | The shared **Global Food Database**: foods, servings, aliases, private submissions/corrections, resolution statistics, admins; matching, search, candidate validation and promotion, alias voting, admin functions; logged items link to shared foods and keep a nutrition snapshot. |
 | `006_global_foods_seed.sql` | The starting foods (generated — see Global Food Database). |
+| `007_subscriptions.sql` | Plans, prices, AI credits, Razorpay subscriptions, admin-given plans, the one-trial-per-phone/email ledger, phone numbers on profiles (verified only by Supabase Auth), saved AI reports and meal plans, admin tools. |
 
 Run them with either method.
 
@@ -136,7 +177,10 @@ In the Supabase Dashboard:
 | `ai-food-analysis` | Food text → items; food photo → items; activity text → activities with MET values | Signed-in user, rate limited |
 | `ai-chat` | Nutri AI coach: chat, "review my day", "suggest what to eat" | Signed-in user, rate limited |
 | `account-recovery` | Create a recovery code (signed in); reset password with email + code (signed out) | Mixed, attempt-limited |
-| `delete-account` | Permanently deletes the user and all their data | Signed-in user |
+| `delete-account` | Cancels any running subscription, then permanently deletes the user and all their data | Signed-in user |
+| `billing` | Plans and prices, starting a subscription or the free trial, verifying Razorpay payments, cancelling, creating the Razorpay plans (admin) | Signed-in user |
+| `razorpay-webhook` | Razorpay → NutriLog payment events (renewals, failed payments, cancellations) | Razorpay HMAC signature |
+| `send-otp` | Supabase Auth "Send SMS" hook → sends phone verification codes on WhatsApp | Supabase hook signature |
 
 Deploy them:
 
@@ -145,6 +189,9 @@ npx supabase functions deploy ai-food-analysis --use-api
 npx supabase functions deploy ai-chat --use-api
 npx supabase functions deploy account-recovery --use-api
 npx supabase functions deploy delete-account --use-api
+npx supabase functions deploy billing --use-api
+npx supabase functions deploy razorpay-webhook --use-api
+npx supabase functions deploy send-otp --use-api
 ```
 
 `supabase/config.toml` sets `verify_jwt = false` for these functions because each one verifies the caller's session itself, which works with both old and new Supabase JWT keys. If you deploy another way, add `--no-verify-jwt`.
@@ -211,6 +258,7 @@ Add `http://localhost:8080/` to Supabase's redirect URLs to test email links loc
 | `npm test` | Unit tests (nutrition and goal-date math, smart-scale protocol, body composition, activity calories, your-foods search, import formats, stats, PWA, build check, secrets scan) and database tests: runs the real migrations on an in-process Postgres (PGlite) and checks RLS isolation, the activity-calorie triggers and the water ml/glasses sync |
 | `npm run test:e2e` | Browser tests with Playwright against a mocked Supabase and a simulated Bluetooth scale: signup → onboarding with a target date → AI logging → edit → water → smart-scale weigh-in (and a failed connection) → targets update → progress → activity → favorites and one-tap re-log → duplicate / undo / repeat yesterday → offline sync → a rejected change kept and retried → second device → no horizontal scrolling at 10 widths from 320 to 1440 px → export → delete my data → recovery → account deletion → a new version installs and "Update" reloads into it → "Today" follows midnight. First run `npx playwright install chromium`; set `E2E_SCREENSHOTS=<folder>` to save screenshots |
 | `npm run build` | Checks the site and assembles `_site/` for GitHub Pages (`-- --check` to only check) |
+| `npm run test:functions` | Deno tests: AI rules, hedging, Razorpay payment and webhook signatures (vectors computed independently), webhook idempotency, the WhatsApp hook signature, weekly-report and meal-plan maths |
 | `npm run build:food-seed` | Regenerates the starting Global Food Database from `scripts/food-data/global-foods.mjs` (needs `USDA_SR_JSON` pointing at USDA's SR Legacy JSON download) |
 | `npm run test:functions` / `npm run check:functions` | Deno tests and type-check for the Edge Functions |
 | `npm run lint` | ESLint |

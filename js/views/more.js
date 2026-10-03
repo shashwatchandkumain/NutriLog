@@ -1,7 +1,8 @@
 // More: everything outside the daily loop — activity, the AI coach, calendar, settings,
 // data, help and log out.
 import { html, setHTML } from '../lib/utils.js';
-import { state, APP_VERSION } from '../store.js';
+import { state, APP_VERSION, planId } from '../store.js';
+import { planStatusText, creditsText } from './plans.js';
 import { bindActions, withBusy } from '../ui/dom.js';
 import { icon, avatar } from '../ui/icons.js';
 import * as auth from '../services/auth.js';
@@ -18,11 +19,15 @@ export function mountMore(root, { onSignedOut }) {
   setHTML(root, html`
     <div class="page-head"><h1>More</h1></div>
     <div class="settings">
+      <a class="card plan-link" href="#/plans"><span class="menu-icon" aria-hidden="true">${icon('star', 20)}</span>
+        <span class="grow"><b>${planStatusText()}</b><span class="tiny muted">${creditsText() || 'See plans'}</span></span>
+        ${planId() === 'free' ? html`<span class="tag ok">Upgrade</span>` : ''}${icon('chevronRight', 18)}</a>
       <a class="card profile-link" href="#/settings">${avatar(name || state.user?.email)}<span class="grow"><b>${name || 'Your profile'}</b><span class="tiny muted">${state.user?.email || ''}</span></span>${icon('chevronRight', 18)}</a>
       <section class="card menu" aria-label="Tools">
         ${item({ href: '#/activity', icon: 'activity', title: 'Activity & calories', sub: 'Log workouts, see energy in vs. out' })}
         ${item({ action: 'coach', icon: 'chat', title: 'Nutri AI coach', sub: 'Review your day, get meal ideas, ask anything' })}
         ${item({ action: 'calendar', icon: 'calendar', title: 'Calendar', sub: 'Jump to any day you logged' })}
+        ${item({ href: '#/meal-plan', icon: 'utensils', title: `AI meal plan${planId() === 'pro_ai' ? '' : ' · Pro AI'}`, sub: 'A day or a week of meals that fit your targets, + grocery list' })}
         ${item({ action: 'explain', icon: 'target', title: 'How your target is calculated', sub: 'BMR → TDEE → goal → calories → macros' })}
       </section>
       <section class="card menu" aria-label="Settings">
@@ -34,7 +39,7 @@ export function mountMore(root, { onSignedOut }) {
       </section>
       <section class="card menu" aria-label="Help">
         ${item({ action: 'bt-help', icon: 'info', title: 'Bluetooth help', sub: 'Trouble connecting to the scale' })}
-        ${state.isAdmin ? item({ href: '#/admin', icon: 'database', title: 'Food database (admin)', sub: 'Review new foods, reports and AI usage' }) : ''}
+        ${state.isAdmin ? item({ href: '#/admin', icon: 'database', title: 'Admin', sub: 'Users & plans, food database, AI usage' }) : ''}
       </section>
       <button type="button" class="btn btn-secondary btn-block" data-action="logout">${icon('logout', 18)} Log out</button>
       <p class="center tiny faint">NutriLog ${APP_VERSION} · Nutrition values are estimates for guidance, not medical advice.</p>

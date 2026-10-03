@@ -22,6 +22,8 @@ import { mountDashboard } from './views/dashboard.js';
 import { openFoodLogger } from './views/food-logger.js';
 import { openCoach } from './views/lazy.js';
 import { isAdmin, clearFoodCache } from './services/food-db.js';
+import { loadEntitlement, cachedEntitlement, loadBilling } from './services/billing.js';
+import { needsPhone, renderPhoneGate } from './views/phone.js';
 
 const appEl = document.getElementById('app');
 const AUTH_ROUTES = new Set(['welcome', 'signup', 'login', 'forgot', 'recover', 'check-email']);
@@ -35,12 +37,15 @@ const ROUTES = {
   activity: { title: 'Activity', tab: 'more', load: () => import('./views/activity.js').then((m) => ({ mount: m.mountActivity })) },
   settings: { title: 'Settings', tab: 'more', load: () => import('./views/settings.js').then((m) => ({ mount: m.mountSettings })) },
   more: { title: 'More', tab: 'more', load: () => import('./views/more.js').then((m) => ({ mount: m.mountMore })) },
-  admin: { title: 'Food database', tab: 'more', load: () => import('./views/admin.js').then((m) => ({ mount: m.mountAdmin })) },
+  admin: { title: 'Admin', tab: 'more', load: () => import('./views/admin.js').then((m) => ({ mount: m.mountAdmin })) },
+  plans: { title: 'Plans', tab: 'more', load: () => import('./views/plans.js').then((m) => ({ mount: m.mountPlans })) },
+  'meal-plan': { title: 'Meal plan', tab: 'food', load: () => import('./views/meal-plan.js').then((m) => ({ mount: m.mountMealPlan })) },
 };
 const ALIASES = { calories: 'activity' };
 const initialHash = window.__nutrilogInitialHash || '';
 
 let shellMounted = false;
+let phoneGateShown = false;
 let unmountView = null;
 let viewRoute = null;
 let renderSeq = 0;
@@ -131,7 +136,8 @@ async function handleAuthEvent(event, session) {
   if (event === 'PASSWORD_RECOVERY') { state.passwordRecovery = true; }
   if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
     state.session = session; state.user = session?.user || null;
-    if (event === 'USER_UPDATED') render();
+    // (Not while the phone step is open: sending a WhatsApp code also updates the user.)
+    if (event === 'USER_UPDATED' && !phoneGateShown) render();
     return;
   }
   if (event === 'SIGNED_OUT') { teardownUser(); state.session = null; state.user = null; closeAllSheets(); navigate('welcome', { replace: true }); render(); return; }
@@ -161,6 +167,16 @@ async function bootstrapUser(user) {
   data.fetchWeights().catch((e) => console.warn('[NutriLog] weights', e.message));
   data.fetchFavorites().catch((e) => console.warn('[NutriLog] favorites', e.message));
   isAdmin().then((yes) => { if (bootstrappedFor === user.id) state.isAdmin = yes; });
+  // Plan and credits: last known instantly, then from the server. Billing status also says
+  // whether WhatsApp phone verification is on and whether the free trial is available.
+  state.entitlement = cachedEntitlement(user.id);
+  loadEntitlement().catch((e) => console.warn('[NutriLog] plan', e.message));
+  loadBilling().catch((e) => console.warn('[NutriLog] billing', e.message));
+  // A phone number given at sign-up is saved to the profile on first login.
+  const signupPhone = user.user_metadata?.phone;
+  if (state.profile && !state.profile.phone && /^\+[1-9]\d{7,14}$/.test(signupPhone || '')) {
+    data.saveProfile({ phone: signupPhone }).catch((e) => console.warn('[NutriLog] phone', e.message));
+  }
   data.fetchLoggedDates().then(() => updateShellStatus()).catch((e) => console.warn('[NutriLog] streak', e.message));
   data.importLegacyData().then((r) => {
     if (r && (r.meal_items || r.weights || r.activities)) {
@@ -179,7 +195,7 @@ function teardownUser() {
   stopReminders();
   data.endDataSession();
   bootstrappedFor = null;
-  Object.assign(state, { profile: null, prefs: null, goals: null, day: null, weights: [], loggedDates: [], favorites: [], date: today(), passwordRecovery: false, isAdmin: false });
+  Object.assign(state, { profile: null, prefs: null, goals: null, day: null, weights: [], loggedDates: [], favorites: [], date: today(), passwordRecovery: false, isAdmin: false, entitlement: null, billing: null });
   clearFoodCache();
   lastWeighIn = null;
   announceTargets = false;
@@ -197,6 +213,7 @@ export function signedOut() {
 const refreshAccount = debounce(() => data.loadAccount().catch(() => {}), 500);
 const refreshWeights = debounce(() => data.fetchWeights().catch(() => {}), 500);
 const refreshFavorites = debounce(() => data.fetchFavorites().catch(() => {}), 500);
+const refreshPlan = debounce(() => { loadEntitlement().catch(() => {}); loadBilling().catch(() => {}); }, 500);
 const refreshDates = debounce(() => data.fetchLoggedDates().then(updateShellStatus).catch(() => {}), 800);
 const refreshDay = debounce(() => { emit('remote-day', state.date); emit('data-changed'); }, 400);
 
@@ -204,6 +221,7 @@ function onRemoteChange(table) {
   if (table === 'meal_items' || table === 'activities' || table === 'water_logs') { refreshDay(); if (table === 'meal_items') refreshDates(); }
   else if (table === 'weight_history') refreshWeights();
   else if (table === 'favorite_foods') refreshFavorites();
+  else if (table === 'billing_subscriptions' || table === 'plan_grants') refreshPlan();
   else refreshAccount();
 }
 
@@ -231,6 +249,10 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('online', () => { state.online = true; emit('sync'); data.flush(); if (bootstrappedFor) refreshDay(); });
 window.addEventListener('offline', () => { state.online = false; emit('sync'); });
 on('toast', ({ message, type }) => toast(message, type));
+// Out of AI credits / a feature of a higher plan → explain and offer an upgrade.
+on('upgrade', (d) => import('./views/plans.js').then((m) => m.openUpgrade(d)).catch(() => {}));
+// Once billing status arrives (it says whether WhatsApp verification is on), show the phone step if needed.
+on('plan', () => { if (bootstrappedFor && state.profile?.onboarding_completed && !phoneGateShown && needsPhone()) render(); });
 
 // ── Automatic targets ─────────────────────────────────────────────────────
 // Non-custom targets follow the latest weigh-in, the profile and the goal date.
@@ -307,6 +329,14 @@ function render() {
   if (!state.profile.onboarding_completed) {
     unmountApp();
     renderOnboarding(appEl, { onDone: () => { navigate('dashboard', { replace: true }); render(); } });
+    return;
+  }
+
+  // Every account has a phone number (verified on WhatsApp once that's switched on).
+  if (needsPhone() && !(state.profile.phone == null && state.user?.user_metadata?.phone)) {
+    unmountApp();
+    phoneGateShown = true;
+    renderPhoneGate(appEl, { onDone: () => { phoneGateShown = false; render(); } });
     return;
   }
 

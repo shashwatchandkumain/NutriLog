@@ -783,7 +783,7 @@ let channel = null;
 /** Live updates from other devices. RLS limits events to the user's own rows. */
 export function subscribeRealtime(onChange) {
   unsubscribeRealtime();
-  const tables = ['meal_items', 'activities', 'water_logs', 'weight_history', 'daily_goals', 'user_preferences', 'favorite_foods'];
+  const tables = ['meal_items', 'activities', 'water_logs', 'weight_history', 'daily_goals', 'user_preferences', 'favorite_foods', 'billing_subscriptions', 'plan_grants'];
   channel = sb.channel(`user-${uid}`);
   for (const table of tables) {
     channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: `user_id=eq.${uid}` }, (p) => onChange(table, p));

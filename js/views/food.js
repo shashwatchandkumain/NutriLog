@@ -1,9 +1,10 @@
 // Food: the day's nutrition, every way to log food, quick re-logging of the user's own foods
 // (favorites first, then recent), and the day's meals with edit / duplicate / repeat.
-import { html, setHTML, fmtInt, fmt1, today, addDays, relativeDayLabel, formatDay, MEAL_TYPES } from '../lib/utils.js';
+import { html, setHTML, fmtInt, fmt1, fmtNum, today, addDays, relativeDayLabel, formatDay, MEAL_TYPES } from '../lib/utils.js';
 import { sumNutrition } from '../lib/nutrition.js';
 import { withFavorites, scaleFood } from '../lib/food-library.js';
-import { state, on, currentGoals } from '../store.js';
+import { state, on, emit, currentGoals, hasFeature } from '../store.js';
+import { dayMicros } from '../lib/micros.js';
 import { $, bindActions, toast } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { cachedDay, fetchDay, fetchRecentFoods, cachedRecentFoods, addFavorite, removeFavorite, isFavorite } from '../services/data.js';
@@ -40,11 +41,13 @@ export function mountFood(root) {
             <button type="button" class="method" data-action="search">${icon('search')}<span><b>My foods</b><small>Search favorites & recent</small></span></button>
             <button type="button" class="method" data-action="manual">${icon('edit')}<span><b>Manual</b><small>Enter the values</small></span></button>
           </div>
+          <a class="plan-cta" href="#/meal-plan">${icon('calendar', 18)}<span class="grow"><b>AI meal plan + grocery list</b><small>A day or a week that fits your targets</small></span><span class="tag">Pro AI</span></a>
         </section>
         <section class="card" id="f-meals" aria-label="Meals"></section>
       </div>
       <div class="cards">
         <section class="card" id="f-summary" aria-label="Day summary"></section>
+        <section class="card" id="f-micros" aria-label="Vitamins and minerals"></section>
         <section class="card" id="f-quick" aria-label="Quick add from my foods"></section>
       </div>
     </div>`);
@@ -76,9 +79,27 @@ export function mountFood(root) {
       ${row('Carbs', '--c-carbs', t.carbs, g.carbs)}
       ${row('Fat', '--c-fat', t.fat, g.fat)}
       ${row('Fiber', '--c-fiber', t.fiber, g.fiber)}`);
+    renderMicros();
     setHTML($('#f-meals', root), html`
       <div class="card-head"><h2 class="card-title">Meals</h2><span class="small muted">${day.items.length} item${day.items.length === 1 ? '' : 's'}</span></div>
       ${mealsView(day, state.date, { yesterday })}`);
+  };
+
+  const renderMicros = () => {
+    const el = $('#f-micros', root);
+    if (!hasFeature('micros')) {
+      setHTML(el, html`<div class="card-head"><h2 class="card-title">Vitamins & minerals</h2><span class="tag">Pro</span></div>
+        <p class="small muted">See iron, calcium, B12, vitamin D and 17 more for every day — from the NutriLog food database.</p>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="unlock-micros" style="margin-top:8px">Unlock with Pro</button>`);
+      return;
+    }
+    const m = dayMicros(state.day?.items);
+    setHTML(el, html`<div class="card-head"><h2 class="card-title">Vitamins & minerals</h2><span class="small muted">${m.withData} of ${m.foods} food${m.foods === 1 ? '' : 's'} with data</span></div>
+      ${m.rows.length ? html`<div class="micros">${m.rows.map((r) => html`<div class="sum-row">
+          <span>${r.label}</span><span class="small"><b>${fmtNum(r.amount, r.amount < 10 ? 1 : 0)}</b> ${r.unit} · ${fmtInt(r.pct)}%</span>
+          <div class="bar"><span style="width:${Math.min(100, r.pct)}%"></span></div></div>`)}</div>
+        <p class="tiny faint" style="margin-top:8px">% of the US FDA Daily Value for adults. Only foods from the NutriLog database include vitamins and minerals; AI estimates and manual entries don't.</p>`
+        : html`<p class="small muted">Log foods from the NutriLog database to see vitamins and minerals here.</p>`}`);
   };
 
   const renderQuick = () => {
@@ -125,6 +146,7 @@ export function mountFood(root) {
     search: () => openFoodLogger({ tab: 'mine', mealType: meal }),
     manual: () => openFoodLogger({ tab: 'manual', mealType: meal }),
     retry: () => loadDay(),
+    'unlock-micros': () => emit('upgrade', { reason: 'plan_required', message: 'Vitamins & minerals are part of Pro and Pro AI.' }),
     'quick-add': (el) => {
       const f = quick[Number(el.dataset.i)];
       if (!f) return;
@@ -144,7 +166,8 @@ export function mountFood(root) {
     root.querySelectorAll('[data-quick-meal]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.quickMeal === meal)));
   });
   disposers.push(bindMealActions(root, { getDay: () => state.day, getDate: () => state.date, getYesterday: () => yesterday }));
-  disposers.push(on('day', () => { renderDay(); renderQuick(); }));
+  disposers.push(on('day', () => { renderDay(); renderQuick(); renderMicros(); }));
+  disposers.push(on('plan', renderMicros));
   disposers.push(on('favorites', () => { renderDay(); renderQuick(); }));
   disposers.push(on('account', renderDay));
   disposers.push(on('remote-day', (d) => { if (d === state.date) loadDay(); }));

@@ -9,6 +9,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { MockSupabase, MOCK_URL } from './mock-backend.mjs';
+import { FAKE_RAZORPAY, RZP_TEST_SECRET } from './mock-billing.mjs';
 import { addDays, today, isoDate } from '../../js/lib/utils.js';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
@@ -97,6 +98,7 @@ async function newDevice({ viewport = { width: 390, height: 844 }, colorScheme =
   const ctx = await browser.newContext({ viewport, colorScheme, acceptDownloads: true, serviceWorkers });
   if (scale) await ctx.addInitScript(FAKE_SCALE);
   if (speech) await ctx.addInitScript(FAKE_SPEECH);
+  await ctx.addInitScript(FAKE_RAZORPAY, RZP_TEST_SECRET);
   await ctx.route(`${MOCK_URL}/**`, (r) => backend.handle(r));
   await ctx.routeWebSocket(/mock\.supabase\.co/, (ws) => backend.realtime(ws));
   await ctx.route('https://world.openfoodfacts.org/**', (r) => (backend.offHits = (backend.offHits || 0) + 1) && r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
@@ -141,18 +143,20 @@ async function go(page, name) {
 const SEED = JSON.parse(await readFile(new URL('../../scripts/food-data/global-foods.json', import.meta.url), 'utf8'));
 const SEED_ID = (name) => SEED.find((f) => f.name === name).id;
 
+let phoneSeq = 100000000;
 /** Another user, already signed in and set up, on a fresh device. */
 async function signedInDevice(email, options = {}) {
   const { randomUUID } = await import('node:crypto');
   const user = { id: randomUUID(), email, password: 'pass-word-123', user_metadata: {}, created_at: new Date().toISOString() };
   backend.users.set(user.id, user);
   backend.createDefaults(user.id);
-  Object.assign(backend.db.profiles.find((p) => p.id === user.id), { display_name: email.split('@')[0], age: 30, sex: 'male', height_cm: 175, weight_kg: 75, onboarding_completed: true });
+  Object.assign(backend.db.profiles.find((p) => p.id === user.id), { display_name: email.split('@')[0], age: 30, sex: 'male', height_cm: 175, weight_kg: 75, onboarding_completed: true,
+    phone: options.phone === undefined ? `+919${String(++phoneSeq).padStart(9, '0')}` : options.phone });
   const s = backend.session(user, options.ttl || 3600);
   const device = await newDevice(options);
   if (options.clock) await device.page.clock.install({ time: options.clock });
   await device.page.goto(`${base}#access_token=${s.access_token}&expires_at=${s.expires_at}&expires_in=${s.expires_in}&refresh_token=${s.refresh_token}&token_type=bearer&type=magiclink`);
-  await device.page.locator('main h1').filter({ hasText: /Good (morning|afternoon|evening)/ }).waitFor();
+  if (options.phone !== null) await device.page.locator('main h1').filter({ hasText: /Good (morning|afternoon|evening)/ }).waitFor();
   return { ...device, user };
 }
 
@@ -193,6 +197,7 @@ test('sign-up checks the password confirmation, then onboarding with a target da
   await page.getByRole('link', { name: 'Create account' }).click();
   await page.getByLabel('Name').fill('Asha');
   await page.getByLabel('Email').fill(EMAIL);
+  await page.locator('#su-phone').fill('98765 43210');
   await page.locator('#su-password').fill(PASSWORD);
   await page.locator('#su-confirm').fill(`${PASSWORD}x`);
   await page.getByRole('button', { name: 'Create account' }).click();
@@ -465,10 +470,11 @@ test('progress page: goal card, charts and body composition from real data', asy
   const body = await page.locator('#p-body').innerText();
   assert.match(body, /31\.9/);
   assert.match(body, /74/);
-  await page.getByRole('button', { name: 'All', exact: true }).click();
+  await page.getByRole('button', { name: '7D', exact: true }).click();
   await page.locator('#p-cal svg').waitFor();
   await page.getByRole('button', { name: '30D', exact: true }).click();
   await page.locator('#p-cal svg').waitFor();
+  assert.equal(await page.getByRole('button', { name: '🔒 All' }).count(), 1, 'Free shows the last 30 days');
   await shot(page, '11-progress');
 });
 
@@ -514,6 +520,65 @@ test('activity presets with intensity, and calories from a watch', async () => {
   await page.locator('#c-list .item', { hasText: 'Badminton' }).waitFor();
   assert.match(await page.locator('#c-list .item', { hasText: 'Badminton' }).innerText(), /entered calories[\s\S]*210/);
   await until(() => backend.db.activities.some((a) => a.name === 'Badminton' && a.calories_burned === 210 && a.met == null), 'the watch calories to sync');
+});
+
+// ── Plans, credits, trial ─────────────────────────────────────────────────
+test('sign-up saved the phone number as the primary contact; Free starts with 20 AI credits', async () => {
+  assert.equal(asha().phone, '+919876543210');
+  assert.equal(asha().phone_verified, false, 'not verified until WhatsApp verification is switched on');
+  const e = backend.billing.entitlement(asha().id);
+  assert.deepEqual([e.plan, e.credits.allowance], ['free', 20]);
+  assert.ok(e.credits.used >= 1, 'the AI estimate earlier used a credit');
+});
+
+test('Plans page: launch prices crossed out with % off, GST shown, yearly toggle; Claude is locked on Free', async () => {
+  const { page } = device1;
+  await go(page, 'Settings');
+  await page.getByRole('button', { name: /🔒 Claude/ }).click();
+  await page.getByRole('heading', { name: 'Upgrade to unlock' }).waitFor();
+  await page.getByRole('link', { name: /See plans/ }).click();
+  await page.getByRole('heading', { name: 'Plans', exact: true }).waitFor();
+  const pro = page.locator('.plan-card', { has: page.getByRole('heading', { name: /Pro$/ }) });
+  const proAi = page.locator('.plan-card', { has: page.getByRole('heading', { name: /Pro AI$/ }) });
+  assert.match(await pro.innerText(), /₹299\s*50% OFF\s*₹149\s*\/month\s*\+ 18% GST · ₹175\.82 total/);
+  assert.match(await proAi.innerText(), /₹600\s*50% OFF\s*₹299\s*\/month\s*\+ 18% GST · ₹352\.82 total/);
+  assert.equal(await pro.locator('s').evaluate((el) => getComputedStyle(el).textDecorationLine), 'line-through');
+  await page.getByRole('button', { name: /Yearly/ }).click();
+  assert.match(await pro.innerText(), /₹3,588\s*72% OFF\s*₹999\s*\/year\s*\+ 18% GST · ₹1,178\.82 total · ≈ ₹83\.25\/month/);
+  assert.match(await proAi.innerText(), /₹7,200\s*72% OFF\s*₹1,999\s*\/year/);
+  await page.locator('.offer').getByText('EXCLUSIVE OFFER').waitFor();
+  assert.match(await page.locator('.offer').innerText(), /1 week of Pro AI — free[\s\S]*₹0 today[\s\S]*₹352\.82\)\/month/);
+  await shot(page, '19-plans');
+});
+
+test('the exclusive free week of Pro AI: autopay mandate via Razorpay, then Pro AI with 150 credits', async () => {
+  const { page } = device1;
+  await page.evaluate(() => { window.__rzpDismiss = true; });
+  await page.getByRole('button', { name: /Start my free week/ }).click();
+  await page.locator('.toast', { hasText: 'Payment not completed — nothing was charged.' }).waitFor();
+  await page.evaluate(() => { window.__rzpDismiss = false; });
+  await page.getByRole('button', { name: /Start my free week/ }).click();
+  await page.locator('.toast', { hasText: 'Your free week of Pro AI has started ✓' }).waitFor();
+  const checkout = await page.evaluate(() => window.__rzpLast);
+  assert.equal(checkout.key, 'rzp_test_E2E');
+  assert.match(checkout.subscription_id, /^sub_E2E/);
+  assert.equal(checkout.prefill.contact, '+919876543210', 'the phone number is the Razorpay contact');
+  const e = backend.billing.entitlement(asha().id);
+  assert.deepEqual([e.plan, e.source, e.status, e.credits.allowance], ['pro_ai', 'trial', 'trialing', 150]);
+  assert.equal(backend.billing.claims.length, 1, 'the trial is claimed for this phone and email');
+  await page.locator('.plan-now', { hasText: /Pro AI · free trial until/ }).waitFor();
+  assert.equal(await page.locator('.offer').count(), 0, 'the offer is gone');
+});
+
+test('the free trial cannot be claimed again with the same phone number', async () => {
+  const other = await signedInDevice('cheater@example.com', { phone: '+919876543210' });
+  await other.page.evaluate(() => { location.hash = '#/plans'; });
+  await other.page.getByRole('heading', { name: 'Plans', exact: true }).waitFor();
+  await other.page.locator('.plan-card').first().waitFor();
+  assert.equal(await other.page.locator('.offer').count(), 0, 'no offer for a number that already had the trial');
+  const [status, body] = backend.billing.handle(other.user.id, { action: 'subscribe', trial: true });
+  assert.deepEqual([status, body.error.code], [409, 'trial_phone_used'], 'and the server refuses it');
+  await other.ctx.close();
 });
 
 test('Settings: choosing Claude sends food analysis to Claude', async () => {
@@ -720,7 +785,7 @@ const WIDTHS = [320, 360, 375, 390, 412, 430, 768, 1024, 1280, 1440];
 const widest = () => [...document.querySelectorAll('body *')]
   .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 0.5 && ![...el.children].some((c) => c.getBoundingClientRect().right > window.innerWidth + 0.5))
   .slice(0, 3).map((el) => `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}${[...el.classList].map((c) => `.${c}`).join('')} +${Math.round(el.getBoundingClientRect().right - window.innerWidth)}px`).join(', ');
-const SCREENS = [['dashboard', /Good (morning|afternoon|evening)/], ['food', /^Food$/], ['progress', /^Progress$/], ['measure', /^Measure$/], ['activity', /^Activity$/], ['more', /^More$/], ['settings', /^Settings$/]];
+const SCREENS = [['plans', /^Plans$/], ['meal-plan', /^AI meal plan$/], ['dashboard', /Good (morning|afternoon|evening)/], ['food', /^Food$/], ['progress', /^Progress$/], ['measure', /^Measure$/], ['activity', /^Activity$/], ['more', /^More$/], ['settings', /^Settings$/]];
 
 test(`no horizontal scrolling on any screen from ${WIDTHS[0]} to ${WIDTHS.at(-1)} px`, async () => {
   const { page } = device1;
@@ -878,7 +943,7 @@ test('wrong values can be reported (never edited directly), and the admin page r
   await page.reload();
   await page.locator('main h1').first().waitFor();
   await go(page, 'More');
-  await page.getByRole('link', { name: /Food database \(admin\)/ }).click();
+  await page.getByRole('link', { name: /^Admin/ }).click();
   await page.getByRole('heading', { name: 'Food database' }).waitFor();
   const text = await page.locator('main').innerText();
   assert.match(text, /AI calls avoided/);
@@ -888,6 +953,134 @@ test('wrong values can be reported (never edited directly), and the admin page r
   await until(() => [...backend.foodDb.foods.values()].some((f) => f.name === 'Jeera rice' && f.status === 'verified'), 'approval');
   await page.locator('.review-item', { hasText: 'Poached egg' }).getByRole('button', { name: 'Apply' }).click();
   await until(() => backend.foodDb.foods.get(SEED_ID('Poached egg')).protein === 13, 'the correction');
+  await go(page, 'Dashboard');
+});
+
+test('Pro AI: weekly AI report and a meal plan with a grocery list; log a planned meal', async () => {
+  const { page } = device1;
+  await go(page, 'Progress');
+  await page.getByRole('button', { name: /Get my report · 10 credits/ }).click();
+  await page.getByRole('heading', { name: 'Weekly AI report' }).waitFor();
+  const report = await page.locator('.sheet').innerText();
+  assert.match(report, /A steady week — protein is the thing to fix[\s\S]*Avg protein[\s\S]*62\.5[\s\S]*Change next week[\s\S]*Add protein at breakfast/);
+  await shot(page, '20-weekly-report');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Read report' }).waitFor();
+  await page.evaluate(() => { location.hash = '#/meal-plan'; });
+  await page.getByRole('button', { name: /Plan my week · 10 credits/ }).click();
+  await page.locator('.toast', { hasText: 'Your meal plan is ready ✓' }).waitFor();
+  assert.equal(await page.locator('[data-action="day"]').count(), 7);
+  assert.match(await page.locator('main').innerText(), /Grocery list[\s\S]*Poha · 200 g/);
+  await page.locator('.grocery-cat input').first().check();
+  await shot(page, '21-meal-plan');
+  await page.getByRole('button', { name: 'Log this meal' }).first().click();
+  await page.getByRole('heading', { name: 'Review & add' }).waitFor();
+  await page.keyboard.press('Escape');
+  const e = backend.billing.entitlement(asha().id);
+  assert.ok(e.credits.used >= 20, `report 10 + week plan 10 → ${e.credits.used} credits used`);
+});
+
+test('Free users: out of credits shows an upgrade, database foods still log; longer history and Pro features are locked', async () => {
+  const me = await signedInDevice('freebie@example.com');
+  backend.billing.usage.set(`${me.user.id}|${backend.billing.entitlement(me.user.id).credits.period_key}`, { used: 20, bonus: 0 });
+  const aiBefore = backend.ai.length;
+  await analyze(me.page, '1 roti with 10g butter and 4 boiled eggs');
+  assert.equal(backend.ai.length, aiBefore, 'known foods need no credits at all');
+  await me.page.keyboard.press('Escape');
+  await me.page.locator('#d-quick').getByRole('button', { name: 'Log food' }).click();
+  await me.page.getByLabel('What did you eat?').fill('homemade peanut chutney');
+  await me.page.getByRole('button', { name: 'Analyze' }).click();
+  await me.page.getByRole('heading', { name: 'Out of AI credits' }).waitFor();
+  await me.page.locator('.sheet [data-credits]', { hasText: '0 of 20 AI credits left' }).waitFor();
+  assert.match(await me.page.locator('.sheet').last().innerText(), /See plans — first week free/);
+  assert.equal(await me.page.locator('.toast.error').count(), 0, 'no error toast on top of the upgrade sheet');
+  await shot(me.page, '22-out-of-credits');
+  await me.page.keyboard.press('Escape');
+  await me.page.keyboard.press('Escape');
+  await me.page.evaluate(() => { location.hash = '#/progress'; });
+  await me.page.getByRole('button', { name: '🔒 90D' }).click();
+  await me.page.getByRole('heading', { name: 'Upgrade to unlock' }).waitFor();
+  await me.page.keyboard.press('Escape');
+  await me.page.getByRole('button', { name: 'Unlock with Pro' }).first().waitFor();
+  await me.page.evaluate(() => { location.hash = '#/meal-plan'; });
+  await me.page.getByRole('button', { name: 'Unlock with Pro AI' }).waitFor();
+  await me.ctx.close();
+});
+
+test('cancel the free trial: nothing will be charged, Pro AI stays until the trial ends', async () => {
+  const { page } = device1;
+  await go(page, 'Settings');
+  await page.locator('#sec-billing').getByRole('button', { name: 'Cancel' }).click();
+  await page.getByRole('button', { name: 'Cancel trial' }).click();
+  await page.locator('.toast', { hasText: 'Trial cancelled — you will not be charged.' }).waitFor();
+  assert.equal(backend.billing.cancels.length, 1);
+  const e = backend.billing.entitlement(asha().id);
+  assert.deepEqual([e.plan, e.status, e.cancel_at_period_end], ['pro_ai', 'trialing', true]);
+  assert.match(await page.locator('#sec-billing').innerText(), /free trial ends .* \(cancelled — no charge\)/);
+});
+
+test('upgrade to Pro yearly with Razorpay; the plan shows everywhere', async () => {
+  const { page } = device1;
+  await page.evaluate(() => { location.hash = '#/plans'; });
+  await page.getByRole('button', { name: /Yearly/ }).click();
+  await page.getByRole('button', { name: 'Get Pro' }).click();
+  await page.locator('.toast', { hasText: 'Welcome to Pro ✓' }).waitFor();
+  // The trial (already cancelled) still gives Pro AI until it ends; Pro takes over after that.
+  const subs = backend.billing.subs.filter((x) => x.user_id === asha().id);
+  assert.deepEqual(subs.map((x) => [x.plan_id, x.period, x.status]), [['pro_ai', 'month', 'cancelled'], ['pro_ai', 'month', 'cancelled'], ['pro', 'year', 'active']]);
+  assert.equal(backend.billing.cancels.length, 1, 'the unfinished checkout needed no Razorpay call');
+  await go(page, 'More');
+  await page.locator('.plan-link', { hasText: /Pro AI · free trial ends/ }).waitFor(); // trial runs out first, then Pro
+});
+
+test('WhatsApp verification on: add a phone with a code, then log in with the phone number', async (t) => {
+  backend.billing.phoneVerification = true;
+  t.after(() => { backend.billing.phoneVerification = false; });
+  const me = await signedInDevice('newphone@example.com', { phone: null });
+  await me.page.getByRole('heading', { name: 'Add your phone number' }).waitFor();
+  await shot(me.page, '23-phone');
+  await me.page.locator('#ph-number').fill('91234 56789');
+  await me.page.getByRole('button', { name: 'Send code on WhatsApp' }).click();
+  await me.page.getByText('We sent a code on WhatsApp to +919123456789').waitFor();
+  await me.page.locator('#ph-otp').fill('111111');
+  await me.page.getByRole('button', { name: 'Verify' }).click();
+  await me.page.locator('.toast.error', { hasText: "That code didn't match" }).waitFor();
+  await me.page.locator('#ph-otp').fill('246810');
+  await me.page.getByRole('button', { name: 'Verify' }).click();
+  await me.page.locator('main h1').filter({ hasText: /Good (morning|afternoon|evening)/ }).waitFor();
+  const prof = backend.db.profiles.find((x) => x.id === me.user.id);
+  assert.deepEqual([prof.phone, prof.phone_verified], ['+919123456789', true]);
+  await me.ctx.close();
+
+  const again = await newDevice();
+  await again.page.goto(`${base}#/login`);
+  await again.page.getByLabel('Phone or email').fill('91234 56789');
+  await again.page.locator('#li-password').fill('pass-word-123');
+  await again.page.getByRole('button', { name: 'Log in' }).click();
+  await again.page.locator('main h1').filter({ hasText: /Good (morning|afternoon|evening)/ }).waitFor();
+  await again.ctx.close();
+  backend.billing.phoneVerification = false;
+});
+
+test('admin: users & plans — give a plan, add credits', async () => {
+  const { page } = device1;
+  backend.foodDb.admins.add(asha().id);
+  const ravi = [...backend.users.values()].find((x) => x.email === 'ravi@example.com');
+  await page.reload();
+  await page.locator('main h1').first().waitFor();
+  await page.evaluate(() => { location.hash = '#/admin'; });
+  await page.getByRole('heading', { name: 'Admin', exact: true }).waitFor();
+  await page.getByLabel('Search users').fill('ravi');
+  const row = page.locator('#ad-users .review-item', { hasText: 'ravi@example.com' });
+  await row.waitFor();
+  await row.getByRole('button', { name: 'Give Pro AI · 30 days' }).click();
+  await page.getByRole('button', { name: 'Give plan', exact: true }).click();
+  await page.locator('.toast', { hasText: 'Plan given ✓' }).waitFor();
+  assert.deepEqual([backend.billing.entitlement(ravi.id).plan, backend.billing.entitlement(ravi.id).source], ['pro_ai', 'grant']);
+  await page.locator('#ad-users .review-item', { hasText: 'ravi@example.com' }).getByRole('button', { name: '+50 credits' }).click();
+  await page.locator('.toast', { hasText: '50 credits added ✓' }).waitFor();
+  assert.equal(backend.billing.entitlement(ravi.id).credits.allowance, 650);
+  await shot(page, '24-admin-users');
   await go(page, 'Dashboard');
 });
 
@@ -950,6 +1143,7 @@ test('log out, recovery-code reset, and delete account', async () => {
   assert.equal(backend.db.meal_items.filter((i) => i.user_id === uid).length, 0);
   assert.equal(backend.users.has(uid), false);
   assert.ok(backend.foodDb.foods.size > 100, 'shared foods stay — they hold no personal data');
+  assert.ok(backend.billing.subs.filter((x) => x.user_id === uid).every((x) => x.status === 'cancelled'), 'the Razorpay subscription was cancelled first');
 });
 
 test('password-reset email link opens "choose a new password" and signs in', async () => {
@@ -1009,7 +1203,7 @@ test('"Today" moves to the new day at midnight while the app is open', async () 
   const user = { id: randomUUID(), email: 'night@example.com', password: 'night-owl-123', user_metadata: {}, created_at: new Date().toISOString() };
   backend.users.set(user.id, user);
   backend.createDefaults(user.id);
-  Object.assign(backend.db.profiles.find((p) => p.id === user.id), { display_name: 'Nisha', age: 28, sex: 'female', height_cm: 160, weight_kg: 58, onboarding_completed: true });
+  Object.assign(backend.db.profiles.find((p) => p.id === user.id), { display_name: 'Nisha', age: 28, sex: 'female', height_cm: 160, weight_kg: 58, onboarding_completed: true, phone: '+919000000001' });
   const midnight = new Date();
   midnight.setHours(24, 0, 0, 0);
   const lateEvening = new Date(midnight.getTime() - 90_000);

@@ -16,7 +16,29 @@ verify_jwt = false
 [functions.delete-account]
 verify_jwt = false
 
+[functions.billing]
+verify_jwt = false
+
+# Razorpay calls this without a Supabase session; every request is checked with its HMAC signature.
+[functions.razorpay-webhook]
+verify_jwt = false
+
+# Supabase Auth calls this hook; every request is checked with the Standard Webhooks signature.
+[functions.send-otp]
+verify_jwt = false
+
 # Auth redirect targets (pushed with `supabase config push`; undeclared settings stay unchanged).
 [auth]
 site_url = "https://shashwatchandkumain.github.io/NutriLog/"
 additional_redirect_urls = ["https://shashwatchandkumain.github.io/NutriLog/", "http://localhost:8080/"]
+
+# Phone numbers (verified with a WhatsApp code). Turn on once WhatsApp is set up — see README
+# "Phone verification". The hook sends Supabase's phone codes through supabase/functions/send-otp.
+[auth.sms]
+enable_signup = false
+enable_confirmations = true
+
+[auth.hook.send_sms]
+enabled = false
+uri = "https://tvzvsbkfmbnbeifrsfmb.supabase.co/functions/v1/send-otp"
+secrets = "env(SEND_SMS_HOOK_SECRETS)"

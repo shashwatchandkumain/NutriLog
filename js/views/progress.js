@@ -4,7 +4,8 @@
 import { html, setHTML, fmtInt, fmt1, fmtNum, today, addDays, dateRange, formatDay, parseISODate, debounce } from '../lib/utils.js';
 import { formatWeight, kgToLb, macroCalories, recommendTargets, trimNumber } from '../lib/nutrition.js';
 import { totalsByDate, computeStreak, averageOfLoggedDays, sortWeights, weightChange, goalProgress, movingAverage, weightTrend } from '../lib/stats.js';
-import { state, on, currentGoals, weightUnit, effectiveProfile } from '../store.js';
+import { state, on, emit, currentGoals, weightUnit, effectiveProfile, historyDays, hasFeature } from '../store.js';
+import { weeklyCard } from './weekly-report.js';
 import { $, bindActions } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { barChart, lineChart } from '../ui/charts.js';
@@ -17,8 +18,10 @@ const RANGES = { 7: { label: '7D', days: 7 }, 30: { label: '30D', days: 30 }, 90
 export function mountProgress(root) {
   const disposers = [];
   const chartDisposers = [];
+  // Free shows the last 30 days; longer ranges are part of Pro.
+  const locked = (k) => { const max = historyDays(); return max != null && (k === 'all' || Number(k) > max); };
   let range = sessionStorage.getItem('nutrilog.progressRange') || '30';
-  if (!RANGES[range]) range = '30';
+  if (!RANGES[range] || locked(range)) range = '30';
   let items = null;
 
   setHTML(root, html`
@@ -26,7 +29,7 @@ export function mountProgress(root) {
       <div><h1>Progress</h1><p class="small muted" id="p-sub">Your trends over time</p></div>
       <div class="row">
         <div class="segmented" role="group" aria-label="Time range">
-          ${Object.entries(RANGES).map(([k, r]) => html`<button type="button" data-action="range" data-range="${k}" aria-pressed="${k === range}">${r.label}</button>`)}
+          ${Object.entries(RANGES).map(([k, r]) => html`<button type="button" data-action="range" data-range="${k}" aria-pressed="${k === range}">${locked(k) ? '🔒 ' : ''}${r.label}</button>`)}
         </div>
         <button type="button" class="icon-btn" data-action="calendar" aria-label="Open calendar">${icon('calendar')}</button>
       </div>
@@ -41,6 +44,7 @@ export function mountProgress(root) {
         <section class="card" aria-label="Protein"><div class="card-head"><h2 class="card-title">Protein</h2><span class="small muted" id="p-prot-note"></span></div><div id="p-prot"></div></section>
       </div>
       <div class="cards">
+        <section class="card" id="p-report" aria-label="Weekly AI report"></section>
         <div class="tiles" id="p-tiles"></div>
         <section class="card" id="p-body" aria-label="Body composition"></section>
         <section class="card" id="p-macros" aria-label="Average macros"></section>
@@ -170,6 +174,7 @@ export function mountProgress(root) {
       date: x.recorded_on, value: Number(x.body_fat_pct), label: formatDay(x.recorded_on, { month: 'short', day: 'numeric' }), title: formatDay(x.recorded_on),
     }));
     const hr = [...w].reverse().find((x) => x.heart_rate_bpm);
+    const history = hasFeature('body_history');
     setHTML(el, html`
       <div class="card-head"><h2 class="card-title">Body composition</h2><span class="tag">Estimates</span></div>
       <div class="tiles">
@@ -178,9 +183,9 @@ export function mountProgress(root) {
         <div class="tile"><div class="tile-label">BMI</div><div class="tile-value">${latest.bmi != null ? fmtNum(latest.bmi, 1) : '—'}</div></div>
         <div class="tile"><div class="tile-label">Heart rate</div><div class="tile-value">${hr ? html`${hr.heart_rate_bpm}<small> bpm</small>` : '—'}</div><div class="tile-delta">${hr ? formatDay(hr.recorded_on, { month: 'short', day: 'numeric' }) : 'from the smart scale'}</div></div>
       </div>
-      <div id="p-fat" style="margin-top:12px"></div>
+      ${history ? html`<div id="p-fat" style="margin-top:12px"></div>` : html`<button type="button" class="locked-chart" data-action="unlock-body">🔒 Body-fat trend over time is part of Pro</button>`}
       <p class="tiny faint" style="margin-top:6px">Body fat is estimated from weight, height, age and sex (Deurenberg); heart rate comes from the scale. Treat these as trends, not medical measurements.</p>`);
-    chartDisposers.push(lineChart($('#p-fat', root), pts, { unit: '%', format: (v) => v.toFixed(1), emptyText: 'Two or more weigh-ins in this range will show your body-fat trend.', ariaLabel: 'Estimated body fat over time' }));
+    if (history) chartDisposers.push(lineChart($('#p-fat', root), pts, { unit: '%', format: (v) => v.toFixed(1), emptyText: 'Two or more weigh-ins in this range will show your body-fat trend.', ariaLabel: 'Estimated body fat over time' }));
   };
 
   const renderNutrition = () => {
@@ -253,6 +258,10 @@ export function mountProgress(root) {
 
   disposers.push(bindActions(root, {
     range: (el) => {
+      if (locked(el.dataset.range)) {
+        emit('upgrade', { reason: 'plan_required', message: 'Progress beyond the last 30 days — 90 days, a year and all time — is part of Pro.' });
+        return;
+      }
       range = el.dataset.range;
       sessionStorage.setItem('nutrilog.progressRange', range);
       root.querySelectorAll('[data-action="range"]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.range === range)));
@@ -261,6 +270,14 @@ export function mountProgress(root) {
     measure: () => openScale(),
     calendar: () => openCalendar({ onPick: (d) => { state.date = d; navigate('dashboard'); } }),
     retry: () => load(),
+    'unlock-body': () => emit('upgrade', { reason: 'plan_required', message: 'Body-composition history is part of Pro.' }),
+  }));
+  const reportCard = weeklyCard($('#p-report', root));
+  // The plan can arrive after the page opened: refresh the locks.
+  disposers.push(on('plan', () => {
+    reportCard(); renderBody();
+    root.querySelectorAll('[data-action="range"]').forEach((b) => { b.textContent = `${locked(b.dataset.range) ? '🔒 ' : ''}${RANGES[b.dataset.range].label}`; });
+    if (locked(range)) { range = '30'; load(); }
   }));
   disposers.push(on('weights', renderAll));
   disposers.push(on('streak', () => { renderTiles(); renderStreak(); }));

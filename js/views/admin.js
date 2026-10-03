@@ -1,24 +1,28 @@
-// Food database admin (only for accounts in public.app_admins — the server checks every call):
-// how foods were resolved (database vs AI), new foods waiting for review, correction reports,
+// Admin (only for accounts in public.app_admins — the server checks every call): users & plans
+// (admin-users.js), and the food database: how foods were resolved (database vs AI), new foods waiting for review, correction reports,
 // suggested aliases, and merging duplicates.
 import { html, setHTML, fmtInt, fmt1, formatDay } from '../lib/utils.js';
 import { state } from '../store.js';
 import { bindActions, toast, showError, confirmDialog, openSheet, $ } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
+import { mountAdminUsers } from './admin-users.js';
 import { adminOverview, adminSetStatus, adminReviewCorrection, adminMergeFoods, adminAddAlias, adminRejectAlias, searchGlobalFoods } from '../services/food-db.js';
 
 const pct = (a, b) => (b ? `${fmtInt((a / b) * 100)}%` : '—');
 
 export function mountAdmin(root) {
   let data = null;
-  setHTML(root, html`<div class="page-head"><div><h1>Food database</h1><p class="small muted">Shared foods, reviews and AI usage</p></div></div>
+  setHTML(root, html`<div class="page-head"><div><h1>Admin</h1><p class="small muted">Users & plans, the shared food database and AI usage</p></div></div>
+    <div class="cards" id="ad-users" style="margin-bottom:14px"></div>
+    <h2 class="section-title">Food database</h2>
     <div id="ad-body"><div class="skeleton" style="height:200px"></div></div>`);
   const body = $('#ad-body', root);
 
   if (!state.isAdmin) {
-    setHTML(body, html`<div class="empty"><div class="empty-title">Admins only</div><a class="btn btn-secondary btn-sm" href="#/more">Back</a></div>`);
+    setHTML(root, html`<div class="empty"><div class="empty-title">Admins only</div><a class="btn btn-secondary btn-sm" href="#/more">Back</a></div>`);
     return () => {};
   }
+  mountAdminUsers($('#ad-users', root));
 
   const render = () => {
     const days = data.stats || [];

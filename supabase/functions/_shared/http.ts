@@ -115,3 +115,57 @@ export async function consumeAiQuota(supabase: SupabaseClient, kind: string): Pr
     throw new HttpError(429, 'rate_limited', "You've reached the AI limit for now. Please try again later.");
   }
 }
+
+export interface Spend {
+  plan: string;
+  features: Record<string, unknown>;
+  remaining: number;
+  /** Gives the credits back (call when the AI request failed). */
+  refund: () => Promise<void>;
+}
+
+/**
+ * Spends the AI credits for `action` (public.ai_credit_costs) from the user's plan allowance.
+ * Throws 402 'no_credits' when there aren't enough — the app then offers an upgrade. Also keeps
+ * the hourly/daily abuse limit (consume_ai_quota).
+ */
+export async function spendCredits(supabase: SupabaseClient, userId: string, action: string): Promise<Spend> {
+  await consumeAiQuota(supabase, action);
+  const admin = adminClient();
+  const { data, error } = await admin.rpc('consume_credits', { p_user: userId, p_action: action });
+  if (error) throw new HttpError(500, 'credits_check_failed', 'Something went wrong. Please try again.', error);
+  if (!data?.ok) {
+    throw new HttpError(402, 'no_credits', data?.plan === 'pro_ai'
+      ? "You've used this month's AI credits. They refill on the 1st — foods from the NutriLog database still log for free."
+      : "You've used your AI credits for now. Upgrade for more — foods from the NutriLog database still log for free.");
+  }
+  let refunded = false;
+  return {
+    plan: data.plan, features: data.features ?? {}, remaining: data.remaining,
+    refund: async () => {
+      if (refunded) return;
+      refunded = true;
+      const { error: e } = await admin.rpc('refund_credits', { p_user: userId, p_period_key: data.period_key, p_credits: data.cost });
+      if (e) console.error('[credits] refund failed', e.message);
+    },
+  };
+}
+
+/** Throws 403 'plan_required' unless the user's plan includes `feature`. */
+export async function requireFeature(userId: string, feature: string, plan: 'pro' | 'pro_ai'): Promise<void> {
+  const { data, error } = await adminClient().rpc('entitlement_for', { p_user: userId });
+  if (error) throw new HttpError(500, 'plan_check_failed', 'Something went wrong. Please try again.', error);
+  if (!data?.features?.[feature]) {
+    throw new HttpError(403, 'plan_required', `This is a ${plan === 'pro_ai' ? 'Pro AI' : 'Pro'} feature. Upgrade to use it.`);
+  }
+}
+
+/** Runs `fn` with the spent credits refunded if it throws. */
+export async function withRefund<T>(spend: Spend, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    await spend.refund();
+    throw e;
+  }
+}

@@ -30,11 +30,20 @@ See README.md for setup and architecture.
   changes history. Seed data is generated: edit `scripts/food-data/global-foods.mjs`, then
   `USDA_SR_JSON=… npm run build:food-seed` — don't hand-edit 006 or `global-foods.json`.
   `food_key()` (SQL) and `nameKey()` (`lib/food-key.js`) must stay identical (a test checks).
+- **Plans & billing** (migration 007): plans/prices/credit costs live in tables (`plans`,
+  `plan_prices`, `ai_credit_costs`) — never hard-code a price, limit or plan check; read
+  `state.entitlement` (`hasFeature`, `planId`) on the client and `entitlement_for()` /
+  `spendCredits()` / `requireFeature()` on the server. Every AI call spends credits via
+  `spendCredits` (refunded with `withRefund` if the AI fails). Billing rows are written only by
+  the `billing` / `razorpay-webhook` functions (service role) after signature checks; never trust
+  the client for a plan. Trial: once per phone and per email (`trial_claims`, hashes only).
+  Phone numbers are verified only by Supabase Auth (`profiles_phone_guard`). Admin is a role.
 - `supabase/migrations/` schema + RLS; `supabase/functions/` Edge Functions (Deno, TypeScript).
 
 ## Guardrails
 - **No secrets in the website.** Only the Supabase URL + anon/publishable key go in `js/config.js`.
-  Gemini/Claude keys exist only as Edge Function secrets; call AI through `js/services/ai.js`.
+  Gemini/Claude, Razorpay secret/webhook and WhatsApp keys exist only as Edge Function secrets;
+  call AI through `js/services/ai.js` and payments through `js/services/billing.js`.
 - **XSS:** write markup only with the `html` tagged template + `setHTML` (auto-escapes). Never build
   inline `onclick` strings — the CSP blocks them; use `data-action` + `bindActions` or listeners.
 - **Every user table has RLS** on `auth.uid()`. New tables need policies and a test in `tests/db/`.

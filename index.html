@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#f8f7f2" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0d1315" media="(prefers-color-scheme: dark)">
   <meta name="color-scheme" content="light dark">
-  <!-- Scripts: this site + jsDelivr (supabase-js, barcode scanner). Data: Supabase + Open Food Facts. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://world.openfoodfacts.org; media-src 'self' blob: mediastream:; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+  <!-- Scripts: this site + jsDelivr (supabase-js, barcode scanner) + Razorpay Checkout. Data: Supabase, Open Food Facts, Razorpay. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.razorpay.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://world.openfoodfacts.org https://*.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; media-src 'self' blob: mediastream:; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <script src="js/theme-init.js"></script>
   <meta name="apple-mobile-web-app-capable" content="yes">

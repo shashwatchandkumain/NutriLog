@@ -1,10 +1,12 @@
 // Global app state + a tiny event bus. Views read `state` and re-render on events.
 import { today } from './lib/utils.js';
 
-export const APP_VERSION = '2.3.0';
+export const APP_VERSION = '2.4.0';
 
 export const state = {
   isAdmin: false,       // may review the shared Global Food Database (checked again by the server)
+  entitlement: null,    // the user's plan right now: { plan, source, status, features, credits, … } (public.my_entitlement)
+  billing: null,        // plans, prices and trial eligibility from the billing function
   session: null,
   user: null,
   profile: null,
@@ -61,5 +63,12 @@ export function effectiveProfile() {
 export const weightUnit = () => state.prefs?.weight_unit || 'kg';
 /** Daily water goal in ml. */
 export const waterGoalMl = () => Number(state.prefs?.water_goal_ml) || (Number(state.prefs?.water_goal) || 8) * 250;
-export const aiProvider = () => (state.prefs?.ai_provider === 'claude' ? 'claude' : 'gemini');
+/** The model to use: Claude only when chosen AND included in the plan (Pro AI). */
+export const aiProvider = () => (state.prefs?.ai_provider === 'claude' && hasFeature('claude') ? 'claude' : 'gemini');
+/** The user's plan id: 'free' | 'pro' | 'pro_ai'. */
+export const planId = () => state.entitlement?.plan || 'free';
+/** Whether the current plan includes a feature (see public.plans.features). */
+export const hasFeature = (name) => !!state.entitlement?.features?.[name];
+/** How many days of history the plan shows (null = all). */
+export const historyDays = () => state.entitlement?.features?.history_days ?? (state.entitlement ? null : 30);
 export const heightUnit = () => state.prefs?.height_unit || 'cm';

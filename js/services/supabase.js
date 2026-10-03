@@ -2,6 +2,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm';
 import { CONFIG } from '../config.js';
 import { UserError } from '../lib/utils.js';
+import { emit } from '../store.js';
 
 const url = String(CONFIG.SUPABASE_URL || '').trim().replace(/\/+$/, '');
 const key = String(CONFIG.SUPABASE_ANON_KEY || '').trim();
@@ -47,10 +48,12 @@ export async function callFunction(name, body) {
   const { data, error } = await sb.functions.invoke(name, { body });
   if (!error) return data;
   let message = null;
+  let code = null;
   let status = error.context?.status;
   try {
     const payload = await error.context?.json?.();
     message = payload?.error?.message || null;
+    code = payload?.error?.code || null;
   } catch { /* non-JSON error body */ }
   // 4xx and 503 (AI unavailable) are handled conditions with a user message; others are bugs.
   console[status && (status < 500 || status === 503) ? 'warn' : 'error'](`[NutriLog] function ${name} failed`, status, error);
@@ -61,5 +64,8 @@ export async function callFunction(name, body) {
   }
   const e = new UserError(message, error);
   e.status = status;
+  e.code = code;
+  // Out of AI credits, or a feature of a higher plan: the app offers an upgrade.
+  if (code === 'no_credits' || code === 'plan_required') emit('upgrade', { reason: code, message });
   throw e;
 }

@@ -2,7 +2,10 @@
 // notifications, privacy, data (export / import / delete) and account.
 import { html, setHTML, fmtInt, today, formatDay } from '../lib/utils.js';
 import { recommendTargets, formatHeight, formatWeight } from '../lib/nutrition.js';
-import { state, on, currentGoals, effectiveProfile, aiProvider, waterGoalMl, APP_VERSION } from '../store.js';
+import { state, on, emit, currentGoals, effectiveProfile, aiProvider, hasFeature, waterGoalMl, APP_VERSION } from '../store.js';
+import { formatPhone } from '../lib/phone.js';
+import { billingSection } from './plans.js';
+import { openPhoneSheet } from './phone.js';
 import { $, toast, showError, withBusy, confirmDialog, openSheet, download } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { applyTheme, getThemePref } from '../ui/theme.js';
@@ -14,11 +17,12 @@ import * as auth from '../services/auth.js';
 import { requestPermission, notificationPermission } from '../services/reminders.js';
 import { openImport, openScale, openBluetoothHelp } from './lazy.js';
 
-const SECTIONS = [['profile', 'Profile'], ['goals', 'Goals'], ['appearance', 'Appearance'], ['devices', 'Devices'], ['ai', 'AI'],
+const SECTIONS = [['billing', 'Plan'], ['profile', 'Profile'], ['goals', 'Goals'], ['appearance', 'Appearance'], ['devices', 'Devices'], ['ai', 'AI'],
   ['notifications', 'Reminders'], ['privacy', 'Privacy'], ['data', 'Data'], ['account', 'Account']];
 
 export function mountSettings(root, { onSignedOut }) {
   const disposers = [];
+  let billingOff = null;
 
   const render = () => {
     const p = effectiveProfile();
@@ -36,6 +40,11 @@ export function mountSettings(root, { onSignedOut }) {
       <div class="page-head"><h1>Settings</h1></div>
       <nav class="section-nav" aria-label="Settings sections">${SECTIONS.map(([id, label]) => html`<button type="button" class="chip" data-jump="${id}">${label}</button>`)}</nav>
       <div class="settings">
+        <section class="card" id="sec-billing" aria-labelledby="s-billing">
+          <div class="card-head"><h2 id="s-billing">${icon('star', 18)} Plan & billing</h2><a class="small" href="#/plans">All plans →</a></div>
+          <div id="s-billing-body"></div>
+        </section>
+
         <section class="card" id="sec-profile" aria-labelledby="s-profile">
           <div class="card-head"><h2 id="s-profile">Profile</h2><button type="button" class="btn btn-secondary btn-sm" data-edit-profile>${icon('edit', 16)} Edit</button></div>
           <dl class="kv">
@@ -109,7 +118,7 @@ export function mountSettings(root, { onSignedOut }) {
             <div><div class="t">Analyze with</div><div class="d">${provider === 'claude' ? 'Claude (Anthropic) — detailed, careful estimates.' : 'Gemini (Google) — fast estimates.'} If the chosen model is unavailable, the other one answers.</div></div>
             <div class="segmented" role="group" aria-label="AI model">
               <button type="button" data-ai="gemini" aria-pressed="${provider === 'gemini'}">Gemini</button>
-              <button type="button" data-ai="claude" aria-pressed="${provider === 'claude'}">Claude</button>
+              <button type="button" data-ai="claude" aria-pressed="${provider === 'claude'}" ${hasFeature('claude') ? '' : html`title="Pro AI feature"`}>${hasFeature('claude') ? '' : '🔒 '}Claude</button>
             </div>
           </div>
         </section>
@@ -144,7 +153,9 @@ export function mountSettings(root, { onSignedOut }) {
         <section class="card" id="sec-account" aria-labelledby="s-account">
           <h2 id="s-account">Account</h2>
           <dl class="kv" style="margin:10px 0 4px">
-            <dt>Email</dt><dd>${state.user?.email || '—'}</dd>
+            <dt>Phone <span class="tag">primary</span></dt><dd>${state.profile?.phone ? html`${formatPhone(state.profile.phone)} ${state.profile.phone_verified ? html`<span class="tag ok">verified</span>` : html`<span class="tag">not verified</span>`}` : '—'}
+              <button type="button" class="link-btn small" data-phone>${state.profile?.phone ? 'Change' : 'Add'}</button></dd>
+            <dt>Email <span class="tag">backup</span></dt><dd>${state.user?.email || '—'}</dd>
             <dt>Account ID</dt><dd><code>${shortId}</code></dd>
           </dl>
           <p class="hint">The Account ID helps identify your account if you contact support. It can't be used to log in.</p>
@@ -162,6 +173,8 @@ export function mountSettings(root, { onSignedOut }) {
 
         <p class="center tiny faint">NutriLog ${APP_VERSION} · Nutrition values are estimates for guidance, not medical advice.</p>
       </div>`);
+    billingOff?.();
+    billingOff = billingSection($('#s-billing-body', root));
     auth.recoveryCodeStatus().then((s) => {
       const el = $('#s-rc-status', root);
       if (el) el.textContent = s?.has_code ? `Active since ${new Date(s.created_at).toLocaleDateString()}` : 'No active code — create one in case you lose email access.';
@@ -188,8 +201,13 @@ export function mountSettings(root, { onSignedOut }) {
         await withBusy(t, '…', () => savePrefs({ exercise_mode: t.dataset.exMode }));
         if (!currentGoals().isCustom) await applyRecommendation(true);
       } else if (t.matches('[data-pref]')) await withBusy(t, '…', () => savePrefs({ [t.dataset.pref]: t.dataset.v }));
+      else if (t.matches('[data-phone]')) openPhoneSheet();
       else if (t.matches('[data-ai]')) {
         if (t.dataset.ai === aiProvider()) return;
+        if (t.dataset.ai === 'claude' && !hasFeature('claude')) {
+          emit('upgrade', { reason: 'plan_required', message: 'Choosing Claude — our most accurate AI — is part of Pro AI. Gemini stays available on every plan.' });
+          return;
+        }
         await withBusy(t, '…', () => savePrefs({ ai_provider: t.dataset.ai }));
         toast(`AI model: ${t.dataset.ai === 'claude' ? 'Claude' : 'Gemini'}.`, 'success');
       } else if (t.matches('[data-import]')) openImport();
@@ -373,5 +391,5 @@ export function mountSettings(root, { onSignedOut }) {
   // Opened from a shortcut such as #/settings?s=data: scroll to that section.
   const section = /[?&]s=([a-z]+)/.exec(location.hash)?.[1];
   if (section) requestAnimationFrame(() => jumpTo(section));
-  return () => disposers.forEach((d) => d());
+  return () => { disposers.forEach((d) => d()); billingOff?.(); };
 }

@@ -77,3 +77,14 @@ test('adding more of the same food merges amounts', () => {
   assert.equal(sameFood({ food: egg }, { food: food('Fried egg') }), false);
   assert.equal(sameFood({ food: egg }, { food: egg }), true);
 });
+
+test('vitamins & minerals add up across the foods that carry them', async () => {
+  const { dayMicros } = await import('../../js/lib/micros.js');
+  const egg = food('Boiled egg');
+  const d = dayMicros([{ micros: nutritionFor(egg, 100).micros }, { micros: nutritionFor(egg, 50).micros }, { micros: null }, {}]);
+  assert.deepEqual([d.withData, d.foods], [2, 4]);
+  const iron = d.rows.find((r) => r.key === 'iron_mg');
+  assert.equal(Math.round(iron.amount * 1000) / 1000, 1.785);
+  assert.equal(Math.round(iron.pct), 10);
+  assert.equal(d.rows.find((r) => r.key === 'vitamin_c_mg').amount, 0, 'known zero stays zero');
+});
