@@ -336,7 +336,10 @@ function render() {
   if (needsPhone() && !(state.profile.phone == null && state.user?.user_metadata?.phone)) {
     unmountApp();
     phoneGateShown = true;
-    renderPhoneGate(appEl, { onDone: () => { phoneGateShown = false; render(); } });
+    renderPhoneGate(appEl, {
+      onDone: () => { phoneGateShown = false; render(); },
+      onSignOut: async () => { phoneGateShown = false; await auth.signOut('local'); signedOut(); },
+    });
     return;
   }
 

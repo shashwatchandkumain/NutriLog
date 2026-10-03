@@ -1038,6 +1038,7 @@ test('WhatsApp verification on: add a phone with a code, then log in with the ph
   t.after(() => { backend.billing.phoneVerification = false; });
   const me = await signedInDevice('newphone@example.com', { phone: null });
   await me.page.getByRole('heading', { name: 'Add your phone number' }).waitFor();
+  await me.page.getByRole('button', { name: 'Log out' }).waitFor();
   await shot(me.page, '23-phone');
   await me.page.locator('#ph-number').fill('91234 56789');
   await me.page.getByRole('button', { name: 'Send code on WhatsApp' }).click();

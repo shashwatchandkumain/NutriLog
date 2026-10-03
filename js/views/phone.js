@@ -95,13 +95,14 @@ export function phoneForm(root, { onDone, required = false, initial = '' } = {})
 }
 
 /** Full-screen step after login for accounts without a (verified) phone number. */
-export async function renderPhoneGate(appEl, { onDone }) {
+export async function renderPhoneGate(appEl, { onDone, onSignOut }) {
   if (!state.billing) await loadBilling().catch(() => {});
   setHTML(appEl, html`<main class="auth"><div class="auth-card"><div class="auth-panel">
     <h2>${state.profile?.phone && phoneVerificationOn() ? 'Verify your phone number' : 'Add your phone number'}</h2>
     <p class="sub">Your mobile number is your main contact for NutriLog — your email stays as a backup. It's never shown to anyone.</p>
     <div id="ph-step"></div>
-  </div></div></main>`);
+  </div><div class="auth-foot"><span></span><button type="button" class="link-btn" data-signout>Log out</button></div></div></main>`);
+  appEl.querySelector('[data-signout]').addEventListener('click', () => onSignOut?.());
   phoneForm(appEl.querySelector('#ph-step'), { required: true, onDone });
 }
 
